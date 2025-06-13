@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-
+# ./gpt-sovits-backend/run.py
 import os
 import sys
 import click

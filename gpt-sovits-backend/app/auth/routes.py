@@ -1,3 +1,4 @@
+# ./gpt-sovits-backend/app/auth/routes.py
 from flask import Blueprint, request, jsonify, current_app, url_for
 from flask_jwt_extended import (
     create_access_token,

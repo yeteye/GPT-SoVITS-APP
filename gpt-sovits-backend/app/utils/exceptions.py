@@ -1,3 +1,4 @@
+# ./gpt-sovits-backend/app/utils/exceptions.py
 class APIException(Exception):
     """API异常基类"""
 
