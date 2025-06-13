@@ -1,3 +1,4 @@
+# ./gpt-sovits-backend/app/models/model.py
 from datetime import datetime
 from app.extensions import db
 import uuid
