@@ -74,7 +74,9 @@ class VoiceModel(db.Model):
         lazy="subquery",
         backref=db.backref("models", lazy=True),
     )
-    reviewer = db.relationship("User", foreign_keys=[reviewed_by])
+
+    # 修复：使用字符串引用避免循环导入
+    reviewer = db.relationship("User", foreign_keys=[reviewed_by], post_update=True)
 
     def set_supported_emotions(self, emotions):
         """设置支持的情感列表"""

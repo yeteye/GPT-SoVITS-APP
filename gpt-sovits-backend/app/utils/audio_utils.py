@@ -7,9 +7,30 @@ from pydub import AudioSegment
 from flask import current_app
 from app.utils.exceptions import AudioProcessingError
 
+# 依赖检查
+try:
+    import librosa
+    import soundfile as sf
+
+    LIBROSA_AVAILABLE = True
+except ImportError:
+    LIBROSA_AVAILABLE = False
+
+try:
+    from pydub import AudioSegment
+
+    PYDUB_AVAILABLE = True
+except ImportError:
+    PYDUB_AVAILABLE = False
+
 
 def validate_audio_content(file_path):
     """验证音频内容"""
+    if not LIBROSA_AVAILABLE:
+        raise AudioProcessingError(
+            "Audio processing libraries not available. Please install librosa and soundfile."
+        )
+
     try:
         # 加载音频文件
         audio, sr = librosa.load(file_path, sr=None)
@@ -52,6 +73,9 @@ def validate_audio_content(file_path):
 
 def convert_to_standard_format(input_path, output_path):
     """转换音频到标准格式"""
+    if not LIBROSA_AVAILABLE:
+        raise AudioProcessingError("librosa not available for audio conversion")
+
     try:
         target_sr = current_app.config.get("AUDIO_SAMPLE_RATE", 16000)
 
@@ -72,6 +96,46 @@ def convert_to_standard_format(input_path, output_path):
 
     except Exception as e:
         raise AudioProcessingError(f"Failed to convert audio: {str(e)}")
+
+
+def get_audio_info(file_path):
+    """获取音频文件信息"""
+    try:
+        info = {}
+
+        # 优先使用pydub获取基本信息
+        if PYDUB_AVAILABLE:
+            audio = AudioSegment.from_file(file_path)
+            info.update(
+                {
+                    "duration": len(audio) / 1000.0,  # 秒
+                    "channels": audio.channels,
+                    "frame_rate": audio.frame_rate,
+                    "sample_width": audio.sample_width,
+                    "max_possible_amplitude": audio.max_possible_amplitude,
+                    "dBFS": audio.dBFS,
+                }
+            )
+
+        # 使用librosa获取详细信息
+        if LIBROSA_AVAILABLE:
+            y, sr = librosa.load(file_path, sr=None)
+            info.update(
+                {
+                    "sample_rate": sr,
+                    "duration": (
+                        len(y) / sr if not info.get("duration") else info["duration"]
+                    ),
+                }
+            )
+
+        # 基本文件信息
+        info["file_size"] = os.path.getsize(file_path)
+
+        return info
+
+    except Exception as e:
+        raise AudioProcessingError(f"Failed to get audio info: {str(e)}")
 
 
 def normalize_audio(audio, target_db=-20):
@@ -95,6 +159,9 @@ def normalize_audio(audio, target_db=-20):
 
 def trim_silence(audio, sr, top_db=20):
     """移除音频首尾的静音部分"""
+    if not LIBROSA_AVAILABLE:
+        return audio
+
     try:
         # 使用librosa的trim函数
         trimmed_audio, _ = librosa.effects.trim(audio, top_db=top_db)
@@ -104,8 +171,44 @@ def trim_silence(audio, sr, top_db=20):
         return audio
 
 
+def split_audio_by_silence(file_path, min_segment_length=2.0, silence_thresh=-40):
+    """根据静音分割音频"""
+    if not PYDUB_AVAILABLE:
+        raise AudioProcessingError("pydub not available for audio splitting")
+
+    try:
+        # 使用pydub加载音频
+        audio = AudioSegment.from_file(file_path)
+
+        # 检测静音段
+        chunks = []
+        current_chunk = AudioSegment.empty()
+
+        for i, chunk in enumerate(audio[::100]):  # 每100ms检查一次
+            if chunk.dBFS < silence_thresh:
+                # 静音段
+                if len(current_chunk) >= min_segment_length * 1000:  # 转换为毫秒
+                    chunks.append(current_chunk)
+                current_chunk = AudioSegment.empty()
+            else:
+                # 非静音段
+                current_chunk += audio[i * 100 : (i + 1) * 100]
+
+        # 添加最后一个片段
+        if len(current_chunk) >= min_segment_length * 1000:
+            chunks.append(current_chunk)
+
+        return chunks
+
+    except Exception as e:
+        raise AudioProcessingError(f"Failed to split audio: {str(e)}")
+
+
 def extract_audio_features(file_path):
     """提取音频特征"""
+    if not LIBROSA_AVAILABLE:
+        raise AudioProcessingError("librosa not available for feature extraction")
+
     try:
         audio, sr = librosa.load(file_path, sr=16000)
 
@@ -137,36 +240,6 @@ def extract_audio_features(file_path):
 
     except Exception as e:
         raise AudioProcessingError(f"Failed to extract audio features: {str(e)}")
-
-
-def split_audio_by_silence(file_path, min_segment_length=2.0, silence_thresh=-40):
-    """根据静音分割音频"""
-    try:
-        # 使用pydub加载音频
-        audio = AudioSegment.from_file(file_path)
-
-        # 检测静音段
-        chunks = []
-        current_chunk = AudioSegment.empty()
-
-        for i, chunk in enumerate(audio[::100]):  # 每100ms检查一次
-            if chunk.dBFS < silence_thresh:
-                # 静音段
-                if len(current_chunk) >= min_segment_length * 1000:  # 转换为毫秒
-                    chunks.append(current_chunk)
-                current_chunk = AudioSegment.empty()
-            else:
-                # 非静音段
-                current_chunk += audio[i * 100 : (i + 1) * 100]
-
-        # 添加最后一个片段
-        if len(current_chunk) >= min_segment_length * 1000:
-            chunks.append(current_chunk)
-
-        return chunks
-
-    except Exception as e:
-        raise AudioProcessingError(f"Failed to split audio: {str(e)}")
 
 
 def merge_audio_files(file_paths, output_path):
@@ -202,30 +275,6 @@ def calculate_audio_hash(file_path):
 
     except Exception as e:
         raise AudioProcessingError(f"Failed to calculate audio hash: {str(e)}")
-
-
-def get_audio_info(file_path):
-    """获取音频文件信息"""
-    try:
-        # 使用pydub获取基本信息
-        audio = AudioSegment.from_file(file_path)
-
-        # 使用librosa获取详细信息
-        y, sr = librosa.load(file_path, sr=None)
-
-        return {
-            "duration": len(audio) / 1000.0,  # 秒
-            "sample_rate": sr,
-            "channels": audio.channels,
-            "frame_rate": audio.frame_rate,
-            "sample_width": audio.sample_width,
-            "max_possible_amplitude": audio.max_possible_amplitude,
-            "dBFS": audio.dBFS,
-            "file_size": os.path.getsize(file_path),
-        }
-
-    except Exception as e:
-        raise AudioProcessingError(f"Failed to get audio info: {str(e)}")
 
 
 def detect_voice_activity(file_path, frame_length=2048, hop_length=512):

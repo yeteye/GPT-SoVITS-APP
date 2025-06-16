@@ -4,5 +4,6 @@ from app.api.tts import tts_bp
 from app.api.model_management import model_bp
 from app.api.admin import admin_bp
 from app.api.user import user_bp
+from app.api.health import health_bp
 
-__all__ = ["voice_clone_bp", "tts_bp", "model_bp", "admin_bp", "user_bp"]
+__all__ = ["voice_clone_bp", "tts_bp", "model_bp", "admin_bp", "user_bp", "health_bp"]

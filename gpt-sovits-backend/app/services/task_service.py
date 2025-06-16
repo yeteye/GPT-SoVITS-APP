@@ -57,10 +57,10 @@ class TaskService:
 
             # 计算平均处理时间
             vc_avg_time = TaskService._calculate_average_processing_time(
-                vc_query.filter_by(status="completed")
+                vc_query.filter_by(status="completed").all()
             )
             tts_avg_time = TaskService._calculate_average_processing_time(
-                tts_query.filter_by(status="completed")
+                tts_query.filter_by(status="completed").all()
             )
 
             return {
@@ -91,32 +91,25 @@ class TaskService:
             raise TaskProcessingError(f"Failed to get task statistics: {str(e)}")
 
     @staticmethod
-    def _calculate_average_processing_time(query):
+    def _calculate_average_processing_time(tasks):
         """计算平均处理时间"""
         try:
-            tasks = (
-                query.filter(
-                    VoiceCloneTask.started_at.isnot(None),
-                    VoiceCloneTask.completed_at.isnot(None),
-                ).all()
-                if hasattr(query.column_descriptions[0]["type"], "started_at")
-                else query.filter(
-                    TTSTask.started_at.isnot(None), TTSTask.completed_at.isnot(None)
-                ).all()
-            )
-
             if not tasks:
                 return 0
 
             total_time = 0
-            for task in tasks:
-                if task.started_at and task.completed_at:
-                    processing_time = (
-                        task.completed_at - task.started_at
-                    ).total_seconds()
-                    total_time += processing_time
+            valid_tasks = 0
 
-            return round(total_time / len(tasks), 2) if tasks else 0
+            for task in tasks:
+                if hasattr(task, "started_at") and hasattr(task, "completed_at"):
+                    if task.started_at and task.completed_at:
+                        processing_time = (
+                            task.completed_at - task.started_at
+                        ).total_seconds()
+                        total_time += processing_time
+                        valid_tasks += 1
+
+            return round(total_time / valid_tasks, 2) if valid_tasks > 0 else 0
 
         except Exception:
             return 0
@@ -253,7 +246,7 @@ class TaskService:
 
                 for task in vc_tasks:
                     try:
-                        if task.celery_task_id:
+                        if task.celery_task_id and celery:
                             celery.control.revoke(task.celery_task_id, terminate=True)
                         task.update_status("failed", error_message="Cancelled by user")
                         cancelled_count += 1
@@ -271,7 +264,7 @@ class TaskService:
 
                 for task in tts_tasks:
                     try:
-                        if task.celery_task_id:
+                        if task.celery_task_id and celery:
                             celery.control.revoke(task.celery_task_id, terminate=True)
                         task.update_status("failed", error_message="Cancelled by user")
                         cancelled_count += 1
@@ -303,27 +296,21 @@ class TaskService:
         """获取任务队列状态"""
         try:
             # 获取Celery队列信息
+            if not celery:
+                return {
+                    "database_status": TaskService._get_db_task_status(),
+                    "celery_status": {"error": "Celery not available"},
+                }
+
             inspect = celery.control.inspect()
 
             # 获取活跃任务
-            active_tasks = inspect.active()
-            scheduled_tasks = inspect.scheduled()
-            reserved_tasks = inspect.reserved()
-
-            # 统计数据库中的任务状态
-            vc_pending = VoiceCloneTask.query.filter_by(status="pending").count()
-            vc_processing = VoiceCloneTask.query.filter_by(status="processing").count()
-
-            tts_pending = TTSTask.query.filter_by(status="pending").count()
-            tts_processing = TTSTask.query.filter_by(status="processing").count()
+            active_tasks = inspect.active() if inspect else None
+            scheduled_tasks = inspect.scheduled() if inspect else None
+            reserved_tasks = inspect.reserved() if inspect else None
 
             return {
-                "database_status": {
-                    "voice_clone_pending": vc_pending,
-                    "voice_clone_processing": vc_processing,
-                    "tts_pending": tts_pending,
-                    "tts_processing": tts_processing,
-                },
+                "database_status": TaskService._get_db_task_status(),
                 "celery_status": {
                     "active_tasks": active_tasks,
                     "scheduled_tasks": scheduled_tasks,
@@ -334,18 +321,33 @@ class TaskService:
         except Exception as e:
             current_app.logger.error(f"Get task queue status error: {e}")
             return {
-                "database_status": {
-                    "voice_clone_pending": 0,
-                    "voice_clone_processing": 0,
-                    "tts_pending": 0,
-                    "tts_processing": 0,
-                },
+                "database_status": TaskService._get_db_task_status(),
                 "celery_status": {
-                    "active_tasks": None,
-                    "scheduled_tasks": None,
-                    "reserved_tasks": None,
                     "error": str(e),
                 },
+            }
+
+    @staticmethod
+    def _get_db_task_status():
+        """获取数据库中的任务状态"""
+        try:
+            vc_pending = VoiceCloneTask.query.filter_by(status="pending").count()
+            vc_processing = VoiceCloneTask.query.filter_by(status="processing").count()
+            tts_pending = TTSTask.query.filter_by(status="pending").count()
+            tts_processing = TTSTask.query.filter_by(status="processing").count()
+
+            return {
+                "voice_clone_pending": vc_pending,
+                "voice_clone_processing": vc_processing,
+                "tts_pending": tts_pending,
+                "tts_processing": tts_processing,
+            }
+        except Exception:
+            return {
+                "voice_clone_pending": 0,
+                "voice_clone_processing": 0,
+                "tts_pending": 0,
+                "tts_processing": 0,
             }
 
     @staticmethod
@@ -372,11 +374,12 @@ class TaskService:
                 db.session.commit()
 
                 # 重新启动任务
-                from app.services.voice_clone_service import start_voice_clone_task
+                if celery:
+                    from app.services.voice_clone_service import start_voice_clone_task
 
-                celery_task = start_voice_clone_task.delay(task.id)
-                task.celery_task_id = celery_task.id
-                db.session.commit()
+                    celery_task = start_voice_clone_task.delay(task.id)
+                    task.celery_task_id = celery_task.id
+                    db.session.commit()
 
                 return task.to_dict()
 
@@ -399,11 +402,12 @@ class TaskService:
                 db.session.commit()
 
                 # 重新启动任务
-                from app.services.tts_service import generate_speech_task
+                if celery:
+                    from app.services.tts_service import generate_speech_task
 
-                celery_task = generate_speech_task.delay(task.id)
-                task.celery_task_id = celery_task.id
-                db.session.commit()
+                    celery_task = generate_speech_task.delay(task.id)
+                    task.celery_task_id = celery_task.id
+                    db.session.commit()
 
                 return task.to_dict()
 
