@@ -11,6 +11,12 @@ class User(db.Model):
     """用户模型"""
 
     __tablename__ = "users"
+    __table_args__ = (
+        db.Index("idx_user_email", "email"),
+        db.Index("idx_user_username", "username"),
+        db.Index("idx_user_role", "role"),
+        db.Index("idx_user_created_at", "created_at"),
+    )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(50), unique=True, nullable=False, index=True)

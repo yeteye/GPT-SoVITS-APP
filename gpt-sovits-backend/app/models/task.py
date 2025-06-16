@@ -9,6 +9,12 @@ class VoiceCloneTask(db.Model):
     """音色克隆任务模型"""
 
     __tablename__ = "voice_clone_tasks"
+    __table_args__ = (
+        db.Index("idx_task_user_id", "user_id"),
+        db.Index("idx_task_status", "status"),
+        db.Index("idx_task_created_at", "created_at"),
+        db.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+    )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)

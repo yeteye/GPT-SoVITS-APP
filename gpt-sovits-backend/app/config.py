@@ -10,10 +10,16 @@ class Config:
     # 数据库配置
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get("DATABASE_URL")
-        or "mysql+pymysql://root:password@localhost/gpt_sovits_db"
+        or "mysql+pymysql://root:password@localhost/gpt_sovits_db?charset=utf8mb4"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_timeout": 20,
+        "max_overflow": 0,
+    }
 
     # JWT配置
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or "jwt-secret-string"
@@ -21,12 +27,18 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     # 文件上传配置
-    UPLOAD_FOLDER = os.path.join(
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "..", "uploads"
     )
-    MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB
-    ALLOWED_AUDIO_EXTENSIONS = {"wav", "mp3", "flac", "m4a"}
-    ALLOWED_MODEL_EXTENSIONS = {"pth", "index", "json"}
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH") or 10 * 1024 * 1024)
+    ALLOWED_AUDIO_EXTENSIONS = {"wav", "mp3", "flac", "m4a", "ogg"}
+    ALLOWED_MODEL_EXTENSIONS = {"pth", "index", "json", "ckpt"}
+
+    # 安全配置
+    WTF_CSRF_ENABLED = True
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
 
     # 音频处理配置
     AUDIO_SAMPLE_RATE = 16000

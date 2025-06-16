@@ -49,6 +49,7 @@ def register_error_handlers(app):
     """注册错误处理器"""
     from app.utils.exceptions import APIException
     from flask import jsonify
+    import traceback
 
     @app.errorhandler(APIException)
     def handle_api_exception(e):
@@ -68,6 +69,15 @@ def register_error_handlers(app):
 
     @app.errorhandler(500)
     def internal_error(error):
+        # 记录错误详情
+        app.logger.error(f"Internal error: {error}")
+        app.logger.error(traceback.format_exc())
+
+        # 回滚数据库事务
+        from app.extensions import db
+
+        db.session.rollback()
+
         return (
             jsonify(
                 {
@@ -77,6 +87,19 @@ def register_error_handlers(app):
                 }
             ),
             500,
+        )
+
+    @app.errorhandler(413)
+    def file_too_large(error):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "File too large",
+                    "code": "FILE_TOO_LARGE",
+                }
+            ),
+            413,
         )
 
 
