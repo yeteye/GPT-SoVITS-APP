@@ -7,20 +7,32 @@ class Config:
     # 基础配置
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
 
-    # 数据库配置 - 修改为本地数据库
-    SQLALCHEMY_DATABASE_URI = (
-        os.environ.get("DATABASE_URL")
-        or "mysql+pymysql://root:your_password@localhost:3306/gpt_sovits_db?charset=utf8mb4"
-    )
+    # 数据库配置 - 强制使用MySQL
+    DATABASE_URL = os.environ.get("DATABASE_URL")
+
+    # 确保使用MySQL
+    if not DATABASE_URL or not DATABASE_URL.startswith("mysql"):
+        # 如果没有配置或者不是MySQL，使用默认MySQL配置
+        DATABASE_URL = "mysql+pymysql://root:383517Cc.@localhost:3306/gpt_sovits_db?charset=utf8mb4"
+
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
-        "pool_timeout": 20,
-        "max_overflow": 10,  # 增加连接池大小
-        "pool_size": 20,  # 增加基础连接数
-    }
+
+    # 只在MySQL时添加连接池配置
+    if DATABASE_URL and DATABASE_URL.startswith("mysql"):
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "pool_pre_ping": True,
+            "pool_recycle": 300,
+            "pool_timeout": 20,
+            "max_overflow": 10,
+            "pool_size": 20,
+            "connect_args": {
+                "charset": "utf8mb4",
+            },
+        }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {}
 
     # JWT配置
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or "jwt-secret-string"
@@ -28,25 +40,23 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     # 文件上传配置 - 使用绝对路径
-    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or "/var/www/gpt-sovits/uploads"
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.abspath("./uploads")
     MAX_CONTENT_LENGTH = int(
         os.environ.get("MAX_CONTENT_LENGTH") or 50 * 1024 * 1024
-    )  # 增加到50MB
+    )  # 50MB
     ALLOWED_AUDIO_EXTENSIONS = {"wav", "mp3", "flac", "m4a", "ogg", "aac"}
     ALLOWED_MODEL_EXTENSIONS = {"pth", "index", "json", "ckpt", "safetensors"}
 
-    # 安全配置 - 生产环境调整
+    # 安全配置
     WTF_CSRF_ENABLED = True
     SESSION_COOKIE_SECURE = os.environ.get("HTTPS_ENABLED", "false").lower() == "true"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 
     # 音频处理配置
-    AUDIO_SAMPLE_RATE = int(os.environ.get("AUDIO_SAMPLE_RATE") or 22050)  # 提高采样率
+    AUDIO_SAMPLE_RATE = int(os.environ.get("AUDIO_SAMPLE_RATE") or 22050)
     AUDIO_MIN_DURATION = int(os.environ.get("AUDIO_MIN_DURATION") or 3)
-    AUDIO_MAX_DURATION = int(
-        os.environ.get("AUDIO_MAX_DURATION") or 120
-    )  # 增加最大时长
+    AUDIO_MAX_DURATION = int(os.environ.get("AUDIO_MAX_DURATION") or 120)
 
     # Celery配置 - 本地Redis
     CELERY_BROKER_URL = (
@@ -60,12 +70,12 @@ class Config:
     CELERY_TASK_SERIALIZER = "json"
     CELERY_ACCEPT_CONTENT = ["json"]
     CELERY_RESULT_SERIALIZER = "json"
-    CELERY_TIMEZONE = "Asia/Shanghai"  # 设置时区
+    CELERY_TIMEZONE = "Asia/Shanghai"
     CELERY_ENABLE_UTC = True
 
     # Redis配置
     REDIS_URL = os.environ.get("REDIS_URL") or "redis://localhost:6379/1"
-    REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")  # 如果Redis有密码
+    REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
 
     # 邮件配置
     MAIL_SERVER = os.environ.get("MAIL_SERVER") or "smtp.gmail.com"
@@ -76,22 +86,20 @@ class Config:
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
 
     # GPT-SoVITS模型配置 - 绝对路径
-    SOVITS_MODEL_PATH = (
-        os.environ.get("SOVITS_MODEL_PATH") or "/opt/gpt-sovits/models/sovits"
+    SOVITS_MODEL_PATH = os.environ.get("SOVITS_MODEL_PATH") or os.path.abspath(
+        "./models/sovits"
     )
-    GPT_MODEL_PATH = os.environ.get("GPT_MODEL_PATH") or "/opt/gpt-sovits/models/gpt"
+    GPT_MODEL_PATH = os.environ.get("GPT_MODEL_PATH") or os.path.abspath("./models/gpt")
 
     # 模型加载配置
-    MODEL_CACHE_SIZE = int(os.environ.get("MODEL_CACHE_SIZE") or 3)  # 缓存模型数量
+    MODEL_CACHE_SIZE = int(os.environ.get("MODEL_CACHE_SIZE") or 3)
     ENABLE_MODEL_PRELOAD = (
         os.environ.get("ENABLE_MODEL_PRELOAD", "false").lower() == "true"
     )
 
     # 业务配置
-    MAX_CONCURRENT_TASKS = int(
-        os.environ.get("MAX_CONCURRENT_TASKS") or 10
-    )  # 根据服务器性能调整
-    TASK_TIMEOUT = int(os.environ.get("TASK_TIMEOUT") or 600)  # 增加超时时间
+    MAX_CONCURRENT_TASKS = int(os.environ.get("MAX_CONCURRENT_TASKS") or 10)
+    TASK_TIMEOUT = int(os.environ.get("TASK_TIMEOUT") or 600)
 
     # 用户限制
     MAX_MODELS_PER_USER = int(os.environ.get("MAX_MODELS_PER_USER") or 20)
@@ -102,7 +110,7 @@ class Config:
 
     # 日志配置
     LOG_LEVEL = os.environ.get("LOG_LEVEL") or "INFO"
-    LOG_FILE = os.environ.get("LOG_FILE") or "/var/log/gpt-sovits/app.log"
+    LOG_FILE = os.environ.get("LOG_FILE") or "./logs/app.log"
     LOG_MAX_BYTES = int(os.environ.get("LOG_MAX_BYTES") or 10 * 1024 * 1024)  # 10MB
     LOG_BACKUP_COUNT = int(os.environ.get("LOG_BACKUP_COUNT") or 5)
 
@@ -115,16 +123,25 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_ECHO = True
 
-    # 开发环境使用相对路径
-    UPLOAD_FOLDER = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "uploads"
-    )
-    SOVITS_MODEL_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "models", "sovits"
-    )
-    GPT_MODEL_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "models", "gpt"
-    )
+    # 开发环境强制使用MySQL
+    DATABASE_URL = os.environ.get("DATABASE_URL")
+    if not DATABASE_URL or not DATABASE_URL.startswith("mysql"):
+        # 使用默认的MySQL配置
+        DATABASE_URL = "mysql+pymysql://root:383517Cc%2E%40@localhost:3306/gpt_sovits_db?charset=utf8mb4"
+
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+
+    # MySQL连接池配置
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_timeout": 20,
+        "max_overflow": 10,
+        "pool_size": 20,
+        "connect_args": {
+            "charset": "utf8mb4",
+        },
+    }
 
     # 开发环境降低限制
     MAX_CONCURRENT_TASKS = 2
@@ -145,8 +162,10 @@ class ProductionConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    # 测试环境可以使用SQLite
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     WTF_CSRF_ENABLED = False
+    SQLALCHEMY_ENGINE_OPTIONS = {}  # SQLite不需要连接池配置
 
     # 测试环境使用临时目录
     import tempfile

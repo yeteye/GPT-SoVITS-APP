@@ -3,6 +3,12 @@ import os
 import sys
 import click
 from flask.cli import with_appcontext
+
+# 重要：在导入app之前先加载环境变量
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from app import create_app
 from app.extensions import db
 from app.models import (
@@ -40,30 +46,41 @@ def make_shell_context():
 @click.option("--drop", is_flag=True, help="Drop all tables before creating")
 def init_db(drop):
     """初始化数据库"""
+
+    # 调试：打印数据库配置
+    print(f"当前数据库URL: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+
     if drop:
         click.echo("Dropping all tables...")
         db.drop_all()
 
     click.echo("Creating database tables...")
-    db.create_all()
 
-    # 创建上传目录
-    upload_dirs = [
-        "audio_samples",
-        "models/official",
-        "models/user_trained",
-        "generated",
-        "temp",
-        "images",
-        "documents",
-    ]
+    try:
+        db.create_all()
 
-    for dir_name in upload_dirs:
-        dir_path = os.path.join(app.config["UPLOAD_FOLDER"], dir_name)
-        os.makedirs(dir_path, exist_ok=True)
-        click.echo(f"Created directory: {dir_path}")
+        # 创建上传目录
+        upload_dirs = [
+            "audio_samples",
+            "models/official",
+            "models/user_trained",
+            "generated",
+            "temp",
+            "images",
+            "documents",
+        ]
 
-    click.echo("Database initialized successfully.")
+        for dir_name in upload_dirs:
+            dir_path = os.path.join(app.config["UPLOAD_FOLDER"], dir_name)
+            os.makedirs(dir_path, exist_ok=True)
+            click.echo(f"Created directory: {dir_path}")
+
+        click.echo("Database initialized successfully.")
+
+    except Exception as e:
+        click.echo(f"Error initializing database: {e}")
+        click.echo(f"Database URL: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+        sys.exit(1)
 
 
 @app.cli.command()
@@ -337,9 +354,14 @@ def check_system():
     click.echo("System Health Check")
     click.echo("=" * 30)
 
+    # 检查环境变量加载
+    click.echo(f"Database URL: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+
     # 检查数据库连接
     try:
-        db.session.execute("SELECT 1")
+        from sqlalchemy import text
+
+        db.session.execute(text("SELECT 1"))
         click.echo("✓ Database: Connected")
     except Exception as e:
         click.echo(f"✗ Database: Error - {e}")
@@ -348,8 +370,11 @@ def check_system():
     try:
         from app.extensions import redis_client
 
-        redis_client.ping()
-        click.echo("✓ Redis: Connected")
+        if redis_client:
+            redis_client.ping()
+            click.echo("✓ Redis: Connected")
+        else:
+            click.echo("? Redis: Not configured")
     except Exception as e:
         click.echo(f"✗ Redis: Error - {e}")
 
@@ -357,12 +382,15 @@ def check_system():
     try:
         from app.extensions import celery
 
-        inspect = celery.control.inspect()
-        active = inspect.active()
-        if active:
-            click.echo("✓ Celery: Workers available")
+        if celery:
+            inspect = celery.control.inspect()
+            active = inspect.active()
+            if active:
+                click.echo("✓ Celery: Workers available")
+            else:
+                click.echo("? Celery: No active workers")
         else:
-            click.echo("? Celery: No active workers")
+            click.echo("? Celery: Not configured")
     except Exception as e:
         click.echo(f"✗ Celery: Error - {e}")
 
