@@ -1,11 +1,12 @@
 // src/main.js
-
 import { createApp } from 'vue'
 import App from './App.vue'
 
 // 1. 引入路由
 import router from './router'
 
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
 
 // 4. axios 配置：可全局使用 axios 进行 API 调用
 import axios from 'axios'
@@ -50,7 +51,7 @@ app.config.globalProperties.$axios = axios
 app.use(router)
 
 // 2.2 使用 Element Plus
-// app.use(ElementPlus)
+app.use(ElementPlus)
 
 // 6.1 如果使用 i18n
 // const i18n = createI18n({ locale: 'zh-CN', messages })
