@@ -52,14 +52,14 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach((to, from, next) => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn'); // 假设登录状态存储在 localStorage 中
+// router.beforeEach((to, from, next) => {
+//     const isLoggedIn = localStorage.getItem('isLoggedIn'); // 假设登录状态存储在 localStorage 中
 
-    if (!isLoggedIn && to.name !== 'Login' && to.name !== 'Register') {
-        next({ name: 'Login' }); // 未登录时跳转到登录页面
-    } else {
-        next(); // 已登录或访问登录/注册页面时继续导航
-    }
-});
+//     if (!isLoggedIn && to.name !== 'Login' && to.name !== 'Register') {
+//         next({ name: 'Login' }); // 未登录时跳转到登录页面
+//     } else {
+//         next(); // 已登录或访问登录/注册页面时继续导航
+//     }
+// });
 
 export default router
