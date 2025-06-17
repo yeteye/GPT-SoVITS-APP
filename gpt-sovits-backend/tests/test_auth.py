@@ -28,14 +28,11 @@ class TestAuth:
         assert user is not None
         assert user.email == "newuser@example.com"
 
-    def test_user_registration_duplicate_username(self, client, app):
+    def test_user_registration_duplicate_username(self, client, app, test_user):
         """测试重复用户名注册"""
         with app.app_context():
             # 先创建一个用户
-            user = User(username="testuser", email="test@example.com")
-            user.set_password("password")
-            db.session.add(user)
-            db.session.commit()
+            test_user()
 
         # 尝试用相同用户名注册
         response = client.post(
@@ -52,18 +49,15 @@ class TestAuth:
         assert data["success"] is False
         assert "already exists" in data["message"]
 
-    def test_user_login_success(self, client, app):
+    def test_user_login_success(self, client, app, test_user):
         """测试成功登录"""
         with app.app_context():
             # 创建测试用户
-            user = User(username="loginuser", email="login@example.com", is_active=True)
-            user.set_password("password123")
-            db.session.add(user)
-            db.session.commit()
+            user = test_user()
 
         response = client.post(
             "/api/auth/login",
-            json={"identifier": "loginuser", "password": "password123"},
+            json={"identifier": user.username, "password": "testpassword123"},
         )
 
         assert response.status_code == 200
@@ -88,17 +82,47 @@ class TestAuth:
         response = client.get("/api/user/profile")
         assert response.status_code == 401
 
-    def test_protected_route_with_token(self, client, auth_headers):
+    def test_protected_route_with_token(self, client, app, test_user):
         """测试有token访问受保护路由"""
-        response = client.get("/api/user/profile", headers=auth_headers)
-        assert response.status_code == 200
+        with app.app_context():
+            user = test_user()
 
-    def test_logout(self, client, auth_headers):
+            # 登录获取token
+            response = client.post(
+                "/api/auth/login",
+                json={"identifier": user.username, "password": "testpassword123"},
+            )
+
+            assert response.status_code == 200
+            data = response.get_json()
+            token = data["data"]["access_token"]
+
+            # 使用token访问受保护路由
+            headers = {"Authorization": f"Bearer {token}"}
+            response = client.get("/api/user/profile", headers=headers)
+            assert response.status_code == 200
+
+    def test_logout(self, client, app, test_user):
         """测试登出"""
-        response = client.post("/api/auth/logout", headers=auth_headers)
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["success"] is True
+        with app.app_context():
+            user = test_user()
+
+            # 登录获取token
+            response = client.post(
+                "/api/auth/login",
+                json={"identifier": user.username, "password": "testpassword123"},
+            )
+
+            assert response.status_code == 200
+            data = response.get_json()
+            token = data["data"]["access_token"]
+
+            # 登出
+            headers = {"Authorization": f"Bearer {token}"}
+            response = client.post("/api/auth/logout", headers=headers)
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["success"] is True
 
     def test_password_validation(self, client):
         """测试密码验证"""
@@ -141,17 +165,32 @@ class TestAuth:
         data = response.get_json()
         assert "email" in data["message"].lower()
 
-    def test_change_password(self, client, auth_headers, app):
+    def test_change_password(self, client, app, test_user):
         """测试修改密码"""
-        response = client.post(
-            "/api/auth/change-password",
-            headers=auth_headers,
-            json={
-                "current_password": "testpassword",
-                "new_password": "NewPassword123!",
-            },
-        )
+        with app.app_context():
+            user = test_user()
 
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["success"] is True
+            # 登录获取token
+            response = client.post(
+                "/api/auth/login",
+                json={"identifier": user.username, "password": "testpassword123"},
+            )
+
+            assert response.status_code == 200
+            data = response.get_json()
+            token = data["data"]["access_token"]
+
+            # 修改密码
+            headers = {"Authorization": f"Bearer {token}"}
+            response = client.post(
+                "/api/auth/change-password",
+                headers=headers,
+                json={
+                    "current_password": "testpassword123",
+                    "new_password": "NewPassword123!",
+                },
+            )
+
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["success"] is True

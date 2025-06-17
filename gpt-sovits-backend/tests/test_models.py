@@ -1,5 +1,5 @@
-# ./gpt-sovits-backend/tests/test_models.py
 import pytest
+from datetime import datetime
 from app.models import User, VoiceModel, Tag, VoiceCloneTask, TTSTask
 from app.extensions import db
 
@@ -130,15 +130,25 @@ class TestVoiceModel:
     def test_model_to_dict(self, app):
         """测试模型字典转换"""
         with app.app_context():
+            # 创建带时间戳的模型
             model = VoiceModel(
-                name="Test Model", model_path="/test/path", config_path="/test/config"
+                name="Test Model",
+                model_path="/test/path",
+                config_path="/test/config",
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
             )
             model.set_supported_emotions(["happy", "sad"])
+
+            db.session.add(model)
+            db.session.commit()
 
             # 不包含路径
             data = model.to_dict(include_paths=False)
             assert "model_path" not in data
             assert data["supported_emotions"] == ["happy", "sad"]
+            assert "created_at" in data
+            assert "updated_at" in data
 
             # 包含路径
             path_data = model.to_dict(include_paths=True)
@@ -186,12 +196,10 @@ class TestTag:
 class TestVoiceCloneTask:
     """语音克隆任务测试"""
 
-    def test_task_creation(self, app):
+    def test_task_creation(self, app, test_user):
         """测试任务创建"""
         with app.app_context():
-            user = User(username="user", email="user@example.com")
-            db.session.add(user)
-            db.session.commit()
+            user = test_user()
 
             task = VoiceCloneTask(
                 user_id=user.id, task_name="Test Task", sample_count=5
@@ -223,10 +231,12 @@ class TestVoiceCloneTask:
 
             assert task.get_config() == config
 
-    def test_task_status_update(self, app):
+    def test_task_status_update(self, app, test_user):
         """测试任务状态更新"""
         with app.app_context():
-            task = VoiceCloneTask(task_name="Test")
+            user = test_user()
+
+            task = VoiceCloneTask(task_name="Test", user_id=user.id)
             db.session.add(task)
             db.session.commit()
 
@@ -275,17 +285,16 @@ class TestVoiceCloneTask:
 class TestTTSTask:
     """TTS任务测试"""
 
-    def test_tts_task_creation(self, app, sample_model):
+    def test_tts_task_creation(self, app, test_user, sample_model):
         """测试TTS任务创建"""
         with app.app_context():
-            user = User(username="user", email="user@example.com")
-            db.session.add(user)
-            db.session.commit()
+            user = test_user()
+            model = sample_model()
 
             task = TTSTask(
                 user_id=user.id,
                 text="Hello world",
-                model_id=sample_model.id,
+                model_id=model.id,
                 emotion="happy",
             )
             db.session.add(task)
@@ -296,10 +305,12 @@ class TestTTSTask:
             assert task.emotion == "happy"
             assert task.speed == 1.0
 
-    def test_tts_task_set_result(self, app):
+    def test_tts_task_set_result(self, app, test_user):
         """测试设置TTS结果"""
         with app.app_context():
-            task = TTSTask(text="Test")
+            user = test_user()
+
+            task = TTSTask(text="Test", user_id=user.id, model_id="test_model")
             db.session.add(task)
             db.session.commit()
 
