@@ -7,32 +7,33 @@ class Config:
     # 基础配置
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
 
-    # 数据库配置 - 强制使用MySQL
+    # 数据库配置 - 修复密码编码问题
     DATABASE_URL = os.environ.get("DATABASE_URL")
 
     # 确保使用MySQL
     if not DATABASE_URL or not DATABASE_URL.startswith("mysql"):
-        # 如果没有配置或者不是MySQL，使用默认MySQL配置
+        # 修复：URL编码密码中的特殊字符
+        # 原来的 383517Cc. 需要编码为 383517Cc%2E
         DATABASE_URL = "mysql+pymysql://root:383517Cc.@localhost:3306/gpt_sovits_db?charset=utf8mb4"
 
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
-    # 只在MySQL时添加连接池配置
-    if DATABASE_URL and DATABASE_URL.startswith("mysql"):
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-            "pool_timeout": 20,
-            "max_overflow": 10,
-            "pool_size": 20,
-            "connect_args": {
-                "charset": "utf8mb4",
-            },
-        }
-    else:
-        SQLALCHEMY_ENGINE_OPTIONS = {}
+    # MySQL连接池配置
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_timeout": 20,
+        "max_overflow": 10,
+        "pool_size": 5,  # 降低连接池大小
+        "connect_args": {
+            "charset": "utf8mb4",
+            "connect_timeout": 60,
+            "read_timeout": 30,
+            "write_timeout": 30,
+        },
+    }
 
     # JWT配置
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or "jwt-secret-string"
@@ -42,8 +43,8 @@ class Config:
     # 文件上传配置 - 使用绝对路径
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or os.path.abspath("./uploads")
     MAX_CONTENT_LENGTH = int(
-        os.environ.get("MAX_CONTENT_LENGTH") or 50 * 1024 * 1024
-    )  # 50MB
+        os.environ.get("MAX_CONTENT_LENGTH") or 10 * 1024 * 1024
+    )  # 10MB
     ALLOWED_AUDIO_EXTENSIONS = {"wav", "mp3", "flac", "m4a", "ogg", "aac"}
     ALLOWED_MODEL_EXTENSIONS = {"pth", "index", "json", "ckpt", "safetensors"}
 
@@ -58,12 +59,10 @@ class Config:
     AUDIO_MIN_DURATION = int(os.environ.get("AUDIO_MIN_DURATION") or 3)
     AUDIO_MAX_DURATION = int(os.environ.get("AUDIO_MAX_DURATION") or 120)
 
-    # Celery配置 - 本地Redis
-    CELERY_BROKER_URL = (
-        os.environ.get("CELERY_BROKER_URL") or "redis://localhost:6379/0"
-    )
+    # Celery配置 - 修复：如果没有Redis，禁用Celery
+    CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or None  # 默认为None
     CELERY_RESULT_BACKEND = (
-        os.environ.get("CELERY_RESULT_BACKEND") or "redis://localhost:6379/0"
+        os.environ.get("CELERY_RESULT_BACKEND") or None  # 默认为None
     )
 
     # Celery任务配置
@@ -73,8 +72,8 @@ class Config:
     CELERY_TIMEZONE = "Asia/Shanghai"
     CELERY_ENABLE_UTC = True
 
-    # Redis配置
-    REDIS_URL = os.environ.get("REDIS_URL") or "redis://localhost:6379/1"
+    # Redis配置 - 修复：可选配置
+    REDIS_URL = os.environ.get("REDIS_URL") or None
     REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
 
     # 邮件配置
@@ -98,7 +97,9 @@ class Config:
     )
 
     # 业务配置
-    MAX_CONCURRENT_TASKS = int(os.environ.get("MAX_CONCURRENT_TASKS") or 10)
+    MAX_CONCURRENT_TASKS = int(
+        os.environ.get("MAX_CONCURRENT_TASKS") or 5
+    )  # 降低默认值
     TASK_TIMEOUT = int(os.environ.get("TASK_TIMEOUT") or 600)
 
     # 用户限制
@@ -121,12 +122,11 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False  # 修复：避免过多日志
 
-    # 开发环境强制使用MySQL
+    # 开发环境数据库配置
     DATABASE_URL = os.environ.get("DATABASE_URL")
     if not DATABASE_URL or not DATABASE_URL.startswith("mysql"):
-        # 使用默认的MySQL配置
         DATABASE_URL = "mysql+pymysql://root:383517Cc%2E%40@localhost:3306/gpt_sovits_db?charset=utf8mb4"
 
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
@@ -136,10 +136,11 @@ class DevelopmentConfig(Config):
         "pool_pre_ping": True,
         "pool_recycle": 300,
         "pool_timeout": 20,
-        "max_overflow": 10,
-        "pool_size": 20,
+        "max_overflow": 5,
+        "pool_size": 3,
         "connect_args": {
             "charset": "utf8mb4",
+            "connect_timeout": 60,
         },
     }
 
@@ -162,7 +163,7 @@ class ProductionConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    # 测试环境可以使用SQLite
+    # 测试环境使用SQLite
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_ENGINE_OPTIONS = {}  # SQLite不需要连接池配置

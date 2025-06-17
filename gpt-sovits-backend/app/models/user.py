@@ -11,12 +11,6 @@ class User(db.Model):
     """用户模型"""
 
     __tablename__ = "users"
-    __table_args__ = (
-        db.Index("idx_user_email", "email"),
-        db.Index("idx_user_username", "username"),
-        db.Index("idx_user_role", "role"),
-        db.Index("idx_user_created_at", "created_at"),
-    )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(50), unique=True, nullable=False, index=True)
@@ -38,14 +32,8 @@ class User(db.Model):
     )
     last_login_at = db.Column(db.DateTime)
 
-    # 关联关系
-    voice_clone_tasks = db.relationship(
-        "VoiceCloneTask", backref="user", lazy="dynamic"
-    )
-    tts_tasks = db.relationship("TTSTask", backref="user", lazy="dynamic")
-    voice_models = db.relationship("VoiceModel", backref="owner", lazy="dynamic")
-    uploads = db.relationship("UserUpload", backref="user", lazy="dynamic")
-    auth_tokens = db.relationship("AuthToken", backref="user", lazy="dynamic")
+    # 修复：简化关联关系，避免使用 backref
+    # 这些关系可以在需要时通过查询获取，避免复杂的关系定义
 
     def set_password(self, password):
         """设置密码"""
@@ -112,6 +100,9 @@ class AuthToken(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False)
     is_revoked = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # 建立与用户的关系
+    user = db.relationship("User", backref="auth_tokens")
 
     @classmethod
     def create_reset_token(cls, user_id, expires_in_hours=24):
