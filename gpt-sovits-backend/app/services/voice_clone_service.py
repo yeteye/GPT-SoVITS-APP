@@ -20,15 +20,19 @@ def get_celery_task_decorator():
     else:
         # 测试环境或没有Celery时的装饰器
         def mock_decorator(func):
-            def wrapper(*args, **kwargs):
-                # 移除bind=True时的第一个self参数
-                if args and hasattr(args[0], "__class__"):
-                    return func(None, *args, **kwargs)
+            def wrapper(self_or_task_id, task_id=None):
+                # 处理两种调用方式：
+                # 1. 直接调用：func(None, task_id)
+                # 2. Celery风格调用：func(self, task_id)
+                if task_id is None:
+                    # 直接调用：第一个参数是task_id
+                    return func(None, self_or_task_id)
                 else:
-                    return func(None, *args, **kwargs)
+                    # Celery风格调用：第一个参数是self
+                    return func(self_or_task_id, task_id)
 
-            wrapper.delay = lambda *args, **kwargs: MockCeleryResult()
-            wrapper.apply_async = lambda *args, **kwargs: MockCeleryResult()
+            wrapper.delay = lambda task_id: MockCeleryResult()
+            wrapper.apply_async = lambda task_id: MockCeleryResult()
             return wrapper
 
         return mock_decorator
@@ -113,7 +117,7 @@ def mock_voice_clone_process(task):
         # 模拟处理时间
         import time
 
-        time.sleep(0.1)  # 短暂延迟模拟处理
+        time.sleep(0.1)
 
         # 创建模拟的语音模型
         voice_model = VoiceModel(

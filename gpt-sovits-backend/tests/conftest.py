@@ -233,6 +233,81 @@ def admin_headers(client, admin_user):
     return {"Authorization": f"Bearer {token}"}
 
 
+# Mock 邮件发送以避免错误
+@pytest.fixture(autouse=True)
+def mock_mail(monkeypatch):
+    """Mock邮件服务以避免测试时发送真实邮件"""
+
+    def mock_send_mail(*args, **kwargs):
+        return True
+
+    # Mock Flask-Mail的send方法
+    try:
+        from flask_mail import Mail
+
+        monkeypatch.setattr("flask_mail.Mail.send", mock_send_mail)
+    except ImportError:
+        pass
+
+    # Mock我们自己的邮件发送函数
+    monkeypatch.setattr("app.auth.utils.send_verification_email", lambda *args: True)
+    monkeypatch.setattr("app.auth.utils.send_password_reset_email", lambda *args: True)
+    monkeypatch.setattr("app.auth.utils.send_welcome_email", lambda *args: True)
+
+
+# Mock Redis 以避免速率限制警告
+@pytest.fixture(autouse=True)
+def mock_redis(monkeypatch):
+    """Mock Redis以避免速率限制相关错误"""
+
+    class MockRedis:
+        def get(self, key):
+            return None
+
+        def setex(self, key, timeout, value):
+            return True
+
+        def incr(self, key):
+            return 1
+
+        def delete(self, key):
+            return True
+
+        def ping(self):
+            return True
+
+    # Mock redis_client
+    monkeypatch.setattr("app.extensions.redis_client", MockRedis())
+
+
+# Mock Celery 任务 - 修复调用方式
+@pytest.fixture(autouse=True)
+def mock_celery(monkeypatch):
+    """Mock Celery任务以避免异步处理错误"""
+
+    class MockCeleryTask:
+        def __init__(self, task_id="mock-task-id"):
+            self.id = task_id
+
+        def delay(self, task_id):  # 修复：只接受task_id参数
+            return self
+
+        def apply_async(self, task_id):  # 修复：只接受task_id参数
+            return self
+
+    # Mock Celery任务
+    mock_task = MockCeleryTask()
+    monkeypatch.setattr(
+        "app.services.voice_clone_service.start_voice_clone_task.delay",
+        lambda task_id: mock_task,
+    )
+    monkeypatch.setattr(
+        "app.services.tts_service.generate_speech_task.delay",
+        lambda task_id: mock_task,
+    )
+
+
+# 其余 fixtures 保持不变...
 def create_wav_file(duration=1.0, sample_rate=16000, frequency=440):
     """创建WAV格式的音频文件"""
     import numpy as np
@@ -377,79 +452,6 @@ def setup_db(app):
                 db.session.rollback()
             except:
                 pass
-
-
-# Mock 邮件发送以避免错误
-@pytest.fixture(autouse=True)
-def mock_mail(monkeypatch):
-    """Mock邮件服务以避免测试时发送真实邮件"""
-
-    def mock_send_mail(*args, **kwargs):
-        return True
-
-    # Mock Flask-Mail的send方法
-    try:
-        from flask_mail import Mail
-
-        monkeypatch.setattr("flask_mail.Mail.send", mock_send_mail)
-    except ImportError:
-        pass
-
-    # Mock我们自己的邮件发送函数
-    monkeypatch.setattr("app.auth.utils.send_verification_email", lambda *args: True)
-    monkeypatch.setattr("app.auth.utils.send_password_reset_email", lambda *args: True)
-    monkeypatch.setattr("app.auth.utils.send_welcome_email", lambda *args: True)
-
-
-# Mock Redis 以避免速率限制警告
-@pytest.fixture(autouse=True)
-def mock_redis(monkeypatch):
-    """Mock Redis以避免速率限制相关错误"""
-
-    class MockRedis:
-        def get(self, key):
-            return None
-
-        def setex(self, key, timeout, value):
-            return True
-
-        def incr(self, key):
-            return 1
-
-        def delete(self, key):
-            return True
-
-        def ping(self):
-            return True
-
-    # Mock redis_client
-    monkeypatch.setattr("app.extensions.redis_client", MockRedis())
-
-
-# Mock Celery 任务
-@pytest.fixture(autouse=True)
-def mock_celery(monkeypatch):
-    """Mock Celery任务以避免异步处理错误"""
-
-    class MockCeleryTask:
-        def __init__(self, task_id="mock-task-id"):
-            self.id = task_id
-
-        def delay(self, *args, **kwargs):
-            return self
-
-        def apply_async(self, *args, **kwargs):
-            return self
-
-    # Mock Celery任务
-    monkeypatch.setattr(
-        "app.services.voice_clone_service.start_voice_clone_task.delay",
-        lambda *args: MockCeleryTask(),
-    )
-    monkeypatch.setattr(
-        "app.services.tts_service.generate_speech_task.delay",
-        lambda *args: MockCeleryTask(),
-    )
 
 
 @pytest.fixture

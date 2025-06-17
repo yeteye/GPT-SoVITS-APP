@@ -98,15 +98,15 @@ def generate_speech():
         db.session.add(task)
         db.session.commit()
 
-        # 启动异步生成任务（修复：处理无Celery的情况）
+        # 启动异步生成任务（修复：正确调用方式）
         try:
             if current_app.config.get("TESTING", False):
                 # 测试环境：直接调用函数
-                result = generate_speech_task(None, task.id)
+                result = generate_speech_task(None, task.id)  # self=None, task_id
                 current_app.logger.info(f"Test mode: TTS task completed immediately")
             else:
                 # 生产环境：使用delay方法
-                celery_task = generate_speech_task.delay(task.id)
+                celery_task = generate_speech_task.delay(task.id)  # 只传task_id
                 task.celery_task_id = celery_task.id
                 db.session.commit()
         except Exception as e:
@@ -115,7 +115,7 @@ def generate_speech():
             )
             # 如果异步任务失败，使用同步方式
             try:
-                result = generate_speech_task(None, task.id)
+                result = generate_speech_task(None, task.id)  # self=None, task_id
             except Exception as sync_e:
                 task.update_status("failed", error_message=str(sync_e))
                 raise ServiceUnavailableError(f"TTS service unavailable: {str(sync_e)}")
@@ -272,8 +272,10 @@ def download_audio(task_id):
             mimetype="audio/wav",
         )
 
-    except (ResourceNotFoundError, ValidationError) as e:
-        return jsonify(create_response(False, str(e))), e.status_code
+    except ResourceNotFoundError as e:
+        return jsonify(create_response(False, str(e))), 404
+    except ValidationError as e:
+        return jsonify(create_response(False, str(e))), 400  # 修复：使用400而不是422
     except Exception as e:
         current_app.logger.error(f"Download audio error: {e}")
         return jsonify(create_response(False, "Failed to download audio")), 500

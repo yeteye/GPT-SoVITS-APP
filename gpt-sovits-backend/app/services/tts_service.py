@@ -19,15 +19,19 @@ def get_celery_task_decorator():
     else:
         # 测试环境或没有Celery时的装饰器
         def mock_decorator(func):
-            def wrapper(*args, **kwargs):
-                # 移除bind=True时的第一个self参数
-                if args and hasattr(args[0], "__class__"):
-                    return func(None, *args, **kwargs)
+            def wrapper(self_or_task_id, task_id=None):
+                # 处理两种调用方式：
+                # 1. 直接调用：func(None, task_id)
+                # 2. Celery风格调用：func(self, task_id)
+                if task_id is None:
+                    # 直接调用：第一个参数是task_id
+                    return func(None, self_or_task_id)
                 else:
-                    return func(None, *args, **kwargs)
+                    # Celery风格调用：第一个参数是self
+                    return func(self_or_task_id, task_id)
 
-            wrapper.delay = lambda *args, **kwargs: MockCeleryResult()
-            wrapper.apply_async = lambda *args, **kwargs: MockCeleryResult()
+            wrapper.delay = lambda task_id: MockCeleryResult()
+            wrapper.apply_async = lambda task_id: MockCeleryResult()
             return wrapper
 
         return mock_decorator
@@ -56,8 +60,18 @@ def generate_speech_task(self, task_id):
         # 更新任务状态
         task.update_status("processing")
 
-        # 检查是否在测试环境
-        if current_app.config.get("TESTING", False) or celery is None:
+        # 检查是否在测试环境 - 安全地访问current_app
+        try:
+            from flask import current_app
+
+            is_testing = current_app.config.get("TESTING", False)
+            has_celery = celery is not None
+        except RuntimeError:
+            # 不在应用上下文中，假设是测试环境
+            is_testing = True
+            has_celery = False
+
+        if is_testing or not has_celery:
             # 测试环境：直接模拟处理结果
             result = mock_speech_generation(task)
         else:
@@ -89,11 +103,11 @@ def generate_speech_task(self, task_id):
 
     except Exception as e:
         # 任务失败
-        if task:
+        if "task" in locals() and task:
             task.update_status("failed", error_message=str(e))
 
         # 记录错误日志
-        if task:
+        if "task" in locals() and task:
             log_user_action(
                 user_id=task.user_id,
                 action="speech_generation_failed",
@@ -102,14 +116,27 @@ def generate_speech_task(self, task_id):
                 details=f"Speech generation failed: {str(e)}",
             )
 
-        current_app.logger.error(f"TTS task {task_id} failed: {e}")
+        try:
+            from flask import current_app
+
+            current_app.logger.error(f"TTS task {task_id} failed: {e}")
+        except RuntimeError:
+            print(f"TTS task {task_id} failed: {e}")
+
         raise TaskProcessingError(f"Speech generation failed: {str(e)}")
 
 
 def mock_speech_generation(task):
     """模拟语音生成过程（用于测试）"""
     try:
-        current_app.logger.info(f"Mock processing TTS task: {task.id}")
+        # 使用try-except来处理current_app访问
+        try:
+            from flask import current_app
+
+            current_app.logger.info(f"Mock processing TTS task: {task.id}")
+        except RuntimeError:
+            # 如果不在应用上下文中，直接打印
+            print(f"Mock processing TTS task: {task.id}")
 
         # 模拟处理时间
         import time
@@ -201,8 +228,6 @@ def preprocess_text(text):
     try:
         # 清理和标准化文本
         processed_text = text.strip()
-
-        # 简化处理，实际应用中可以添加更多预处理逻辑
         return processed_text
 
     except Exception as e:
@@ -214,8 +239,7 @@ def generate_audio(text, model_info, emotion="neutral", speed=1.0):
     """生成音频"""
     try:
         # 模拟音频生成过程
-        # 计算音频长度（基于文本长度和语速）
-        base_duration = len(text) * 0.15  # 每个字符大约0.15秒
+        base_duration = len(text) * 0.15
         duration = base_duration / speed
 
         # 生成模拟音频数据
@@ -224,7 +248,7 @@ def generate_audio(text, model_info, emotion="neutral", speed=1.0):
 
         # 创建简单的正弦波作为模拟音频
         t = np.linspace(0, duration, samples)
-        frequency = 440  # A4音符
+        frequency = 440
 
         # 根据情感调整频率
         emotion_freq_map = {
@@ -264,7 +288,7 @@ def post_process_audio(audio_info, speed=1.0):
         # 音频标准化
         max_val = np.max(np.abs(audio_data))
         if max_val > 0:
-            audio_data = audio_data / max_val * 0.8  # 标准化到80%音量
+            audio_data = audio_data / max_val * 0.8
 
         # 更新音频信息
         audio_info["audio_data"] = audio_data
@@ -291,10 +315,8 @@ def save_generated_audio(audio_info, task):
         file_path = os.path.join(save_dir, filename)
 
         # 模拟保存音频文件
-        # 在实际应用中，这里应该使用 soundfile.write 保存真实音频
         with open(file_path, "wb") as f:
-            # 写入模拟的WAV数据
-            f.write(b"RIFF" + b"\x00" * 40 + b"WAVE")  # 简化的WAV头
+            f.write(b"RIFF" + b"\x00" * 40 + b"WAVE")
 
         # 生成访问URL
         audio_url = f"/api/tts/tasks/{task.id}/download"

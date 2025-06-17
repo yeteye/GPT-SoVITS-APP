@@ -52,34 +52,59 @@ class AuditLog(db.Model):
         status="success",
         error_message=None,
     ):
-        """记录操作日志"""
-        log = cls(
-            action=action,
-            resource_type=resource_type,
-            user_id=user_id,
-            resource_id=resource_id,
-            old_values=json.dumps(old_values) if old_values else None,
-            new_values=json.dumps(new_values) if new_values else None,
-            description=description,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            status=status,
-            error_message=error_message,
-        )
-        db.session.add(log)
-        db.session.commit()
-        return log
+        """记录操作日志 - 安全版本"""
+        try:
+            log = cls(
+                action=action,
+                resource_type=resource_type,
+                user_id=user_id,
+                resource_id=resource_id,
+                old_values=json.dumps(old_values) if old_values else None,
+                new_values=json.dumps(new_values) if new_values else None,
+                description=description,
+                ip_address=ip_address or "127.0.0.1",
+                user_agent=user_agent or "Unknown",
+                status=status,
+                error_message=error_message,
+            )
+
+            from app.extensions import db
+
+            db.session.add(log)
+            db.session.commit()
+            return log
+        except Exception as e:
+            # 如果日志记录失败，不要影响主要流程
+            try:
+                from flask import current_app
+
+                current_app.logger.warning(f"Failed to create audit log: {e}")
+            except RuntimeError:
+                print(f"Warning: Failed to create audit log: {e}")
+
+            # 回滚事务
+            try:
+                db.session.rollback()
+            except:
+                pass
+            return None
 
     def get_old_values(self):
         """获取修改前的值"""
         if self.old_values:
-            return json.loads(self.old_values)
+            try:
+                return json.loads(self.old_values)
+            except:
+                return {}
         return {}
 
     def get_new_values(self):
         """获取修改后的值"""
         if self.new_values:
-            return json.loads(self.new_values)
+            try:
+                return json.loads(self.new_values)
+            except:
+                return {}
         return {}
 
     def to_dict(self):
