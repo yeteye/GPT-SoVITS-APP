@@ -437,6 +437,13 @@ async def tts_post_endpoint(request: TTS_Request):
     req = request.dict()
     return await tts_handle(req)
 
+@APP.post("/train")
+async def tts_post_endpoint(request: TTS_Request):
+    """
+    该接口用于训练模型，暂未实现
+    """
+    return JSONResponse(status_code=501, content={"message": "train endpoint is not implemented yet"})
+
 
 @APP.get("/set_refer_audio")
 async def set_refer_aduio(refer_audio_path: str = None):
