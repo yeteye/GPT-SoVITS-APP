@@ -36,6 +36,7 @@ def register_blueprints(app):
     from app.api.model_management import model_bp
     from app.api.admin import admin_bp
     from app.api.user import user_bp
+    from app.api.health import health_bp  # 添加健康检查路由
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(voice_clone_bp, url_prefix="/api/voice-clone")
@@ -43,6 +44,7 @@ def register_blueprints(app):
     app.register_blueprint(model_bp, url_prefix="/api/models")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(user_bp, url_prefix="/api/user")
+    app.register_blueprint(health_bp, url_prefix="/api")  # 添加健康检查路由
 
 
 def register_error_handlers(app):

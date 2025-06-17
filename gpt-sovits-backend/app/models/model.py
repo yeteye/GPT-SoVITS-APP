@@ -76,6 +76,7 @@ class VoiceModel(db.Model):
     )
 
     # 修复：使用字符串引用避免循环导入
+    owner = db.relationship("User", foreign_keys=[owner_id], backref="owned_models")
     reviewer = db.relationship("User", foreign_keys=[reviewed_by], post_update=True)
 
     def set_supported_emotions(self, emotions):
