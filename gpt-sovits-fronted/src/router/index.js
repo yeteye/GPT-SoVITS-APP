@@ -15,20 +15,65 @@ const routes = [
         component: Home
     },
     {
-    path: '/creator',
-    name: 'CreatorCenter',
-    component: () => import('@/views/CreatorCenter.vue')
-    },
-    {
-    path: '/voices',
-    name: 'VoiceLibrary',
-    component: () => import('@/views/VoiceLibrary.vue')
-    },
-    {
     path: '/user',
     name: 'UserCenter',
     component: () => import('@/views/UserCenter.vue')
     },
+    // 文本转语音体验
+    {
+        path: '/tts-playground',
+        name: 'TTSPlayground',
+        component: () => import('@/views/user/TTSPlayground.vue')
+    },
+
+    // 音色库
+    {
+        path: '/voice-library',
+        name: 'VoiceLibrary',
+        component: () => import('@/views/user/VoiceLibrary.vue')
+    },
+
+    // 任务与历史记录
+    {
+        path: '/task-history',
+        name: 'TaskHistory',
+        component: () => import('@/views/user/TaskHistory.vue')
+    },
+
+    // 创作者中心
+    {
+        path: '/creator',
+        name: 'CreatorCenter',
+        component: () => import('@/views/creator/CreatorCenter.vue')
+    },
+    // 音色克隆向导
+    {
+        path: '/creator/clone-wizard',
+        name: 'CloneWizard',
+        component: () => import('@/views/creator/CloneWizard.vue')
+    },
+
+    // 我的音色
+    {
+        path: '/creator/my-voices',
+        name: 'MyVoices',
+        component: () => import('@/views/creator/MyVoices.vue')
+    },
+
+    // 模型分析
+    {
+        path: '/creator/model-analytics',
+        name: 'ModelAnalytics',
+        component: () => import('@/views/creator/ModelAnalytics.vue')
+    },
+
+    // 音色发布
+    {
+        path: '/creator/publish-voice',
+        name: 'PublishVoice',
+        component: () => import('@/views/creator/PublishVoice.vue')
+    },
+
     {
     path: '/admin',
     name: 'AdminDashboard',
