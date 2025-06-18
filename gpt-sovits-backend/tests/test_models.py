@@ -199,7 +199,7 @@ class TestVoiceCloneTask:
     def test_task_creation(self, app, test_user):
         """测试任务创建"""
         with app.app_context():
-            user = test_user()
+            user = test_user
 
             task = VoiceCloneTask(
                 user_id=user.id, task_name="Test Task", sample_count=5
@@ -234,7 +234,7 @@ class TestVoiceCloneTask:
     def test_task_status_update(self, app, test_user):
         """测试任务状态更新"""
         with app.app_context():
-            user = test_user()
+            user = test_user
 
             task = VoiceCloneTask(task_name="Test", user_id=user.id)
             db.session.add(task)
@@ -288,7 +288,7 @@ class TestTTSTask:
     def test_tts_task_creation(self, app, test_user, sample_model):
         """测试TTS任务创建"""
         with app.app_context():
-            user = test_user()
+            user = test_user
             model = sample_model()
 
             task = TTSTask(
@@ -308,7 +308,7 @@ class TestTTSTask:
     def test_tts_task_set_result(self, app, test_user):
         """测试设置TTS结果"""
         with app.app_context():
-            user = test_user()
+            user = test_user
 
             task = TTSTask(text="Test", user_id=user.id, model_id="test_model")
             db.session.add(task)

@@ -52,7 +52,7 @@ class AuditLog(db.Model):
         status="success",
         error_message=None,
     ):
-        """记录操作日志 - 安全版本"""
+        """记录操作日志 - 修复版本"""
         try:
             log = cls(
                 action=action,
@@ -70,9 +70,27 @@ class AuditLog(db.Model):
 
             from app.extensions import db
 
-            db.session.add(log)
-            db.session.commit()
-            return log
+            # 修复：确保在适当的事务状态下操作
+            try:
+                # 如果当前没有活跃事务，开始一个新的
+                if not db.session.in_transaction():
+                    db.session.begin()
+
+                db.session.add(log)
+                db.session.commit()
+                return log
+            except Exception as commit_error:
+                # 如果提交失败，回滚并重试
+                try:
+                    db.session.rollback()
+                except:
+                    pass
+
+                # 在新事务中重试
+                db.session.add(log)
+                db.session.commit()
+                return log
+
         except Exception as e:
             # 如果日志记录失败，不要影响主要流程
             try:
@@ -82,9 +100,13 @@ class AuditLog(db.Model):
             except RuntimeError:
                 print(f"Warning: Failed to create audit log: {e}")
 
-            # 回滚事务
+            # 安全地回滚事务
             try:
-                db.session.rollback()
+                if (
+                    hasattr(db.session, "in_transaction")
+                    and db.session.in_transaction()
+                ):
+                    db.session.rollback()
             except:
                 pass
             return None

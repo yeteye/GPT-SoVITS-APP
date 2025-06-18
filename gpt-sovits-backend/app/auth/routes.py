@@ -420,7 +420,7 @@ def change_password():
     """修改密码"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
 
         if not user:
             raise AuthenticationError("User not found")

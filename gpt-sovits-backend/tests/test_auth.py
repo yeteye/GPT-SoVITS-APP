@@ -30,9 +30,6 @@ class TestAuth:
 
     def test_user_registration_duplicate_username(self, client, app, test_user):
         """测试重复用户名注册"""
-        with app.app_context():
-            # 先创建一个用户
-            test_user()
 
         # 尝试用相同用户名注册
         response = client.post(
@@ -53,7 +50,7 @@ class TestAuth:
         """测试成功登录"""
         with app.app_context():
             # 创建测试用户
-            user = test_user()
+            user = test_user
 
         response = client.post(
             "/api/auth/login",
@@ -85,7 +82,7 @@ class TestAuth:
     def test_protected_route_with_token(self, client, app, test_user):
         """测试有token访问受保护路由"""
         with app.app_context():
-            user = test_user()
+            user = test_user
 
             # 登录获取token
             response = client.post(
@@ -105,7 +102,7 @@ class TestAuth:
     def test_logout(self, client, app, test_user):
         """测试登出"""
         with app.app_context():
-            user = test_user()
+            user = test_user
 
             # 登录获取token
             response = client.post(
@@ -168,7 +165,7 @@ class TestAuth:
     def test_change_password(self, client, app, test_user):
         """测试修改密码"""
         with app.app_context():
-            user = test_user()
+            user = test_user
 
             # 登录获取token
             response = client.post(

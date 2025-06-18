@@ -55,7 +55,7 @@ def start_voice_clone_task(self, task_id):
     """启动语音克隆任务（支持Celery和测试环境）"""
     try:
         # 获取任务信息
-        task = VoiceCloneTask.query.get(task_id)
+        task = db.session.get(VoiceCloneTask, task_id)
         if not task:
             raise TaskProcessingError("Task not found")
 

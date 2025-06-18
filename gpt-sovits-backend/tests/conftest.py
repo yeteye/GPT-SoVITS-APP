@@ -113,7 +113,7 @@ def client(app):
 
 @pytest.fixture
 def test_user(app):
-    """创建测试用户 - 返回对象而不是函数"""
+    """创建测试用户"""
     with app.app_context():
         user = User(
             username="testuser",
@@ -131,7 +131,7 @@ def test_user(app):
 
 @pytest.fixture
 def admin_user(app):
-    """创建管理员用户 - 返回对象而不是函数"""
+    """创建管理员用户"""
     with app.app_context():
         admin = User(
             username="admin",
@@ -174,38 +174,43 @@ def sample_tags(app):
 
 @pytest.fixture
 def sample_model(app, admin_user, sample_tags):
-    """创建示例模型 - 返回对象而不是函数"""
-    with app.app_context():
-        model = VoiceModel(
-            name="Test Voice Model",
-            description="A test voice model for testing purposes",
-            model_type="official",
-            model_path="/test/path/model.pth",
-            config_path="/test/path/config.json",
-            status="active",
-            is_public=True,
-            is_featured=True,
-            quality_score=8.5,
-            review_status="approved",
-            reviewed_by=admin_user.id,
-            reviewed_at=datetime.utcnow(),
-        )
+    """创建示例模型 - 返回函数来按需创建"""
 
-        model.set_supported_emotions(["neutral", "happy", "sad", "calm"])
-        model.set_supported_languages(["zh-CN", "en-US"])
+    def _create_model():
+        with app.app_context():
+            model = VoiceModel(
+                name="Test Voice Model",
+                description="A test voice model for testing purposes",
+                model_type="official",
+                model_path="/test/path/model.pth",
+                config_path="/test/path/config.json",
+                status="active",
+                is_public=True,
+                is_featured=True,
+                quality_score=8.5,
+                review_status="approved",
+                reviewed_by=admin_user.id,
+                reviewed_at=datetime.utcnow(),
+            )
 
-        if sample_tags:
-            model.tags.extend(sample_tags[:2])
+            model.set_supported_emotions(["neutral", "happy", "sad", "calm"])
+            model.set_supported_languages(["zh-CN", "en-US"])
 
-        db.session.add(model)
-        db.session.commit()
-        db.session.refresh(model)
-        return model
+            if sample_tags:
+                model.tags.extend(sample_tags[:2])
+
+            db.session.add(model)
+            db.session.commit()
+            db.session.refresh(model)
+            return model
+
+    return _create_model
 
 
 @pytest.fixture
 def auth_headers(client, test_user):
     """获取认证头部"""
+    # test_user 现在直接返回对象，不需要调用
     response = client.post(
         "/api/auth/login",
         json={"identifier": test_user.username, "password": "testpassword123"},
@@ -221,6 +226,7 @@ def auth_headers(client, test_user):
 @pytest.fixture
 def admin_headers(client, admin_user):
     """获取管理员认证头部"""
+    # admin_user 现在直接返回对象，不需要调用
     response = client.post(
         "/api/auth/login",
         json={"identifier": admin_user.username, "password": "adminpassword123"},
@@ -307,8 +313,7 @@ def mock_celery(monkeypatch):
     )
 
 
-# 其余 fixtures 保持不变...
-def create_wav_file(duration=1.0, sample_rate=16000, frequency=440):
+def create_wav_file(duration=5.0, sample_rate=16000, frequency=440):
     """创建WAV格式的音频文件"""
     import numpy as np
 
@@ -417,10 +422,13 @@ def sample_voice_clone_task(app, test_user, sample_upload):
 def sample_tts_task(app, test_user, sample_model):
     """创建示例TTS任务"""
     with app.app_context():
+        # 创建模型
+        model = sample_model()
+
         task = TTSTask(
             user_id=test_user.id,
             text="这是一个测试文本",
-            model_id=sample_model.id,
+            model_id=model.id,
             emotion="neutral",
             speed=1.0,
             status="completed",

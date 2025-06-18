@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, current_app, send_file
 from app.extensions import db
 from app.models.task import TTSTask
 from app.models.model import VoiceModel
+from app.extensions import db
 from app.auth.decorators import auth_required, rate_limit, log_action
 from app.utils.validators import (
     validate_text_length,
@@ -60,7 +61,7 @@ def generate_speech():
         validate_speed(speed)
 
         # 验证模型存在且可用
-        model = VoiceModel.query.get(model_id)
+        model = db.session.get(VoiceModel, model_id)
 
         if not model:
             raise ResourceNotFoundError("Voice model")
@@ -348,7 +349,7 @@ def get_model_detail(model_id):
     try:
         user = request.current_user
 
-        model = VoiceModel.query.get(model_id)
+        model = db.session.get(VoiceModel, model_id)
 
         if not model:
             raise ResourceNotFoundError("Voice model")

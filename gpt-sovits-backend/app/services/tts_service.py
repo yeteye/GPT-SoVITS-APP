@@ -52,8 +52,8 @@ class MockCeleryResult:
 def generate_speech_task(self, task_id):
     """生成语音任务（支持Celery和测试环境）"""
     try:
-        # 获取任务信息
-        task = TTSTask.query.get(task_id)
+        # 获取任务信息 - 修复：使用现代SQLAlchemy语法
+        task = db.session.get(TTSTask, task_id)
         if not task:
             raise TaskProcessingError("Task not found")
 
@@ -200,7 +200,7 @@ def process_speech_generation(task):
 def load_voice_model(model_id):
     """加载语音模型"""
     try:
-        model = VoiceModel.query.get(model_id)
+        model = db.session.get(VoiceModel, model_id)
         if not model:
             raise TaskProcessingError("Voice model not found")
 
@@ -348,7 +348,7 @@ def update_tts_task_status(task, message):
 def get_tts_task_status(task_id):
     """获取TTS任务状态"""
     try:
-        task = TTSTask.query.get(task_id)
+        task = db.session.get(TTSTask, task_id)
         if not task:
             return None
 
@@ -374,7 +374,7 @@ def get_tts_task_status(task_id):
 def cancel_tts_task(task_id):
     """取消TTS任务"""
     try:
-        task = TTSTask.query.get(task_id)
+        task = db.session.get(TTSTask, task_id)
         if not task:
             return False
 
