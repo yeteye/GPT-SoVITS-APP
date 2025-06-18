@@ -15,6 +15,41 @@ const routes = [
         component: Home
     },
     {
+    path: '/creator',
+    name: 'CreatorCenter',
+    component: () => import('@/views/CreatorCenter.vue')
+    },
+    {
+    path: '/voices',
+    name: 'VoiceLibrary',
+    component: () => import('@/views/VoiceLibrary.vue')
+    },
+    {
+    path: '/user',
+    name: 'UserCenter',
+    component: () => import('@/views/UserCenter.vue')
+    },
+    {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: () => import('@/views/AdminDashboard.vue')
+    },
+    {
+    path: '/admin/users',
+    name: 'UserManage',
+    component: () => import('@/views/admin/UserManage.vue') 
+    },
+    {
+    path: '/admin/models',
+    name: 'ModelAudit',
+    component: () => import('@/views/admin/ModelAudit.vue')
+    },
+    {
+    path: '/admin/logs',
+    name: 'SystemLog',
+    component: () => import('@/views/admin/SystemLog.vue')
+    },
+    {
         path: '/generate',
         name: 'Generate',
         component: Generate
