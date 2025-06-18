@@ -70,29 +70,29 @@ class AuditLog(db.Model):
 
             from app.extensions import db
 
-            # 修复：确保在适当的事务状态下操作
+            # 方法1: 使用独立的事务（推荐）
             try:
-                # 如果当前没有活跃事务，开始一个新的
-                if not db.session.in_transaction():
-                    db.session.begin()
-
                 db.session.add(log)
                 db.session.commit()
                 return log
             except Exception as commit_error:
-                # 如果提交失败，回滚并重试
-                try:
-                    db.session.rollback()
-                except:
-                    pass
+                # 只有在发生异常时才回滚
+                db.session.rollback()
 
-                # 在新事务中重试
-                db.session.add(log)
-                db.session.commit()
-                return log
+                # 记录错误但不抛出异常，避免影响主要业务流程
+                try:
+                    from flask import current_app
+
+                    current_app.logger.warning(
+                        f"Failed to commit audit log: {commit_error}"
+                    )
+                except RuntimeError:
+                    print(f"Warning: Failed to commit audit log: {commit_error}")
+
+                return None
 
         except Exception as e:
-            # 如果日志记录失败，不要影响主要流程
+            # 如果创建日志对象失败，记录错误
             try:
                 from flask import current_app
 
@@ -100,15 +100,6 @@ class AuditLog(db.Model):
             except RuntimeError:
                 print(f"Warning: Failed to create audit log: {e}")
 
-            # 安全地回滚事务
-            try:
-                if (
-                    hasattr(db.session, "in_transaction")
-                    and db.session.in_transaction()
-                ):
-                    db.session.rollback()
-            except:
-                pass
             return None
 
     def get_old_values(self):
