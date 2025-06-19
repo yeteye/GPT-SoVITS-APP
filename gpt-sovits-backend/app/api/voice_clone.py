@@ -1,4 +1,4 @@
-# ./gpt-sovits-backend/app/api/voice_clone.py (关键部分修复)
+# ./gpt-sovits-backend/app/api/voice_clone.py
 from flask import Blueprint, request, jsonify, current_app
 from app.extensions import db
 from app.models.task import VoiceCloneTask

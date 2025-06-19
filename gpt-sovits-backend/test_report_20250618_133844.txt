@@ -1,0 +1,61 @@
+GPT-SoVITS Backend API Test Report
+==================================================
+Generated: 2025-06-18 13:38:44
+Total Tests: 26
+
+
+Basic Tests:
+-----------
+  ✗ Health Check: FAIL
+
+Authentication:
+--------------
+  ✓ User Registration: PASS
+  ✓ User Login: PASS
+  ✓ User Logout: PASS
+  ✓ Password Change: PASS
+
+User Management:
+---------------
+  ✓ Get User Profile: PASS
+  ✓ Update User Profile: PASS
+  ✓ Get User Statistics: PASS
+  ✓ Get Task History: PASS
+
+Voice Clone:
+-----------
+  ✓ Upload Audio Sample: PASS
+  ✓ Start Voice Clone Training: PASS
+  ✓ Get Voice Clone Tasks: PASS
+  ✓ Get Voice Clone Task Detail: PASS
+  ✓ Get Audio Samples: PASS
+
+Text-to-Speech:
+--------------
+  ✓ Get TTS Models: PASS
+  ✓ Get TTS Emotions: PASS
+  ✓ Generate Speech: PASS
+  ✓ Get TTS Tasks: PASS
+  ✓ Get TTS Task Detail: PASS
+
+Model Management:
+----------------
+  ✓ Get My Models: PASS
+  ✓ Get Model Tags: PASS
+  ✓ Get Model Stats: PASS
+
+Admin Functions:
+---------------
+  ✓ Admin Statistics: PASS
+
+Error Handling:
+--------------
+  ✓ Unauthorized Access: PASS
+  ✓ Invalid Endpoints: PASS
+  ✓ Invalid Data: PASS
+
+Summary:
+  PASS: 25
+  FAIL: 1
+  ERROR: 0
+  SUCCESS RATE: 96.2%

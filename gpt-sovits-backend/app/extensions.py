@@ -16,36 +16,52 @@ celery = None
 
 
 def create_celery(app=None):
-    """创建Celery实例 - 只有在配置了Redis时才创建"""
+    """创建Celery实例 - 修复版本"""
     if not app or not app.config.get("CELERY_BROKER_URL"):
         return None
 
     try:
         from celery import Celery
 
-        celery = Celery(app.import_name if app else "gpt-sovits-backend")
+        # 修复：使用正确的应用名称
+        celery = Celery(app.import_name)
 
         if app:
+            # 修复：确保所有Celery配置都正确传递
             celery.conf.update(
                 broker_url=app.config["CELERY_BROKER_URL"],
                 result_backend=app.config["CELERY_RESULT_BACKEND"],
-                task_serializer="json",
-                accept_content=["json"],
-                result_serializer="json",
-                timezone="UTC",
-                enable_utc=True,
+                task_serializer=app.config.get("CELERY_TASK_SERIALIZER", "json"),
+                accept_content=app.config.get("CELERY_ACCEPT_CONTENT", ["json"]),
+                result_serializer=app.config.get("CELERY_RESULT_SERIALIZER", "json"),
+                timezone=app.config.get("CELERY_TIMEZONE", "UTC"),
+                enable_utc=app.config.get("CELERY_ENABLE_UTC", True),
+                # 添加任务路由配置
                 task_routes={
                     "app.services.voice_clone_service.*": {"queue": "voice_clone"},
                     "app.services.tts_service.*": {"queue": "tts"},
                 },
+                # 添加worker配置
+                worker_prefetch_multiplier=1,
+                task_acks_late=True,
+                worker_max_tasks_per_child=1000,
             )
 
+            # 修复：确保任务在Flask应用上下文中运行
             class ContextTask(celery.Task):
                 def __call__(self, *args, **kwargs):
                     with app.app_context():
                         return self.run(*args, **kwargs)
 
             celery.Task = ContextTask
+
+            # 自动发现任务
+            celery.autodiscover_tasks(
+                [
+                    "app.services.voice_clone_service",
+                    "app.services.tts_service",
+                ]
+            )
 
         return celery
     except ImportError:
@@ -96,7 +112,13 @@ def init_extensions(app):
         try:
             celery = create_celery(app)
             if celery:
-                app.logger.info("Celery initialized successfully")
+                app.logger.info(
+                    f"Celery initialized successfully - Broker: {app.config['CELERY_BROKER_URL']}"
+                )
+
+                # 验证配置
+                app.logger.info(f"Celery broker: {celery.conf.broker_url}")
+                app.logger.info(f"Celery backend: {celery.conf.result_backend}")
             else:
                 app.logger.warning("Celery initialization failed")
         except Exception as e:

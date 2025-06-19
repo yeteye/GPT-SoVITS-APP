@@ -70,7 +70,6 @@ class AuditLog(db.Model):
 
             from app.extensions import db
 
-            # 方法1: 使用独立的事务（推荐）
             try:
                 db.session.add(log)
                 db.session.commit()
