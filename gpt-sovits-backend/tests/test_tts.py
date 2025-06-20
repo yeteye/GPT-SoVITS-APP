@@ -1,4 +1,5 @@
-# ./gpt-sovits-backend/tests/test_tts.py
+# ./gpt-sovits-backend/tests/test_tts.py 修复版本
+
 import pytest
 from app.models import TTSTask
 from app.extensions import db
@@ -7,14 +8,18 @@ from app.extensions import db
 class TestTTS:
     """TTS API测试"""
 
-    def test_generate_speech_success(self, client, auth_headers, sample_model):
+    def test_generate_speech_success(self, client, auth_headers, app, sample_model):
         """测试成功生成语音"""
+        # 修复：调用sample_model函数创建模型
+        with app.app_context():
+            model = sample_model()
+
         response = client.post(
             "/api/tts/generate",
             headers=auth_headers,
             json={
                 "text": "这是一个测试文本",
-                "model_id": sample_model.id,
+                "model_id": model.id,  # 使用创建的模型ID
                 "emotion": "neutral",
                 "speed": 1.0,
             },
@@ -25,12 +30,18 @@ class TestTTS:
         assert data["success"] is True
         assert "task_id" in data["data"]
 
-    def test_generate_speech_missing_text(self, client, auth_headers, sample_model):
+    def test_generate_speech_missing_text(
+        self, client, auth_headers, app, sample_model
+    ):
         """测试缺少文本参数"""
+        # 修复：调用sample_model函数创建模型
+        with app.app_context():
+            model = sample_model()
+
         response = client.post(
             "/api/tts/generate",
             headers=auth_headers,
-            json={"model_id": sample_model.id, "emotion": "neutral"},
+            json={"model_id": model.id, "emotion": "neutral"},  # 使用创建的模型ID
         )
 
         assert response.status_code == 422
@@ -57,40 +68,58 @@ class TestTTS:
 
         assert response.status_code == 404
 
-    def test_generate_speech_text_too_long(self, client, auth_headers, sample_model):
+    def test_generate_speech_text_too_long(
+        self, client, auth_headers, app, sample_model
+    ):
         """测试文本过长"""
+        # 修复：调用sample_model函数创建模型
+        with app.app_context():
+            model = sample_model()
+
         long_text = "a" * 201  # 超过200字符限制
 
         response = client.post(
             "/api/tts/generate",
             headers=auth_headers,
-            json={"text": long_text, "model_id": sample_model.id, "emotion": "neutral"},
+            json={"text": long_text, "model_id": model.id, "emotion": "neutral"},
         )
 
         assert response.status_code == 422
 
-    def test_generate_speech_invalid_emotion(self, client, auth_headers, sample_model):
+    def test_generate_speech_invalid_emotion(
+        self, client, auth_headers, app, sample_model
+    ):
         """测试无效情感"""
+        # 修复：调用sample_model函数创建模型
+        with app.app_context():
+            model = sample_model()
+
         response = client.post(
             "/api/tts/generate",
             headers=auth_headers,
             json={
                 "text": "测试文本",
-                "model_id": sample_model.id,
+                "model_id": model.id,
                 "emotion": "invalid_emotion",
             },
         )
 
         assert response.status_code == 422
 
-    def test_generate_speech_invalid_speed(self, client, auth_headers, sample_model):
+    def test_generate_speech_invalid_speed(
+        self, client, auth_headers, app, sample_model
+    ):
         """测试无效语速"""
+        # 修复：调用sample_model函数创建模型
+        with app.app_context():
+            model = sample_model()
+
         response = client.post(
             "/api/tts/generate",
             headers=auth_headers,
             json={
                 "text": "测试文本",
-                "model_id": sample_model.id,
+                "model_id": model.id,
                 "emotion": "neutral",
                 "speed": 3.0,  # 超出范围
             },
@@ -129,11 +158,13 @@ class TestTTS:
             from app.models import User
 
             user = User.query.filter_by(username="testuser").first()
+            # 修复：调用sample_model函数创建模型
+            model = sample_model()
 
             task = TTSTask(
                 user_id=user.id,
                 text="Test text",
-                model_id=sample_model.id,
+                model_id=model.id,
                 emotion="happy",
                 status="completed",
             )
@@ -155,25 +186,32 @@ class TestTTS:
 
         assert response.status_code == 404
 
-    def test_get_available_models(self, client, auth_headers, sample_model):
+    def test_get_available_models(self, client, auth_headers, app, sample_model):
         """测试获取可用模型列表"""
+        # 修复：调用sample_model函数创建模型，确保有模型存在
+        with app.app_context():
+            model = sample_model()
+
         response = client.get("/api/tts/models", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.get_json()
         assert data["success"] is True
+        # 现在应该至少有一个模型
         assert len(data["data"]["models"]) >= 1
 
-    def test_get_model_detail(self, client, auth_headers, sample_model):
+    def test_get_model_detail(self, client, auth_headers, app, sample_model):
         """测试获取模型详情"""
-        response = client.get(
-            f"/api/tts/models/{sample_model.id}", headers=auth_headers
-        )
+        # 修复：调用sample_model函数创建模型
+        with app.app_context():
+            model = sample_model()
+
+        response = client.get(f"/api/tts/models/{model.id}", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.get_json()
         assert data["success"] is True
-        assert data["data"]["model"]["name"] == sample_model.name
+        assert data["data"]["model"]["name"] == model.name
 
     def test_get_supported_emotions(self, client):
         """测试获取支持的情感列表"""
@@ -265,10 +303,11 @@ class TestTTS:
         assert data["data"]["pagination"]["total"] == 25
         assert data["data"]["pagination"]["has_next"] is True
 
-    def test_concurrent_requests_limit(self, client, auth_headers, sample_model, app):
+    def test_concurrent_requests_limit(self, client, auth_headers, app, sample_model):
         """测试并发请求限制"""
-        # 这个测试需要模拟达到并发限制
-        # 在实际实现中，你可能需要mock MAX_CONCURRENT_TASKS
+        # 修复：调用sample_model函数创建模型
+        with app.app_context():
+            model = sample_model()
 
         requests = []
         for i in range(10):  # 尝试创建超过限制的任务
@@ -277,7 +316,7 @@ class TestTTS:
                 headers=auth_headers,
                 json={
                     "text": f"Test text {i}",
-                    "model_id": sample_model.id,
+                    "model_id": model.id,
                     "emotion": "neutral",
                 },
             )

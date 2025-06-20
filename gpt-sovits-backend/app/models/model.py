@@ -28,8 +28,8 @@ class VoiceModel(db.Model):
     # 模型类型: user_trained(用户训练), official(官方预训练)
     model_type = db.Column(db.String(20), default="user_trained", nullable=False)
 
-    # 所有者信息
-    owner_id = db.Column(db.String(36), db.ForeignKey("users.id"))
+    # 所有者信息 - 修复：添加索引约束
+    owner_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True)
 
     # 模型文件路径
     model_path = db.Column(db.String(255), nullable=False)  # 主模型文件路径
@@ -53,12 +53,12 @@ class VoiceModel(db.Model):
     is_public = db.Column(db.Boolean, default=False, nullable=False)  # 是否公开
     is_featured = db.Column(db.Boolean, default=False, nullable=False)  # 是否为精选模型
 
-    # 审核信息
+    # 审核信息 - 修复：分离审核者外键，避免循环引用
     review_status = db.Column(
         db.String(20), default="pending"
     )  # pending, approved, rejected
     review_message = db.Column(db.Text)  # 审核意见
-    reviewed_by = db.Column(db.String(36), db.ForeignKey("users.id"))
+    reviewed_by = db.Column(db.String(36))  # 只存储用户ID，不建立外键关系
     reviewed_at = db.Column(db.DateTime)
 
     # 时间戳
@@ -67,7 +67,7 @@ class VoiceModel(db.Model):
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    # 关联关系
+    # 关联关系 - 修复：简化关系定义
     tags = db.relationship(
         "Tag",
         secondary=model_tags,
@@ -75,10 +75,7 @@ class VoiceModel(db.Model):
         backref=db.backref("models", lazy=True),
     )
 
-    # 修复：使用字符串引用避免循环导入
-    owner = db.relationship("User", foreign_keys=[owner_id], backref="owned_models")
-    reviewer = db.relationship("User", foreign_keys=[reviewed_by], post_update=True)
-
+    # 修复：使用简单的外键关系，避免多个外键路径
     def set_supported_emotions(self, emotions):
         """设置支持的情感列表"""
         self.supported_emotions = json.dumps(emotions)
@@ -113,7 +110,7 @@ class VoiceModel(db.Model):
         """设置审核结果"""
         self.review_status = status
         self.review_message = message
-        self.reviewed_by = reviewer_id
+        self.reviewed_by = reviewer_id  # 直接存储ID
         self.reviewed_at = datetime.utcnow()
 
         if status == "approved":

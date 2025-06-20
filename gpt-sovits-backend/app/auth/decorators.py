@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.models.user import User
 from app.utils.exceptions import AuthenticationError, AuthorizationError
 from app.utils.helpers import get_client_ip, get_user_agent, log_user_action
+from app.extensions import db
 
 
 def auth_required(f):
@@ -15,7 +16,8 @@ def auth_required(f):
     def decorated_function(*args, **kwargs):
         try:
             current_user_id = get_jwt_identity()
-            current_user = User.query.get(current_user_id)
+
+            current_user = db.session.get(User, current_user_id)
 
             if not current_user or not current_user.is_active:
                 raise AuthenticationError("User account is inactive")
@@ -250,7 +252,8 @@ def verify_ownership(resource_class, id_param="id"):
             if not resource_id:
                 raise AuthorizationError("Resource ID required")
 
-            resource = resource_class.query.get(resource_id)
+            # 修复：使用现代SQLAlchemy语法
+            resource = db.session.get(resource_class, resource_id)
             if not resource:
                 raise AuthorizationError("Resource not found")
 

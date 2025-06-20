@@ -76,16 +76,26 @@ def register():
             details="User registered successfully",
         )
 
-        # 生成验证令牌并发送邮件
-        verification_token = generate_verification_token(user.id)
-        verification_url = url_for(
-            "auth.verify_email", token=verification_token, _external=True
-        )
+        # 生成验证令牌并发送邮件 - 修复：检查邮件服务是否可用
+        message = "Registration successful."
+        try:
+            from app.extensions import mail
 
-        if send_verification_email(user, verification_url):
-            message = "Registration successful. Please check your email to verify your account."
-        else:
-            message = "Registration successful, but failed to send verification email."
+            if mail and current_app.config.get("MAIL_SERVER"):
+                verification_token = generate_verification_token(user.id)
+                verification_url = url_for(
+                    "auth.verify_email", token=verification_token, _external=True
+                )
+
+                if send_verification_email(user, verification_url):
+                    message += " Please check your email to verify your account."
+                else:
+                    message += " Email verification is not available at the moment."
+            else:
+                message += " Email verification is not configured."
+        except Exception as e:
+            current_app.logger.warning(f"Email service error: {e}")
+            message += " Email verification is not available."
 
         # 生成访问令牌（可选：注册后自动登录）
         access_token, refresh_token = user.generate_tokens()
@@ -263,8 +273,14 @@ def verify_email(token):
         user.is_verified = True
         db.session.commit()
 
-        # 发送欢迎邮件
-        send_welcome_email(user)
+        # 发送欢迎邮件 - 修复：检查邮件服务
+        try:
+            from app.extensions import mail
+
+            if mail and current_app.config.get("MAIL_SERVER"):
+                send_welcome_email(user)
+        except Exception as e:
+            current_app.logger.warning(f"Welcome email error: {e}")
 
         # 记录验证日志
         log_user_action(
@@ -304,23 +320,29 @@ def forgot_password():
         user = User.query.filter_by(email=email).first()
 
         if user:
-            # 生成重置令牌
-            reset_token = AuthToken.create_reset_token(user.id)
-            reset_url = url_for(
-                "auth.reset_password", token=reset_token, _external=True
-            )
+            try:
+                from app.extensions import mail
 
-            # 发送重置邮件
-            send_password_reset_email(user, reset_url)
+                if mail and current_app.config.get("MAIL_SERVER"):
+                    # 生成重置令牌
+                    reset_token = AuthToken.create_reset_token(user.id)
+                    reset_url = url_for(
+                        "auth.reset_password", token=reset_token, _external=True
+                    )
 
-            # 记录重置请求日志
-            log_user_action(
-                user_id=user.id,
-                action="password_reset_requested",
-                resource_type="user",
-                resource_id=user.id,
-                details="Password reset requested",
-            )
+                    # 发送重置邮件
+                    send_password_reset_email(user, reset_url)
+
+                    # 记录重置请求日志
+                    log_user_action(
+                        user_id=user.id,
+                        action="password_reset_requested",
+                        resource_type="user",
+                        resource_id=user.id,
+                        details="Password reset requested",
+                    )
+            except Exception as e:
+                current_app.logger.warning(f"Password reset email error: {e}")
 
         # 无论用户是否存在都返回相同消息，防止邮箱枚举
         return jsonify(
@@ -398,7 +420,7 @@ def change_password():
     """修改密码"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
 
         if not user:
             raise AuthenticationError("User not found")
