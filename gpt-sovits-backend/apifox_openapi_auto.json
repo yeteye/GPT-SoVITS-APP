@@ -1,0 +1,1397 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "My Flask Project API (Auto-generated)",
+    "description": "通过静态代码分析自动生成的 API 文档，可导入 Apifox",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "本地服务器"
+    }
+  ],
+  "paths": {
+    "/api/admin/audit-logs": {
+      "get": {
+        "summary": "Get Audit Logs",
+        "tags": ["admin"],
+        "operationId": "get_admin.get_audit_logs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: action",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: resource_type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: user_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/admin/cleanup": {
+      "post": {
+        "summary": "System Cleanup",
+        "tags": ["admin"],
+        "operationId": "post_admin.system_cleanup",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/admin/models": {
+      "get": {
+        "summary": "Get All Models",
+        "tags": ["admin"],
+        "operationId": "get_admin.get_all_models",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: review_status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/admin/models/{model_id}/review": {
+      "post": {
+        "summary": "Review Model",
+        "tags": ["admin"],
+        "operationId": "post_admin.review_model",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: model_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "description": "请求体字段: status"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "请求体字段: message"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/statistics": {
+      "get": {
+        "summary": "Get System Statistics",
+        "tags": ["admin"],
+        "operationId": "get_admin.get_system_statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/admin/tags": {
+      "post": {
+        "summary": "Create Tag",
+        "tags": ["admin"],
+        "operationId": "post_admin.create_tag",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "请求体字段: name"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "请求体字段: description"
+                  },
+                  "color": {
+                    "type": "string",
+                    "description": "请求体字段: color"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/tags/{tag_id}": {
+      "delete": {
+        "summary": "Delete Tag",
+        "tags": ["admin"],
+        "operationId": "delete_admin.delete_tag",
+        "parameters": [
+          {
+            "name": "tag_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: tag_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/admin/upload-official-model": {
+      "post": {
+        "summary": "Upload Official Model",
+        "tags": ["admin"],
+        "operationId": "post_admin.upload_official_model",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "Get All Users",
+        "tags": ["admin"],
+        "operationId": "get_admin.get_all_users",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: role",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: is_active",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{user_id}/role": {
+      "put": {
+        "summary": "Update User Role",
+        "tags": ["admin"],
+        "operationId": "put_admin.update_user_role",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: user_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "description": "请求体字段: role"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{user_id}/status": {
+      "put": {
+        "summary": "Update User Status",
+        "tags": ["admin"],
+        "operationId": "put_admin.update_user_status",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: user_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "is_active": {
+                    "type": "string",
+                    "description": "请求体字段: is_active"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "summary": "Change Password",
+        "tags": ["auth"],
+        "operationId": "post_auth.change_password",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "description": "请求体字段: current_password"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "description": "请求体字段: new_password"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "summary": "Forgot Password",
+        "tags": ["auth"],
+        "operationId": "post_auth.forgot_password",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": "请求体字段: email"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login",
+        "tags": ["auth"],
+        "operationId": "post_auth.login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "identifier": {
+                    "type": "string",
+                    "description": "请求体字段: identifier"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "请求体字段: password"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Logout",
+        "tags": ["auth"],
+        "operationId": "post_auth.logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Refresh",
+        "tags": ["auth"],
+        "operationId": "post_auth.refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register",
+        "tags": ["auth"],
+        "operationId": "post_auth.register",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "请求体字段: username"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "请求体字段: email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "请求体字段: password"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password/{token}": {
+      "post": {
+        "summary": "Reset Password",
+        "tags": ["auth"],
+        "operationId": "post_auth.reset_password",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "请求体字段: password"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email/{token}": {
+      "get": {
+        "summary": "Verify Email",
+        "tags": ["auth"],
+        "operationId": "get_auth.verify_email",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Health Check",
+        "tags": ["health"],
+        "operationId": "get_health.health_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/models/{model_id}": {
+      "get": {
+        "summary": "Get Model Detail",
+        "tags": ["models"],
+        "operationId": "get_models.get_model_detail",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: model_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Model",
+        "tags": ["models"],
+        "operationId": "put_models.update_model",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: model_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Model",
+        "tags": ["models"],
+        "operationId": "delete_models.delete_model",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: model_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/models/{model_id}/toggle-public": {
+      "post": {
+        "summary": "Toggle Model Public",
+        "tags": ["models"],
+        "operationId": "post_models.toggle_model_public",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: model_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/models/my-models": {
+      "get": {
+        "summary": "Get My Models",
+        "tags": ["models"],
+        "operationId": "get_models.get_my_models",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/models/stats": {
+      "get": {
+        "summary": "Get Model Stats",
+        "tags": ["models"],
+        "operationId": "get_models.get_model_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/models/tags": {
+      "get": {
+        "summary": "Get Tags",
+        "tags": ["models"],
+        "operationId": "get_models.get_tags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/tts/emotions": {
+      "get": {
+        "summary": "Get Supported Emotions",
+        "tags": ["tts"],
+        "operationId": "get_tts.get_supported_emotions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/tts/generate": {
+      "post": {
+        "summary": "Generate Speech",
+        "tags": ["tts"],
+        "operationId": "post_tts.generate_speech",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "请求体字段: text"
+                  },
+                  "model_id": {
+                    "type": "string",
+                    "description": "请求体字段: model_id"
+                  },
+                  "emotion": {
+                    "type": "string",
+                    "description": "请求体字段: emotion"
+                  },
+                  "speed": {
+                    "type": "string",
+                    "description": "请求体字段: speed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tts/models": {
+      "get": {
+        "summary": "Get Available Models",
+        "tags": ["tts"],
+        "operationId": "get_tts.get_available_models",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: featured",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/tts/models/{model_id}": {
+      "get": {
+        "summary": "Get Model Detail",
+        "tags": ["tts"],
+        "operationId": "get_tts.get_model_detail",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: model_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/tts/tasks": {
+      "get": {
+        "summary": "Get Tts Tasks",
+        "tags": ["tts"],
+        "operationId": "get_tts.get_tts_tasks",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/tts/tasks/{task_id}": {
+      "get": {
+        "summary": "Get Tts Task Detail",
+        "tags": ["tts"],
+        "operationId": "get_tts.get_tts_task_detail",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: task_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/tts/tasks/{task_id}/download": {
+      "get": {
+        "summary": "Download Audio",
+        "tags": ["tts"],
+        "operationId": "get_tts.download_audio",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: task_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/user/delete-account": {
+      "delete": {
+        "summary": "Delete Account",
+        "tags": ["user"],
+        "operationId": "delete_user.delete_account",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/user/profile": {
+      "get": {
+        "summary": "Get Profile",
+        "tags": ["user"],
+        "operationId": "get_user.get_profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Profile",
+        "tags": ["user"],
+        "operationId": "put_user.update_profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/user/statistics": {
+      "get": {
+        "summary": "Get User Statistics",
+        "tags": ["user"],
+        "operationId": "get_user.get_user_statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/user/tasks/history": {
+      "get": {
+        "summary": "Get Task History",
+        "tags": ["user"],
+        "operationId": "get_user.get_task_history",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/user/uploads": {
+      "get": {
+        "summary": "Get User Uploads",
+        "tags": ["user"],
+        "operationId": "get_user.get_user_uploads",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: type",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/user/uploads/{upload_id}": {
+      "delete": {
+        "summary": "Delete Upload",
+        "tags": ["user"],
+        "operationId": "delete_user.delete_upload",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: upload_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/samples": {
+      "get": {
+        "summary": "Get User Samples",
+        "tags": ["voice_clone"],
+        "operationId": "get_voice_clone.get_user_samples",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/samples/{sample_id}": {
+      "delete": {
+        "summary": "Delete Sample",
+        "tags": ["voice_clone"],
+        "operationId": "delete_voice_clone.delete_sample",
+        "parameters": [
+          {
+            "name": "sample_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: sample_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/start-training": {
+      "post": {
+        "summary": "Start Training",
+        "tags": ["voice_clone"],
+        "operationId": "post_voice_clone.start_training",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "model_name": {
+                    "type": "string",
+                    "description": "请求体字段: model_name"
+                  },
+                  "sample_ids": {
+                    "type": "string",
+                    "description": "请求体字段: sample_ids"
+                  },
+                  "training_params": {
+                    "type": "string",
+                    "description": "请求体字段: training_params"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/voice-clone/tasks": {
+      "get": {
+        "summary": "Get User Tasks",
+        "tags": ["voice_clone"],
+        "operationId": "get_voice_clone.get_user_tasks",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}": {
+      "get": {
+        "summary": "Get Task Detail",
+        "tags": ["voice_clone"],
+        "operationId": "get_voice_clone.get_task_detail",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: task_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}/cancel": {
+      "post": {
+        "summary": "Cancel Task",
+        "tags": ["voice_clone"],
+        "operationId": "post_voice_clone.cancel_task",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: task_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}/result": {
+      "get": {
+        "summary": "Get Task Result",
+        "tags": ["voice_clone"],
+        "operationId": "get_voice_clone.get_task_result",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: task_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}/retry": {
+      "post": {
+        "summary": "Retry Task",
+        "tags": ["voice_clone"],
+        "operationId": "post_voice_clone.retry_task",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: task_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/voice-clone/upload-sample": {
+      "post": {
+        "summary": "Upload Audio Sample",
+        "tags": ["voice_clone"],
+        "operationId": "post_voice_clone.upload_audio_sample",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    }
+  }
+}
