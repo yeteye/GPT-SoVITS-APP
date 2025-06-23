@@ -41,6 +41,7 @@ def get_celery_task_decorator():
 class MockCeleryResult:
     """模拟Celery任务结果"""
 
+    # 这个类用于模拟Celery任务的结果对象, 需要
     def __init__(self, task_id="mock-task-id"):
         self.id = task_id
         self.state = "SUCCESS"
@@ -221,7 +222,7 @@ def preprocess_audio_files(task, work_dir):
             # 输出文件路径
             output_path = os.path.join(work_dir, "processed", f"sample_{i}.wav")
 
-            # 简化处理：直接复制文件（在实际应用中应该进行音频处理）
+            # 简化处理：直接复制文件（在实际应用中应该进行音频处理）, 需要修改
             shutil.copy2(audio_path, output_path)
             preprocessed_files.append(output_path)
 
@@ -267,14 +268,15 @@ def train_voice_model(features_file, work_dir, task):
     try:
         model_dir = os.path.join(work_dir, "models")
 
-        # 模拟训练过程
+        # 模拟训练过程, 需要修改
+        # 实际应用中应该调用真实的训练脚本或库
         model_files = {
             "model_path": os.path.join(model_dir, f"{task.model_name}.pth"),
             "config_path": os.path.join(model_dir, f"{task.model_name}_config.json"),
             "index_path": os.path.join(model_dir, f"{task.model_name}.index"),
         }
 
-        # 创建模拟模型文件
+        # 创建模拟模型文件, 需要修改
         for file_path in model_files.values():
             with open(file_path, "w") as f:
                 f.write(f"# Simulated model file for {task.model_name}\n")
@@ -288,7 +290,8 @@ def train_voice_model(features_file, work_dir, task):
 def validate_model_quality(model_files, audio_files):
     """验证模型质量"""
     try:
-        # 简化的质量评估
+        # 简化的质量评估, 需要修改
+        # 实际应用中应该使用更复杂的评估方法
         quality_score = 7.5
 
         # 检查模型文件是否存在

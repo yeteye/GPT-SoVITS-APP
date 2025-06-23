@@ -2,6 +2,7 @@
 from flask import Blueprint, jsonify, current_app
 from app.extensions import db, redis_client
 from app.utils.helpers import create_response
+from sqlalchemy import text
 
 health_bp = Blueprint("health", __name__)
 
@@ -94,9 +95,12 @@ def health_check():
         status["status"] = "healthy"
 
     # 添加额外的系统信息
-    status["timestamp"] = (
-        db.func.now().scalar() if status["services"]["database"] == "healthy" else None
+    status["database_time"] = (
+        db.session.execute(text("SELECT NOW()")).scalar()
+        if status["services"]["database"] == "healthy"
+        else None
     )
+
     status["environment"] = current_app.config.get("FLASK_ENV", "unknown")
 
     # 根据整体状态返回适当的HTTP状态码

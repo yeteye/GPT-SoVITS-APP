@@ -3,6 +3,7 @@ import os
 import sys
 import click
 from flask.cli import with_appcontext
+from flasgger import Swagger
 
 # 重要：在导入app之前先加载环境变量
 from dotenv import load_dotenv
@@ -24,6 +25,7 @@ from app.models import (
 
 # 创建应用实例
 app = create_app()
+swagger = Swagger(app)
 
 
 @app.shell_context_processor

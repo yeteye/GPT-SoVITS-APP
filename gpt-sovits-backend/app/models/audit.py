@@ -75,10 +75,24 @@ class AuditLog(db.Model):
                 db.session.commit()
                 return log
             except Exception as commit_error:
-                # 只有在发生异常时才回滚
-                db.session.rollback()
+                # 检查会话是否仍然有效
+                if db.session.is_active:
+                    try:
+                        db.session.rollback()
+                    except Exception as rollback_error:
+                        # 回滚失败时记录错误
+                        try:
+                            from flask import current_app
 
-                # 记录错误但不抛出异常，避免影响主要业务流程
+                            current_app.logger.warning(
+                                f"Failed to rollback audit log session: {rollback_error}"
+                            )
+                        except RuntimeError:
+                            print(
+                                f"Warning: Failed to rollback audit log session: {rollback_error}"
+                            )
+
+                # 记录提交错误
                 try:
                     from flask import current_app
 
