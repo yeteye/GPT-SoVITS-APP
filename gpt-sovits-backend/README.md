@@ -61,7 +61,7 @@ app/
 
 ### 环境要求
 
-- Python 3.8+
+- Python 3.9+
 - MySQL 5.7+ 或 MariaDB 10.3+
 - Redis 6.0+
 - FFmpeg（音频处理）

@@ -7,13 +7,13 @@
       </div>
       <el-form :model="form" :rules="rules" ref="formRef" class="register-form" label-position="top">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" clearable size="large" style="width:100%" />
+          <el-input v-model="form.username" placeholder="请输入用户名" clearable size="large" />
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱" clearable size="large" style="width:100%" />
+          <el-input v-model="form.email" placeholder="请输入邮箱" clearable size="large" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" clearable size="large" style="width:100%" />
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" clearable size="large" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="onSubmit" class="register-btn" size="large">注册</el-button>
@@ -25,15 +25,19 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import axios from '@/utils/request'
 
-const router = useRouter();
+const router = useRouter()
+const formRef = ref(null)
+
 const form = reactive({
   username: '',
   email: '',
   password: '',
-});
+})
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -42,22 +46,28 @@ const rules = {
     { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' },
   ],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-};
+}
 
-const formRef = ref(null);
+const onSubmit = () => {
+  formRef.value.validate(async (valid) => {
+    if (!valid) return
 
-function onSubmit() {
-  formRef.value.validate((valid) => {
-    if (valid) {
-      console.log('注册成功', form);
-    } else {
-      console.log('注册失败');
+    try {
+      const res = await axios.post('/auth/register', {
+        username: form.username,
+        email: form.email,
+        password: form.password
+      })
+      ElMessage.success('注册成功，请登录')
+      router.push({ name: 'Login' })
+    } catch (err) {
+      ElMessage.error(err?.response?.data?.message || '注册失败')
     }
-  });
+  })
 }
 
 function goToLogin() {
-  router.push({ name: 'Login' });
+  router.push({ name: 'Login' })
 }
 </script>
 
@@ -72,8 +82,8 @@ function goToLogin() {
 .register-wrapper {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-  padding: 48px 36px 32px 36px;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  padding: 48px 36px;
   width: 400px;
   display: flex;
   flex-direction: column;
@@ -93,23 +103,16 @@ function goToLogin() {
   font-size: 22px;
   font-weight: 600;
   color: #333;
-  letter-spacing: 1px;
 }
 .register-form {
   width: 100%;
 }
 .el-form-item {
   margin-bottom: 24px;
-  width: 100%;
-  min-height: 56px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 .register-btn {
   width: 100%;
   font-size: 16px;
-  letter-spacing: 2px;
   border-radius: 8px;
 }
 .login-link {

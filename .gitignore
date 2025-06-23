@@ -201,3 +201,5 @@ cython_debug/
 .pypirc
 
 .uploads/
+
+test*.txt # Test files

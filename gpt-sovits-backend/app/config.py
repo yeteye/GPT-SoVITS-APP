@@ -127,7 +127,7 @@ class DevelopmentConfig(Config):
     # 开发环境数据库配置
     DATABASE_URL = os.environ.get("DATABASE_URL")
     if not DATABASE_URL or not DATABASE_URL.startswith("mysql"):
-        DATABASE_URL = "mysql+pymysql://root:383517Cc%2E%40@localhost:3306/gpt_sovits_db?charset=utf8mb4"
+        DATABASE_URL = "mysql+pymysql://root:383517Cc.@localhost:3306/gpt_sovits_db?charset=utf8mb4"
 
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
 
