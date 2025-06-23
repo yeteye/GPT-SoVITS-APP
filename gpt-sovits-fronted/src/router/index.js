@@ -25,7 +25,12 @@ const routes = [
         name: 'TTSPlayground',
         component: () => import('@/views/user/TTSPlayground.vue')
     },
-
+    // 音色克隆
+    {
+        path: '/voice-clone',
+        name: 'VoiceClone',
+        component: () => import('@/views/user/VoiceClone.vue')
+    },
     // 音色库
     {
         path: '/voice-library',
