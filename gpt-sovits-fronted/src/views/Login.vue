@@ -48,8 +48,10 @@ const onSubmit = () => {
           identifier: form.identifier,
           password: form.password
         })
+        // console.log('登录请求结果:', res)
         // 假设 token 返回在 res.data.access_token 中
         if (res && res.data.access_token) {
+          // console.log('登录成功:', res.data)
           localStorage.setItem('token', res.data.access_token)
           ElMessage.success('登录成功')
           router.push({ name: 'Home' }) // 登录后跳转页面

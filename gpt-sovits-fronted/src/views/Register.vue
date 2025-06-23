@@ -53,7 +53,7 @@ const onSubmit = () => {
     if (!valid) return
 
     try {
-      const res = await axios.post('/api/auth/register', {
+      const res = await axios.post('/auth/register', {
         username: form.username,
         email: form.email,
         password: form.password
