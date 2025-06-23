@@ -6,11 +6,11 @@
         <span>GPT-SoVITS 登录</span>
       </div>
       <el-form :model="form" :rules="rules" ref="formRef" class="login-form" label-position="top">
-        <el-form-item label="邮箱" prop="email" class="el-form-item">
-          <el-input v-model="form.email" placeholder="请输入邮箱" clearable size="large" style="width:100%; min-height: 15px;"  />
+        <el-form-item label="用户名" prop="identifier">
+          <el-input v-model="form.identifier" placeholder="请输入用户名" clearable size="large" />
         </el-form-item>
-        <el-form-item label="密码" prop="password" class="el-form-item">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" clearable size="large" style="width:100%" />
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" clearable size="large" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="login-btn" @click="onSubmit" size="large">登录</el-button>
@@ -22,37 +22,49 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import request from '@/utils/request' // 自定义的 axios 封装
 
-const router = useRouter();
+const router = useRouter()
+
+const formRef = ref(null)
 const form = reactive({
-  email: '',
-  password: '',
-});
+  identifier: '',
+  password: ''
+})
 
 const rules = {
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' },
-  ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-};
-
-const formRef = ref(null);
-
-function onSubmit() {
-  formRef.value.validate((valid) => {
-    if (valid) {
-      console.log('登录成功', form);
-    } else {
-      console.log('登录失败');
-    }
-  });
+  identifier: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-function goToRegister() {
-  router.push({ name: 'Register' });
+const onSubmit = () => {
+  formRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const res = await request.post('/auth/login', {
+          identifier: form.identifier,
+          password: form.password
+        })
+        // 假设 token 返回在 res.token 中
+        if (res && res.token) {
+          localStorage.setItem('token', res.token)
+          ElMessage.success('登录成功')
+          router.push({ name: 'Home' }) // 登录后跳转页面
+        } else {
+          ElMessage.error('登录失败，返回数据缺少 token')
+        }
+      } catch (err) {
+        ElMessage.error('登录失败，请检查用户名或密码')
+      }
+    }
+  })
+}
+
+const goToRegister = () => {
+  router.push({ name: 'Register' })
 }
 </script>
 
@@ -95,27 +107,6 @@ function goToRegister() {
 }
 .el-form-item {
   margin-bottom: 24px;
-  width: 100%;
-  min-height: 56px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.el-input__wrapper {
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.08);
-  border: 1px solid #e0e7ff;
-  background: #f8faff;
-  transition: border-color 0.2s;
-}
-.el-input__wrapper:focus-within {
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.15);
-}
-.el-input__inner {
-  font-size: 16px;
-  padding: 12px 14px;
-  background: transparent;
 }
 .login-btn {
   width: 100%;
@@ -127,11 +118,9 @@ function goToRegister() {
   border: none;
   color: #fff;
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
-  transition: background 0.2s, box-shadow 0.2s;
 }
 .login-btn:hover {
   background: linear-gradient(90deg, #66b1ff 0%, #409eff 100%);
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.18);
 }
 .register-link {
   width: 100%;
@@ -139,7 +128,6 @@ function goToRegister() {
   color: #409eff;
   font-size: 15px;
   margin-top: 10px;
-  margin-bottom: 0;
   letter-spacing: 1px;
 }
 .register-link:hover {
