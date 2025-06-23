@@ -48,9 +48,9 @@ const onSubmit = () => {
           identifier: form.identifier,
           password: form.password
         })
-        // 假设 token 返回在 res.token 中
-        if (res && res.token) {
-          localStorage.setItem('token', res.token)
+        // 假设 token 返回在 res.data.access_token 中
+        if (res && res.data.access_token) {
+          localStorage.setItem('token', res.data.access_token)
           ElMessage.success('登录成功')
           router.push({ name: 'Home' }) // 登录后跳转页面
         } else {
@@ -76,6 +76,7 @@ const goToRegister = () => {
   align-items: center;
   justify-content: center;
 }
+
 .login-wrapper {
   background: #fff;
   border-radius: 16px;
@@ -86,28 +87,34 @@ const goToRegister = () => {
   flex-direction: column;
   align-items: center;
 }
+
 .login-logo {
   display: flex;
   align-items: center;
   margin-bottom: 32px;
 }
+
 .login-logo img {
   width: 40px;
   height: 40px;
   margin-right: 12px;
 }
+
 .login-logo span {
   font-size: 22px;
   font-weight: 600;
   color: #333;
   letter-spacing: 1px;
 }
+
 .login-form {
   width: 100%;
 }
+
 .el-form-item {
   margin-bottom: 24px;
 }
+
 .login-btn {
   width: 100%;
   font-size: 16px;
@@ -119,9 +126,11 @@ const goToRegister = () => {
   color: #fff;
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
 }
+
 .login-btn:hover {
   background: linear-gradient(90deg, #66b1ff 0%, #409eff 100%);
 }
+
 .register-link {
   width: 100%;
   text-align: center;
@@ -130,6 +139,7 @@ const goToRegister = () => {
   margin-top: 10px;
   letter-spacing: 1px;
 }
+
 .register-link:hover {
   color: #66b1ff;
   text-decoration: underline;

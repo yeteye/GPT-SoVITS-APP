@@ -15,7 +15,11 @@ def create_app(config_name=None):
     app.config.from_object(config[config_name])
 
     # 初始化CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(
+        app,
+        supports_credentials=True,
+        resources={r"/api/*": {"origins": ["http://localhost:5173"]}},
+    )
 
     # 初始化扩展
     init_extensions(app)
