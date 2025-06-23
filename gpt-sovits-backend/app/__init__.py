@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from app.extensions import init_extensions
 from app.config import config
+from flask_cors import CORS
 
 
 def create_app(config_name=None):
@@ -12,6 +13,9 @@ def create_app(config_name=None):
 
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+
+    # 初始化CORS
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # 初始化扩展
     init_extensions(app)

@@ -25,6 +25,7 @@ from app.models import (
 
 # 创建应用实例
 app = create_app()
+
 swagger = Swagger(app)
 
 
