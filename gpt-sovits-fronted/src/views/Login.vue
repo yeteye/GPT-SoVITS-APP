@@ -48,11 +48,18 @@ const onSubmit = () => {
           identifier: form.identifier,
           password: form.password
         })
+        // console.log('登录请求结果:', res)
         // 假设 token 返回在 res.data.access_token 中
         if (res && res.data.access_token) {
+          // console.log('登录成功:', res.data)
           localStorage.setItem('token', res.data.access_token)
+          localStorage.setItem('user', JSON.stringify(res.data.user)) // 保存用户信息
           ElMessage.success('登录成功')
-          router.push({ name: 'Home' }) // 登录后跳转页面
+          if (res.data.user.role === '2') {
+            router.push({ name: 'AdminDashboard' }) // 管理员跳转到后台管理
+          } else {
+            router.push({ name: 'Home' })// 普通用户跳转到首页
+          }
         } else {
           ElMessage.error('登录失败，返回数据缺少 token')
         }

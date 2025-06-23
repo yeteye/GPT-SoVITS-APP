@@ -111,6 +111,13 @@ def register_error_handlers(app):
             ),
             413,
         )
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers["Access-Control-Allow-Origin"] = "http://localhost:5173"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS,PUT,DELETE"
+        return response
 
 
 def create_upload_directories(app):
@@ -120,3 +127,4 @@ def create_upload_directories(app):
     for dir_name in upload_dirs:
         dir_path = os.path.join(app.config["UPLOAD_FOLDER"], dir_name)
         os.makedirs(dir_path, exist_ok=True)
+
