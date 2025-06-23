@@ -53,7 +53,7 @@ const onSubmit = () => {
     if (!valid) return
 
     try {
-      const res = await axios.post('/api/auth/register', {
+      const res = await axios.post('/auth/register', {
         username: form.username,
         email: form.email,
         password: form.password
@@ -79,6 +79,7 @@ function goToLogin() {
   align-items: center;
   justify-content: center;
 }
+
 .register-wrapper {
   background: #fff;
   border-radius: 16px;
@@ -89,32 +90,39 @@ function goToLogin() {
   flex-direction: column;
   align-items: center;
 }
+
 .register-logo {
   display: flex;
   align-items: center;
   margin-bottom: 32px;
 }
+
 .register-logo img {
   width: 40px;
   height: 40px;
   margin-right: 12px;
 }
+
 .register-logo span {
   font-size: 22px;
   font-weight: 600;
   color: #333;
 }
+
 .register-form {
   width: 100%;
 }
+
 .el-form-item {
   margin-bottom: 24px;
 }
+
 .register-btn {
   width: 100%;
   font-size: 16px;
   border-radius: 8px;
 }
+
 .login-link {
   display: block;
   text-align: center;
