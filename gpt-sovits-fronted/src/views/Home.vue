@@ -13,6 +13,7 @@
           <el-menu-item index="CreatorCenter">创作者中心</el-menu-item>
           <el-menu-item index="VoiceLibrary">音色库</el-menu-item>
           <el-menu-item index="TaskHistory">历史记录</el-menu-item>
+          <el-menu-item index="UserCenter">用户中心</el-menu-item>
         </el-menu>
       </nav>
     </header>
