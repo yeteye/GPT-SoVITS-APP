@@ -2,6 +2,8 @@
 import os
 import shutil
 import subprocess
+import soundfile as sf
+from pydub import AudioSegment
 from datetime import datetime
 from flask import current_app
 from app.extensions import celery, db
@@ -158,7 +160,9 @@ def process_voice_clone(task):
 
         # 2. 预处理音频文件
         update_task_progress(task, 10, "Preprocessing audio files...")
-        preprocessed_files = preprocess_audio_files(task, work_dir)
+        preprocessed_files = preprocess_audio_files(
+            task, work_dir, target_sample_rate=16000
+        )
 
         # 3. 提取音频特征
         update_task_progress(task, 30, "Extracting audio features...")
@@ -208,23 +212,37 @@ def prepare_training_environment(task):
         raise TaskProcessingError(f"Failed to prepare training environment: {str(e)}")
 
 
-def preprocess_audio_files(task, work_dir):
-    """预处理音频文件"""
+def preprocess_audio_files(task, work_dir, target_sample_rate=16000):
+    """对音频文件进行预处理（采样率、通道数、格式标准化）"""
     try:
         audio_samples = task.get_audio_samples()
         preprocessed_files = []
+        processed_dir = os.path.join(work_dir, "processed")
+
+        os.makedirs(processed_dir, exist_ok=True)
 
         for i, audio_path in enumerate(audio_samples):
             if not os.path.exists(audio_path):
                 current_app.logger.warning(f"Audio file not found: {audio_path}")
                 continue
 
-            # 输出文件路径
-            output_path = os.path.join(work_dir, "processed", f"sample_{i}.wav")
+            try:
+                # 加载原始音频（pydub 支持多数格式）
+                audio = AudioSegment.from_file(audio_path)
 
-            # 简化处理：直接复制文件（在实际应用中应该进行音频处理）, 需要修改
-            shutil.copy2(audio_path, output_path)
-            preprocessed_files.append(output_path)
+                # 转为单声道 & 目标采样率
+                audio = audio.set_channels(1).set_frame_rate(target_sample_rate)
+
+                # 输出路径
+                output_path = os.path.join(processed_dir, f"sample_{i}.wav")
+
+                # 导出为 wav 文件
+                audio.export(output_path, format="wav")
+
+                preprocessed_files.append(output_path)
+            except Exception as e:
+                current_app.logger.warning(f"Failed to process {audio_path}: {e}")
+                continue
 
         if not preprocessed_files:
             raise TaskProcessingError("No valid audio files to process")
@@ -235,12 +253,20 @@ def preprocess_audio_files(task, work_dir):
         raise TaskProcessingError(f"Failed to preprocess audio files: {str(e)}")
 
 
-def extract_audio_features(audio_files, work_dir):
-    """提取音频特征"""
-    try:
-        import numpy as np
+import os
+import numpy as np
+import librosa
+import soundfile as sf
+from app.utils.exceptions import TaskProcessingError
 
-        # 模拟特征提取
+
+def extract_audio_features(audio_files, work_dir, sample_rate=16000):
+    """从多个音频文件中提取 MFCC、Mel Spectrogram 和 F0 特征"""
+    try:
+        # 确保特征输出目录存在
+        feature_dir = os.path.join(work_dir, "features")
+        os.makedirs(feature_dir, exist_ok=True)
+
         features = {
             "mfcc": [],
             "mel_spectrogram": [],
@@ -248,13 +274,39 @@ def extract_audio_features(audio_files, work_dir):
         }
 
         for audio_file in audio_files:
-            # 模拟特征数据
-            features["mfcc"].append(np.random.rand(13, 100))
-            features["mel_spectrogram"].append(np.random.rand(80, 100))
-            features["f0"].append(np.random.rand(100))
+            try:
+                # 加载音频，强制指定采样率（避免 librosa 自动重采样）
+                y, sr = librosa.load(audio_file, sr=sample_rate)
 
-        # 保存特征
-        feature_file = os.path.join(work_dir, "features", "extracted_features.npz")
+                # --- MFCC ---
+                mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)  # (13, T)
+
+                # --- Mel Spectrogram ---
+                mel = librosa.feature.melspectrogram(
+                    y=y, sr=sr, n_mels=80, fmax=sr // 2
+                )
+                mel_db = librosa.power_to_db(mel, ref=np.max)  # dB 归一化
+
+                # --- F0 (基频) ---
+                f0, voiced_flag, voiced_probs = librosa.pyin(
+                    y,
+                    sr=sr,
+                    fmin=librosa.note_to_hz("C2"),
+                    fmax=librosa.note_to_hz("C7"),
+                )
+                # 补全无声段为0
+                f0 = np.nan_to_num(f0)
+
+                features["mfcc"].append(mfcc)
+                features["mel_spectrogram"].append(mel_db)
+                features["f0"].append(f0)
+
+            except Exception as e:
+                print(f"Feature extraction failed for {audio_file}: {e}")
+                continue
+
+        # 保存为 .npz
+        feature_file = os.path.join(feature_dir, "extracted_features.npz")
         np.savez(feature_file, **features)
 
         return feature_file

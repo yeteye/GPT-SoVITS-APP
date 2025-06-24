@@ -20,15 +20,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB max file size
 
 # 允许的音频文件格式
-ALLOWED_EXTENSIONS = {'wav'}
+ALLOWED_EXTENSIONS = {"wav"}
 
 
 @dataclass
 class WatermarkConfig:
     """水印配置"""
+
     start_freq: int = 1000
     delta: int = 30
     strength_factor: float = 2.0
@@ -48,7 +49,8 @@ class WatermarkDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS watermark (
                 id INTEGER AUTO_INCREMENT PRIMARY KEY,
                 watermark_code VARCHAR(64) NOT NULL UNIQUE,
@@ -68,9 +70,11 @@ class WatermarkDatabase:
                 FOREIGN KEY (model_id) REFERENCES voice_models(id)
                     ON DELETE SET NULL ON UPDATE CASCADE
             );
-        ''')
+        """
+        )
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS verification_log (
                 id INTEGER AUTO_INCREMENT PRIMARY KEY,
                 watermark_code TEXT,
@@ -82,7 +86,8 @@ class WatermarkDatabase:
                 ip_address TEXT,
                 user_agent TEXT
             )
-        ''')
+        """
+        )
 
         conn.commit()
         conn.close()
@@ -90,18 +95,23 @@ class WatermarkDatabase:
     def generate_watermark_code(self, length: int = 16) -> str:
         """生成水印识别码"""
         if length == 8:
-            return ''.join(secrets.choice(string.digits) for _ in range(8))
+            return "".join(secrets.choice(string.digits) for _ in range(8))
         elif length == 16:
             chars = string.ascii_lowercase + string.digits
-            return ''.join(secrets.choice(chars) for _ in range(16))
+            return "".join(secrets.choice(chars) for _ in range(16))
         elif length == 32:
             return secrets.token_hex(16)
         else:
             chars = string.ascii_lowercase + string.digits
-            return ''.join(secrets.choice(chars) for _ in range(length))
+            return "".join(secrets.choice(chars) for _ in range(length))
 
-    def add_watermark(self, username: str, code_length: int, description: str = "",
-                      file_info: str = "") -> str:
+    def add_watermark(
+        self,
+        username: str,
+        code_length: int,
+        description: str = "",
+        file_info: str = "",
+    ) -> str:
         """添加水印记录"""
         max_attempts = 10
         for _ in range(max_attempts):
@@ -111,10 +121,13 @@ class WatermarkDatabase:
             cursor = conn.cursor()
 
             try:
-                cursor.execute('''
+                cursor.execute(
+                    """
                     INSERT INTO watermark (username, watermark_code, code_length, description, file_info)
                     VALUES (?, ?, ?, ?, ?)
-                ''', (username, watermark_code, code_length, description, file_info))
+                """,
+                    (username, watermark_code, code_length, description, file_info),
+                )
                 conn.commit()
                 conn.close()
                 return watermark_code
@@ -129,22 +142,25 @@ class WatermarkDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT username, watermark_code, code_length, created_at, usage_count, description
             FROM watermark WHERE watermark_code = ?
-        ''', (watermark_code,))
+        """,
+            (watermark_code,),
+        )
 
         result = cursor.fetchone()
         conn.close()
 
         if result:
             return {
-                'username': result[0],
-                'watermark_code': result[1],
-                'code_length': result[2],
-                'created_at': result[3],
-                'usage_count': result[4],
-                'description': result[5]
+                "username": result[0],
+                "watermark_code": result[1],
+                "code_length": result[2],
+                "created_at": result[3],
+                "usage_count": result[4],
+                "description": result[5],
             }
         return None
 
@@ -153,28 +169,49 @@ class WatermarkDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             UPDATE watermark 
             SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP
             WHERE watermark_code = ?
-        ''', (watermark_code,))
+        """,
+            (watermark_code,),
+        )
 
         conn.commit()
         conn.close()
 
-    def log_verification(self, watermark_code: str, filename: str, accuracy: float,
-                         extracted_code: str, success: bool, ip_address: str = "",
-                         user_agent: str = ""):
+    def log_verification(
+        self,
+        watermark_code: str,
+        filename: str,
+        accuracy: float,
+        extracted_code: str,
+        success: bool,
+        ip_address: str = "",
+        user_agent: str = "",
+    ):
         """记录验证日志"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT INTO verification_log 
             (watermark_code, original_filename, extraction_accuracy, extracted_code, 
              success, ip_address, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (watermark_code, filename, accuracy, extracted_code, success, ip_address, user_agent))
+        """,
+            (
+                watermark_code,
+                filename,
+                accuracy,
+                extracted_code,
+                success,
+                ip_address,
+                user_agent,
+            ),
+        )
 
         conn.commit()
         conn.close()
@@ -188,45 +225,73 @@ class AudioWatermarkProcessor:
         self.db = WatermarkDatabase()
 
     def str_to_bin(self, s: str) -> str:
-        return ''.join(format(ord(c), '08b') for c in s)
+        return "".join(format(ord(c), "08b") for c in s)
 
     def bin_to_str(self, b: str) -> str:
         try:
             if len(b) % 8 != 0:
-                b = b[:-(len(b) % 8)]
+                b = b[: -(len(b) % 8)]
 
             chars = []
             for i in range(0, len(b), 8):
-                byte = b[i:i + 8]
+                byte = b[i : i + 8]
                 if len(byte) == 8:
                     char_code = int(byte, 2)
                     if 32 <= char_code <= 126:
                         chars.append(chr(char_code))
                     else:
-                        chars.append('?')
-            return ''.join(chars)
+                        chars.append("?")
+            return "".join(chars)
         except:
             return None
 
     def add_error_correction(self, data: str) -> str:
         """5重复纠错编码"""
-        return ''.join(bit * 5 for bit in data)
+        return "".join(bit * 5 for bit in data)
 
     def decode_error_correction(self, data: str) -> str:
         """5重复解码"""
         if len(data) % 5 != 0:
             return data
 
-        decoded = ''
+        decoded = ""
         for i in range(0, len(data), 5):
-            quintuple = data[i:i + 5]
-            ones = quintuple.count('1')
-            decoded += '1' if ones >= 3 else '0'
+            quintuple = data[i : i + 5]
+            ones = quintuple.count("1")
+            decoded += "1" if ones >= 3 else "0"
         return decoded
 
-    def get_prime_frequency_indices(self, start_freq: int, delta: int, num_bits: int) -> List[int]:
+    def get_prime_frequency_indices(
+        self, start_freq: int, delta: int, num_bits: int
+    ) -> List[int]:
         """生成质数分布的频率索引"""
-        primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+        primes = [
+            2,
+            3,
+            5,
+            7,
+            11,
+            13,
+            17,
+            19,
+            23,
+            29,
+            31,
+            37,
+            41,
+            43,
+            47,
+            53,
+            59,
+            61,
+            67,
+            71,
+            73,
+            79,
+            83,
+            89,
+            97,
+        ]
         indices = []
 
         for i in range(num_bits):
@@ -235,8 +300,14 @@ class AudioWatermarkProcessor:
 
         return indices
 
-    def embed_watermark(self, input_path: str, output_path: str, username: str,
-                        code_length: int = 16, description: str = "") -> Dict[str, Any]:
+    def embed_watermark(
+        self,
+        input_path: str,
+        output_path: str,
+        username: str,
+        code_length: int = 16,
+        description: str = "",
+    ) -> Dict[str, Any]:
         """嵌入水印"""
         try:
             # 获取文件信息
@@ -244,10 +315,12 @@ class AudioWatermarkProcessor:
             file_info = f"size: {file_size} bytes"
 
             # 生成水印码
-            watermark_code = self.db.add_watermark(username, code_length, description, file_info)
+            watermark_code = self.db.add_watermark(
+                username, code_length, description, file_info
+            )
 
             # 读取音频
-            with wave.open(input_path, 'rb') as wav:
+            with wave.open(input_path, "rb") as wav:
                 params = wav.getparams()
                 n_frames = wav.getnframes()
                 audio = np.frombuffer(wav.readframes(n_frames), dtype=np.int16)
@@ -285,12 +358,12 @@ class AudioWatermarkProcessor:
                 original_mag = abs(original_complex)
                 phase = np.angle(original_complex)
 
-                if bit == '1':
+                if bit == "1":
                     new_mag = original_mag * (1 + self.config.strength_factor)
                     new_mag += original_mag * self.config.boost_factor + 1200
                 else:
                     new_mag = original_mag * (1 - self.config.strength_factor)
-                    new_mag *= (1 - self.config.boost_factor)
+                    new_mag *= 1 - self.config.boost_factor
                     new_mag = max(new_mag, original_mag * 0.008, 8)
 
                 spectrum[freq_index] = new_mag * np.exp(1j * phase)
@@ -315,30 +388,35 @@ class AudioWatermarkProcessor:
                 watermarked_audio = stereo_audio
 
             # 保存音频
-            with wave.open(output_path, 'wb') as out_wav:
+            with wave.open(output_path, "wb") as out_wav:
                 out_wav.setparams(params)
                 out_wav.writeframes(watermarked_audio.tobytes())
 
             return {
-                'success': True,
-                'watermark_code': watermark_code,
-                'code_length': code_length,
-                'username': username,
-                'embedded_bits': len(watermark_bin),
-                'frequency_range': f"{min(freq_indices)}-{max(freq_indices)}",
-                'description': description
+                "success": True,
+                "watermark_code": watermark_code,
+                "code_length": code_length,
+                "username": username,
+                "embedded_bits": len(watermark_bin),
+                "frequency_range": f"{min(freq_indices)}-{max(freq_indices)}",
+                "description": description,
             }
 
         except Exception as e:
             logger.error(f"嵌入水印失败: {str(e)}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    def extract_watermark(self, audio_path: str, filename: str = "",
-                          ip_address: str = "", user_agent: str = "") -> Dict[str, Any]:
+    def extract_watermark(
+        self,
+        audio_path: str,
+        filename: str = "",
+        ip_address: str = "",
+        user_agent: str = "",
+    ) -> Dict[str, Any]:
         """提取并验证水印"""
         try:
             # 读取音频
-            with wave.open(audio_path, 'rb') as wav:
+            with wave.open(audio_path, "rb") as wav:
                 audio = np.frombuffer(wav.readframes(wav.getnframes()), dtype=np.int16)
                 if wav.getnchannels() == 2:
                     audio = audio[::2]
@@ -350,77 +428,79 @@ class AudioWatermarkProcessor:
 
             for test_length in possible_lengths:
                 result = self._extract_watermark_length(audio, test_length)
-                if result and result['accuracy'] > best_accuracy:
-                    best_accuracy = result['accuracy']
+                if result and result["accuracy"] > best_accuracy:
+                    best_accuracy = result["accuracy"]
                     best_result = result
 
-            if best_result and best_result['accuracy'] > 0.7:
+            if best_result and best_result["accuracy"] > 0.7:
                 # 查找用户信息
-                user_info = self.db.get_user_by_watermark(best_result['watermark_code'])
+                user_info = self.db.get_user_by_watermark(best_result["watermark_code"])
 
                 if user_info:
                     # 更新使用记录
-                    self.db.update_usage(best_result['watermark_code'])
+                    self.db.update_usage(best_result["watermark_code"])
 
                     # 记录验证日志
                     self.db.log_verification(
-                        best_result['watermark_code'],
+                        best_result["watermark_code"],
                         filename,
-                        best_result['accuracy'],
-                        best_result['extracted_raw'],
+                        best_result["accuracy"],
+                        best_result["extracted_raw"],
                         True,
                         ip_address,
-                        user_agent
+                        user_agent,
                     )
 
                     return {
-                        'success': True,
-                        'verification': 'verified',
-                        'username': user_info['username'],
-                        'watermark_code': best_result['watermark_code'],
-                        'code_length': best_result['code_length'],
-                        'accuracy': best_result['accuracy'],
-                        'confidence': best_result['confidence'],
-                        'created_at': user_info['created_at'],
-                        'usage_count': user_info['usage_count'] + 1,
-                        'description': user_info['description']
+                        "success": True,
+                        "verification": "verified",
+                        "username": user_info["username"],
+                        "watermark_code": best_result["watermark_code"],
+                        "code_length": best_result["code_length"],
+                        "accuracy": best_result["accuracy"],
+                        "confidence": best_result["confidence"],
+                        "created_at": user_info["created_at"],
+                        "usage_count": user_info["usage_count"] + 1,
+                        "description": user_info["description"],
                     }
                 else:
                     # 记录未找到用户的日志
                     self.db.log_verification(
-                        best_result['watermark_code'],
+                        best_result["watermark_code"],
                         filename,
-                        best_result['accuracy'],
-                        best_result['extracted_raw'],
+                        best_result["accuracy"],
+                        best_result["extracted_raw"],
                         False,
                         ip_address,
-                        user_agent
+                        user_agent,
                     )
 
                     return {
-                        'success': True,
-                        'verification': 'watermark_found_but_not_registered',
-                        'extracted_code': best_result['watermark_code'],
-                        'accuracy': best_result['accuracy'],
-                        'message': '检测到水印但未在数据库中找到对应用户'
+                        "success": True,
+                        "verification": "watermark_found_but_not_registered",
+                        "extracted_code": best_result["watermark_code"],
+                        "accuracy": best_result["accuracy"],
+                        "message": "检测到水印但未在数据库中找到对应用户",
                     }
             else:
                 return {
-                    'success': False,
-                    'verification': 'no_watermark_detected',
-                    'message': '未检测到有效水印',
-                    'max_accuracy': best_accuracy
+                    "success": False,
+                    "verification": "no_watermark_detected",
+                    "message": "未检测到有效水印",
+                    "max_accuracy": best_accuracy,
                 }
 
         except Exception as e:
             logger.error(f"提取水印失败: {str(e)}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    def _extract_watermark_length(self, audio: np.ndarray, code_length: int) -> Optional[Dict]:
+    def _extract_watermark_length(
+        self, audio: np.ndarray, code_length: int
+    ) -> Optional[Dict]:
         """提取指定长度的水印码"""
         try:
             spectrum = fft(audio.astype(np.float64))
-            spectrum_mag = np.abs(spectrum[:len(spectrum) // 2])
+            spectrum_mag = np.abs(spectrum[: len(spectrum) // 2])
 
             expected_bits = code_length * 8
             if self.config.use_error_correction:
@@ -450,11 +530,11 @@ class AudioWatermarkProcessor:
             above_count = sum(1 for mag in sorted_mags if mag > threshold)
             high_mag_indices = set(x[1] for x in mag_with_index[:above_count])
 
-            bits = ''
+            bits = ""
             confidences = []
 
             for i in range(min(expected_bits, len(watermark_mags))):
-                bit = '1' if i in high_mag_indices else '0'
+                bit = "1" if i in high_mag_indices else "0"
                 rank = next(j for j, (_, idx) in enumerate(mag_with_index) if idx == i)
                 confidence = abs(rank - above_count) / len(watermark_mags)
 
@@ -475,17 +555,19 @@ class AudioWatermarkProcessor:
                     accuracy = 0.9
                 elif code_length == 16 and all(c.isalnum() for c in extracted_code):
                     accuracy = 0.85
-                elif code_length == 32 and all(c in '0123456789abcdef' for c in extracted_code.lower()):
+                elif code_length == 32 and all(
+                    c in "0123456789abcdef" for c in extracted_code.lower()
+                ):
                     accuracy = 0.8
                 else:
                     accuracy = 0.7
 
                 return {
-                    'watermark_code': extracted_code,
-                    'extracted_raw': watermark_str,
-                    'accuracy': accuracy,
-                    'confidence': avg_confidence,
-                    'code_length': code_length
+                    "watermark_code": extracted_code,
+                    "extracted_raw": watermark_str,
+                    "accuracy": accuracy,
+                    "confidence": avg_confidence,
+                    "code_length": code_length,
                 }
 
             return None
@@ -496,24 +578,26 @@ class AudioWatermarkProcessor:
 
 def allowed_file(filename):
     """检查文件类型"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 # 初始化处理器
 processor = AudioWatermarkProcessor()
 
 
-@app.route('/api/health', methods=['GET'])
+@app.route("/api/health", methods=["GET"])
 def health_check():
     """健康检查"""
-    return jsonify({
-        'status': 'healthy',
-        'service': 'audio_watermark_api',
-        'timestamp': datetime.now().isoformat()
-    })
+    return jsonify(
+        {
+            "status": "healthy",
+            "service": "audio_watermark_api",
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
 
 
-@app.route('/api/watermark/embed', methods=['POST'])
+@app.route("/api/watermark/embed", methods=["POST"])
 def embed_watermark_api():
     """
     嵌入水印API
@@ -529,70 +613,71 @@ def embed_watermark_api():
     """
     try:
         # 检查文件
-        if 'file' not in request.files:
-            return jsonify({'error': '未提供音频文件'}), 400
+        if "file" not in request.files:
+            return jsonify({"error": "未提供音频文件"}), 400
 
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': '未选择文件'}), 400
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "未选择文件"}), 400
 
         if not allowed_file(file.filename):
-            return jsonify({'error': '只支持WAV格式文件'}), 400
+            return jsonify({"error": "只支持WAV格式文件"}), 400
 
         # 检查必需参数
-        username = request.form.get('username')
+        username = request.form.get("username")
         if not username:
-            return jsonify({'error': '用户名不能为空'}), 400
+            return jsonify({"error": "用户名不能为空"}), 400
 
         # 获取可选参数
-        code_length = int(request.form.get('code_length', 16))
+        code_length = int(request.form.get("code_length", 16))
         if code_length not in [8, 16, 32]:
-            return jsonify({'error': '识别码长度必须是8, 16, 或32'}), 400
+            return jsonify({"error": "识别码长度必须是8, 16, 或32"}), 400
 
-        description = request.form.get('description', '')
+        description = request.form.get("description", "")
 
         # 保存上传的文件
         filename = secure_filename(file.filename)
-        temp_input = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+        temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
         file.save(temp_input.name)
 
         # 创建输出文件
-        temp_output = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+        temp_output = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
         temp_output.close()
 
         # 嵌入水印
         result = processor.embed_watermark(
-            temp_input.name,
-            temp_output.name,
-            username,
-            code_length,
-            description
+            temp_input.name, temp_output.name, username, code_length, description
         )
 
         # 清理输入文件
         os.unlink(temp_input.name)
 
-        if result['success']:
+        if result["success"]:
             # 返回带水印的文件
             return send_file(
                 temp_output.name,
                 as_attachment=True,
                 download_name=f"watermarked_{filename}",
-                mimetype='audio/wav'
+                mimetype="audio/wav",
             )
         else:
             os.unlink(temp_output.name)
-            return jsonify({
-                'error': '水印嵌入失败',
-                'details': result.get('error', '未知错误')
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "error": "水印嵌入失败",
+                        "details": result.get("error", "未知错误"),
+                    }
+                ),
+                500,
+            )
 
     except Exception as e:
         logger.error(f"嵌入水印API错误: {str(e)}")
-        return jsonify({'error': '服务器内部错误'}), 500
+        return jsonify({"error": "服务器内部错误"}), 500
 
 
-@app.route('/api/watermark/verify', methods=['POST'])
+@app.route("/api/watermark/verify", methods=["POST"])
 def verify_watermark_api():
     """
     验证水印API
@@ -605,66 +690,67 @@ def verify_watermark_api():
     """
     try:
         # 检查文件
-        if 'file' not in request.files:
-            return jsonify({'error': '未提供音频文件'}), 400
+        if "file" not in request.files:
+            return jsonify({"error": "未提供音频文件"}), 400
 
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': '未选择文件'}), 400
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "未选择文件"}), 400
 
         if not allowed_file(file.filename):
-            return jsonify({'error': '只支持WAV格式文件'}), 400
+            return jsonify({"error": "只支持WAV格式文件"}), 400
 
         # 获取客户端信息
-        ip_address = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-        user_agent = request.environ.get('HTTP_USER_AGENT', '')
+        ip_address = request.environ.get("HTTP_X_FORWARDED_FOR", request.remote_addr)
+        user_agent = request.environ.get("HTTP_USER_AGENT", "")
 
         # 保存上传的文件
         filename = secure_filename(file.filename)
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
         file.save(temp_file.name)
 
         # 验证水印
         result = processor.extract_watermark(
-            temp_file.name,
-            filename,
-            ip_address,
-            user_agent
+            temp_file.name, filename, ip_address, user_agent
         )
 
         # 清理临时文件
         os.unlink(temp_file.name)
 
-        if result['success']:
-            return jsonify({
-                'status': 'success',
-                'verification': result['verification'],
-                'data': {
-                    'username': result.get('username'),
-                    'watermark_code': result.get('watermark_code'),
-                    'code_length': result.get('code_length'),
-                    'accuracy': result.get('accuracy'),
-                    'confidence': result.get('confidence'),
-                    'created_at': result.get('created_at'),
-                    'usage_count': result.get('usage_count'),
-                    'description': result.get('description')
-                },
-                'message': result.get('message', '验证成功')
-            })
+        if result["success"]:
+            return jsonify(
+                {
+                    "status": "success",
+                    "verification": result["verification"],
+                    "data": {
+                        "username": result.get("username"),
+                        "watermark_code": result.get("watermark_code"),
+                        "code_length": result.get("code_length"),
+                        "accuracy": result.get("accuracy"),
+                        "confidence": result.get("confidence"),
+                        "created_at": result.get("created_at"),
+                        "usage_count": result.get("usage_count"),
+                        "description": result.get("description"),
+                    },
+                    "message": result.get("message", "验证成功"),
+                }
+            )
         else:
-            return jsonify({
-                'status': 'failed',
-                'verification': result.get('verification', 'failed'),
-                'message': result.get('message', '验证失败'),
-                'error': result.get('error')
-            })
+            return jsonify(
+                {
+                    "status": "failed",
+                    "verification": result.get("verification", "failed"),
+                    "message": result.get("message", "验证失败"),
+                    "error": result.get("error"),
+                }
+            )
 
     except Exception as e:
         logger.error(f"验证水印API错误: {str(e)}")
-        return jsonify({'error': '服务器内部错误'}), 500
+        return jsonify({"error": "服务器内部错误"}), 500
 
 
-@app.route('/api/watermark/info/<watermark_code>', methods=['GET'])
+@app.route("/api/watermark/info/<watermark_code>", methods=["GET"])
 def get_watermark_info(watermark_code):
     """
     根据水印码获取信息
@@ -673,22 +759,19 @@ def get_watermark_info(watermark_code):
         user_info = processor.db.get_user_by_watermark(watermark_code)
 
         if user_info:
-            return jsonify({
-                'status': 'found',
-                'data': user_info
-            })
+            return jsonify({"status": "found", "data": user_info})
         else:
-            return jsonify({
-                'status': 'not_found',
-                'message': '未找到对应的水印记录'
-            }), 404
+            return (
+                jsonify({"status": "not_found", "message": "未找到对应的水印记录"}),
+                404,
+            )
 
     except Exception as e:
         logger.error(f"查询水印信息错误: {str(e)}")
-        return jsonify({'error': '服务器内部错误'}), 500
+        return jsonify({"error": "服务器内部错误"}), 500
 
 
-@app.route('/api/user/<username>/watermarks', methods=['GET'])
+@app.route("/api/user/<username>/watermarks", methods=["GET"])
 def get_user_watermarks(username):
     """
     获取用户的所有水印
@@ -696,29 +779,31 @@ def get_user_watermarks(username):
     try:
         watermarks = processor.db.get_user_watermarks(username)
 
-        return jsonify({
-            'status': 'success',
-            'username': username,
-            'watermarks': watermarks,
-            'count': len(watermarks)
-        })
+        return jsonify(
+            {
+                "status": "success",
+                "username": username,
+                "watermarks": watermarks,
+                "count": len(watermarks),
+            }
+        )
 
     except Exception as e:
         logger.error(f"查询用户水印错误: {str(e)}")
-        return jsonify({'error': '服务器内部错误'}), 500
+        return jsonify({"error": "服务器内部错误"}), 500
 
 
 @app.errorhandler(413)
 def too_large(e):
-    return jsonify({'error': '文件太大，最大支持50MB'}), 413
+    return jsonify({"error": "文件太大，最大支持50MB"}), 413
 
 
 @app.errorhandler(404)
 def not_found(e):
-    return jsonify({'error': 'API端点不存在'}), 404
+    return jsonify({"error": "API端点不存在"}), 404
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("🚀 启动音频水印API服务...")
     print("📋 可用的API端点:")
     print("  POST /api/watermark/embed    - 嵌入水印")
@@ -728,7 +813,10 @@ if __name__ == '__main__':
     print("  GET  /api/health             - 健康检查")
     print("\n💡 使用方法:")
     print(
-        "  curl -X POST -F 'file=@audio.wav' -F 'username=alice' -F 'code_length=16' http://localhost:5000/api/watermark/embed")
-    print("  curl -X POST -F 'file=@watermarked.wav' http://localhost:5000/api/watermark/verify")
+        "  curl -X POST -F 'file=@audio.wav' -F 'username=alice' -F 'code_length=16' http://localhost:5000/api/watermark/embed"
+    )
+    print(
+        "  curl -X POST -F 'file=@watermarked.wav' http://localhost:5000/api/watermark/verify"
+    )
 
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000)
