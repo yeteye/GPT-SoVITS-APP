@@ -1,20 +1,5 @@
 <template>
   <div class="tts-playground">
-    <!-- 顶部菜单栏 -->
-    <header class="header">
-      <div class="header-left">
-        <img src="@/assets/logo.svg" class="logo" alt="logo" />
-        <h1 class="title">GPT-SoVITS 文本转语音</h1>
-      </div>
-      <nav class="nav-menu">
-        <el-menu mode="horizontal" :default-active="active" class="el-menu-demo" @select="onSelect">
-          <el-menu-item index="Home">首页</el-menu-item>
-          <el-menu-item index="VoiceClone">音色克隆</el-menu-item>
-          <el-menu-item index="VoiceLibrary">音色库</el-menu-item>
-          <el-menu-item index="TaskHistory">历史记录</el-menu-item>
-        </el-menu>
-      </nav>
-    </header>
 
     <!-- 主体内容区域 -->
     <el-container class="main-content">
@@ -29,9 +14,15 @@
           resize="none"
         />
         <div class="control-buttons">
-          <el-button type="primary" @click="onSynthesize">合成语音</el-button>
+          <el-button type="primary" :loading="loading" @click="onSynthesize">合成语音</el-button>
           <el-button @click="text = ''">清空</el-button>
         </div>
+        <audio
+          v-if="audioUrl"
+          :src="audioUrl"
+          controls
+          style="margin-top: 20px; width: 100%"
+        />
       </el-aside>
 
       <!-- 音色库展示 -->
@@ -53,11 +44,15 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { synthesizeTTS } from '@/api/tts'
 
 const router = useRouter()
 const active = ref('TTSPlayground')
 const text = ref('你好，欢迎使用 GPT-SoVITS 在线语音合成系统。')
 const selectedVoice = ref(null)
+const loading = ref(false)
+const audioUrl = ref(null)
 
 const voices = [
   { id: 'v1', name: '官方音色 A', description: '适用于新闻播报风格' },
@@ -69,13 +64,54 @@ function selectVoice(id) {
   selectedVoice.value = id
 }
 
-function onSynthesize() {
+async function onSynthesize() {
   if (!text.value || !selectedVoice.value) {
     ElMessage.warning('请填写文本并选择一个音色')
     return
   }
-  // 模拟跳转或发起合成任务
-  console.log('提交合成任务:', text.value, selectedVoice.value)
+
+  loading.value = true
+  audioUrl.value = null
+
+  try {
+    const payload = {
+      text: text.value,
+      text_lang: 'zh',
+      ref_audio_path: `${selectedVoice.value}.wav`, // 实际需匹配后端已有音色路径
+      prompt_text: '',
+      prompt_lang: 'zh',
+      text_split_method: 'cut5',
+      batch_size: 1,
+      media_type: 'wav',
+      streaming_mode: false,
+      top_k: 5,
+      top_p: 1,
+      temperature: 1,
+      batch_threshold: 0.75,
+      split_bucket: true,
+      speed_factor: 1,
+      fragment_interval: 0.3,
+      seed: -1,
+      parallel_infer: true,
+      repetition_penalty: 1.35,
+      sample_steps: 32,
+      super_sampling: false,
+      aux_ref_audio_paths: []
+    }
+
+    const response = await synthesizeTTS(payload, { responseType: 'blob' })
+
+    const blob = new Blob([response.data], { type: 'audio/wav' })
+    audioUrl.value = URL.createObjectURL(blob)
+
+    ElMessage.success('语音合成成功，点击播放试听')
+
+  } catch (err) {
+    ElMessage.error('语音合成失败，请检查后端接口或输入内容')
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
 }
 
 function onSelect(index) {

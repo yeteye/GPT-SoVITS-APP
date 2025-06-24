@@ -1,21 +1,4 @@
 <template>
-  <div class="home-container">
-    <!-- 顶部横幅导航 + 菜单 -->
-    <header class="header">
-      <div class="header-left">
-        <img src="@/assets/logo.svg" class="logo" alt="logo" />
-        <h1 class="title">GPT-SoVITS 在线语音克隆平台</h1>
-      </div>
-      <nav class="nav-menu">
-        <el-menu mode="horizontal" :default-active="active" class="el-menu-demo" @select="onSelect">
-          <el-menu-item index="TTSPlayground">文本转语音</el-menu-item>
-          <el-menu-item index="VoiceClone">音色克隆</el-menu-item>
-          <el-menu-item index="CreatorCenter">创作者中心</el-menu-item>
-          <el-menu-item index="VoiceLibrary">音色库</el-menu-item>
-          <el-menu-item index="TaskHistory">历史记录</el-menu-item>
-        </el-menu>
-      </nav>
-    </header>
 
     <!-- 顶部轮播图 -->
     <div class="carousel-wrapper">
@@ -30,6 +13,29 @@
         </el-carousel-item>
       </el-carousel>
     </div>
+
+    <!-- 音色精选展示区 -->
+    <section class="voice-preview-section">
+      <div class="section-header">
+        <h2 class="section-title">音色库</h2>
+        <div class="more-link" @click="goToVoiceLibrary">查看更多 ></div>
+      </div>
+
+      <div class="voice-card-list">
+        <div
+          v-for="(voice, index) in topVoices"
+          :key="voice.id"
+          class="voice-card"
+          @click="goToTTS(voice)"
+        >
+          <img :src="voice.avatar" class="voice-avatar" alt="voice avatar" />
+          <div class="voice-info">
+            <span class="voice-rank" :class="'rank-' + (index + 1)">{{ index + 1 }}</span>
+            <span class="voice-name">{{ voice.name }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- 功能展示页面列表 -->
     <section v-for="(section, index) in sections" :key="index" class="feature-section">
@@ -49,7 +55,7 @@
     <footer class="footer">
       <p>© 2025 GPT-SoVITS · <a href="#">用户协议</a> · <a href="#">隐私政策</a></p>
     </footer>
-  </div>
+
 </template>
 
 <script setup>
@@ -74,6 +80,43 @@ const banners = [
     description: '上传几秒音频，即可打造你的数字分身音色'
   }
 ]
+
+const topVoices = ref([
+  {
+    id: 1,
+    name: '诗仙李白',
+    avatar: new URL('@/assets/voice.png', import.meta.url).href
+  },
+  {
+    id: 2,
+    name: '文雅',
+    avatar: new URL('@/assets/voice.png', import.meta.url).href
+  },
+  {
+    id: 3,
+    name: '贞烨',
+    avatar: new URL('@/assets/voice.png', import.meta.url).href
+  },
+  {
+    id: 4,
+    name: '恬雅',
+    avatar: new URL('@/assets/voice.png', import.meta.url).href
+  },
+  {
+    id: 5,
+    name: '海化',
+    avatar: new URL('@/assets/voice.png', import.meta.url).href
+  }
+])
+
+function goToTTS(voice) {
+  router.push({ name: 'TTSPlayground', query: { voice_id: voice.id } })
+}
+
+function goToVoiceLibrary() {
+  router.push({ name: 'VoiceLibrary' })
+}
+
 
 const sections = [
   {
@@ -169,6 +212,86 @@ const sections = [
   padding: 16px 20px;
   border-radius: 8px;
 }
+.voice-preview-section {
+  background: #fff;
+  padding: 40px 24px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+}
+
+.more-link {
+  font-size: 14px;
+  color: #409eff;
+  cursor: pointer;
+}
+
+.voice-card-list {
+  display: flex;
+  justify-content: center; /* 居中展示 */
+  flex-wrap: wrap;         /* 允许换行 */
+  gap: 80px;               /* 卡片间隔 */
+}
+
+.voice-card {
+  width: 160px;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #f9f9f9;
+  transition: transform 0.2s;
+}
+
+.voice-card:hover {
+  transform: translateY(-4px);
+}
+
+.voice-avatar {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.voice-info {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.voice-rank {
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  color: #fff;
+}
+
+.rank-1 { background: #f60; }
+.rank-2 { background: #ccc; }
+.rank-3 { background: #c39; }
+.rank-4,
+.rank-5 { background: #999; }
+
+.voice-name {
+  font-size: 14px;
+  color: #333;
+}
+
+
 .feature-section {
   padding: 60px 24px;
   background: #fff;
