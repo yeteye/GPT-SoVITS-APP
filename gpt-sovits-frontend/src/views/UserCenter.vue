@@ -5,6 +5,7 @@
       <div class="header-actions">
         <el-button type="primary" size="small" @click="openChangePwdDialog">修改密码</el-button>
         <el-button type="danger" size="small" @click="logout">退出登录</el-button>
+        <el-button type="warning" size="small" @click="openDeleteDialog">注销账号</el-button>
       </div>
     </el-header>
 
@@ -42,18 +43,30 @@
         <el-button type="primary" @click="submitChangePwd">确认修改</el-button>
       </template>
     </el-dialog>
+
+    <!-- 注销账号弹窗 -->
+    <el-dialog title="确认注销账号" v-model="deleteDialogVisible" width="400px">
+      <el-form :model="deleteForm" :rules="deleteRules" ref="deleteFormRef" label-width="100px">
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="deleteForm.password" type="password" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="deleteDialogVisible = false">取消</el-button>
+        <el-button type="danger" @click="confirmDelete">确认注销</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 
 const router = useRouter()
 
-// 获取本地存储的用户信息
 const user = ref({ email: '', username: '', role: 0 })
 const roleText = computed(() => {
   const map = { 0: '普通用户', 1: '审核员', 2: '管理员' }
@@ -61,13 +74,13 @@ const roleText = computed(() => {
 })
 
 onMounted(() => {
-  const storedUser = localStorage.getItem('user')
-  if (storedUser) {
-    user.value = JSON.parse(storedUser)
-  } else {
+  request.get('/user/profile').then(res => {
+    user.value = res.data.profile
+    localStorage.setItem('user', JSON.stringify(res.data.profile))
+  }).catch(() => {
     ElMessage.warning('请先登录')
     router.push({ name: 'Login' })
-  }
+  })
 })
 
 function logout() {
@@ -75,6 +88,30 @@ function logout() {
   localStorage.removeItem('user')
   ElMessage.success('已退出登录')
   router.push({ name: 'Login' })
+}
+
+const deleteDialogVisible = ref(false)
+const deleteForm = ref({ password: '' })
+const deleteRules = {
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+const deleteFormRef = ref(null)
+
+function openDeleteDialog() {
+  deleteDialogVisible.value = true
+  deleteForm.value.password = ''
+}
+
+function confirmDelete() {
+  deleteFormRef.value.validate(valid => {
+    if (!valid) return
+    request.delete('/user/delete-account', { data: deleteForm.value }).then(() => {
+      ElMessage.success('账号已删除')
+      logout()
+    }).catch(() => {
+      ElMessage.error('删除失败')
+    })
+  })
 }
 
 function goToTasks() {
@@ -85,7 +122,6 @@ function goToVoice() {
   router.push({ name: 'VoiceLibrary' })
 }
 
-// 修改密码逻辑
 const pwdDialogVisible = ref(false)
 const pwdForm = ref({
   current_password: '',
