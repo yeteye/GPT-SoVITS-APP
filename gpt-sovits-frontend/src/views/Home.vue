@@ -1,22 +1,4 @@
 <template>
-  <div class="home-container">
-    <!-- 顶部横幅导航 + 菜单 -->
-    <header class="header">
-      <div class="header-left">
-        <img src="@/assets/logo.svg" class="logo" alt="logo" />
-        <h1 class="title">GPT-SoVITS 在线语音克隆平台</h1>
-      </div>
-      <nav class="nav-menu">
-        <el-menu mode="horizontal" :default-active="active" class="el-menu-demo" @select="onSelect">
-          <el-menu-item index="TTSPlayground">文本转语音</el-menu-item>
-          <el-menu-item index="VoiceClone">音色克隆</el-menu-item>
-          <el-menu-item index="CreatorCenter">创作者中心</el-menu-item>
-          <el-menu-item index="VoiceLibrary">音色库</el-menu-item>
-          <el-menu-item index="TaskHistory">历史记录</el-menu-item>
-          <el-menu-item index="UserCenter">用户中心</el-menu-item>
-        </el-menu>
-      </nav>
-    </header>
 
     <!-- 顶部轮播图 -->
     <div class="carousel-wrapper">
@@ -73,7 +55,7 @@
     <footer class="footer">
       <p>© 2025 GPT-SoVITS · <a href="#">用户协议</a> · <a href="#">隐私政策</a></p>
     </footer>
-  </div>
+
 </template>
 
 <script setup>
