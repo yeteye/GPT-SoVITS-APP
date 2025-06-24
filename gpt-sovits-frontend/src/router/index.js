@@ -123,12 +123,14 @@ const routes = [
     {
         path: '/login',
         name: 'Login',
-        component: Login
+        component: Login,
+        meta: { hideHeader: true }
     },
     {
         path: '/register',
         name: 'Register',
-        component: Register
+        component: Register,
+        meta: { hideHeader: true }
     }
 ]
 

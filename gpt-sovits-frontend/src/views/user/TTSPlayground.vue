@@ -1,20 +1,5 @@
 <template>
   <div class="tts-playground">
-    <!-- 顶部菜单栏 -->
-    <header class="header">
-      <div class="header-left">
-        <img src="@/assets/logo.svg" class="logo" alt="logo" />
-        <h1 class="title">GPT-SoVITS 文本转语音</h1>
-      </div>
-      <nav class="nav-menu">
-        <el-menu mode="horizontal" :default-active="active" class="el-menu-demo" @select="onSelect">
-          <el-menu-item index="Home">首页</el-menu-item>
-          <el-menu-item index="VoiceClone">音色克隆</el-menu-item>
-          <el-menu-item index="VoiceLibrary">音色库</el-menu-item>
-          <el-menu-item index="TaskHistory">历史记录</el-menu-item>
-        </el-menu>
-      </nav>
-    </header>
 
     <!-- 主体内容区域 -->
     <el-container class="main-content">
