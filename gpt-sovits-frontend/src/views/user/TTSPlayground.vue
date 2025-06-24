@@ -54,7 +54,7 @@ const selectedVoice = ref(null)
 const loading = ref(false)
 const audioUrl = ref(null)
 
-const voices = [u
+const voices = [
   { id: 'v1', name: '官方音色 A', description: '适用于新闻播报风格' },
   { id: 'v2', name: '创作者音色 B', description: '更具感情的自然语调' },
   { id: 'v3', name: '官方音色 C', description: '适合客服语音应用' }
