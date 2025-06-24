@@ -45,7 +45,7 @@ const text = ref('你好，欢迎使用 GPT-SoVITS 在线语音合成系统。')
 const selectedVoice = ref(null)
 
 const voices = [
-  { id: 'v1', name: '官方音色 A', description: '适用于新闻播报风格' },
+  { id: 'D:\\Code\\From_Pycharm\\practice3\\GPT-SoVITS-APP\\GPT-SoVITS-main\\お前のことだから、少しかっこいいなーとか思って言ったのだろう。んで、引くに引けない状態になったんだろ', name: '官方音色 A', description: '适用于新闻播报风格' },
   { id: 'v2', name: '创作者音色 B', description: '更具感情的自然语调' },
   { id: 'v3', name: '官方音色 C', description: '适合客服语音应用' }
 ]
