@@ -123,13 +123,19 @@ def owner_or_admin_required(resource_getter):
     return decorator
 
 
-def rate_limit(requests_per_minute=60):
-    """简单的速率限制装饰器"""
+def rate_limit(requests_per_minute=None):
+    """简单的速率限制装饰器 - 使用配置的默认值"""
 
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             from app.extensions import redis_client
+
+            # 使用配置的默认速率限制
+            if requests_per_minute is None:
+                limit = current_app.config.get("DEFAULT_RATE_LIMIT", 60)
+            else:
+                limit = requests_per_minute
 
             # 获取客户端标识符
             if hasattr(request, "current_user"):
@@ -141,25 +147,26 @@ def rate_limit(requests_per_minute=60):
             key = f"rate_limit:{identifier}:{request.endpoint}"
 
             try:
-                # 获取当前请求数
-                current_requests = redis_client.get(key)
-                if current_requests is None:
-                    # 首次请求
-                    redis_client.setex(key, 60, 1)
-                else:
-                    current_requests = int(current_requests)
-                    if current_requests >= requests_per_minute:
-                        from app.utils.exceptions import RateLimitError
+                if redis_client:
+                    # 获取当前请求数
+                    current_requests = redis_client.get(key)
+                    if current_requests is None:
+                        # 首次请求
+                        redis_client.setex(key, 60, 1)
+                    else:
+                        current_requests = int(current_requests)
+                        if current_requests >= limit:
+                            from app.utils.exceptions import RateLimitError
 
-                        raise RateLimitError(
-                            f"Rate limit exceeded: {requests_per_minute} requests per minute"
-                        )
+                            raise RateLimitError(
+                                f"Rate limit exceeded: {limit} requests per minute"
+                            )
 
-                    # 增加请求计数
-                    redis_client.incr(key)
+                        # 增加请求计数
+                        redis_client.incr(key)
 
             except Exception as e:
-                # Redis错误时允许请求通过
+                # Redis错误时允许请求通过，但记录警告
                 current_app.logger.warning(f"Rate limiting failed: {e}")
 
             return f(*args, **kwargs)
@@ -170,7 +177,7 @@ def rate_limit(requests_per_minute=60):
 
 
 def api_key_required(f):
-    """API密钥认证装饰器"""
+    """API密钥认证装饰器 - 使用配置的主密钥"""
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -179,9 +186,20 @@ def api_key_required(f):
         if not api_key:
             raise AuthenticationError("API key required")
 
-        # 验证API密钥（这里简化处理，实际应该查询数据库）
-        # 可以扩展为支持用户API密钥
-        if api_key != current_app.config.get("MASTER_API_KEY"):
+        # 验证API密钥 - 使用配置的主密钥
+        master_key = current_app.config.get("MASTER_API_KEY")
+        if not master_key:
+            current_app.logger.warning("MASTER_API_KEY not configured")
+            raise AuthenticationError("API authentication not available")
+
+        if api_key != master_key:
+            # 记录失败的API访问尝试
+            log_user_action(
+                user_id=None,
+                action="invalid_api_key_attempt",
+                resource_type="api_access",
+                details=f"Invalid API key attempt from {get_client_ip()}",
+            )
             raise AuthenticationError("Invalid API key")
 
         return f(*args, **kwargs)
@@ -252,7 +270,7 @@ def verify_ownership(resource_class, id_param="id"):
             if not resource_id:
                 raise AuthorizationError("Resource ID required")
 
-            # 修复：使用现代SQLAlchemy语法
+            # 使用现代SQLAlchemy语法
             resource = db.session.get(resource_class, resource_id)
             if not resource:
                 raise AuthorizationError("Resource not found")
@@ -267,6 +285,80 @@ def verify_ownership(resource_class, id_param="id"):
                     raise AuthorizationError("You do not own this resource")
 
             request.current_resource = resource
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
+
+
+def check_task_limits(task_type):
+    """检查任务限制的装饰器"""
+
+    def decorator(f):
+        @wraps(f)
+        @auth_required
+        def decorated_function(*args, **kwargs):
+            current_user = request.current_user
+
+            # 获取用户任务限制
+            from app.services.task_service import TaskService
+
+            try:
+                limits_info = TaskService.get_user_task_limits(current_user.id)
+
+                if task_type == "voice_clone":
+                    can_create = limits_info["can_create_vc"]
+                    current_usage = limits_info["current_usage"]["concurrent_vc"]
+                    daily_usage = limits_info["current_usage"]["daily_vc"]
+                    max_concurrent = limits_info["limits"]["max_concurrent_vc"]
+                    max_daily = limits_info["limits"]["max_daily_vc"]
+                elif task_type == "tts":
+                    can_create = limits_info["can_create_tts"]
+                    current_usage = limits_info["current_usage"]["concurrent_tts"]
+                    daily_usage = limits_info["current_usage"]["daily_tts"]
+                    max_concurrent = limits_info["limits"]["max_concurrent_tts"]
+                    max_daily = limits_info["limits"]["max_daily_tts"]
+                else:
+                    raise AuthorizationError("Invalid task type")
+
+                if not can_create:
+                    if current_usage >= max_concurrent:
+                        raise AuthorizationError(
+                            f"Maximum concurrent {task_type} tasks exceeded ({current_usage}/{max_concurrent})"
+                        )
+                    if daily_usage >= max_daily:
+                        raise AuthorizationError(
+                            f"Daily {task_type} task limit exceeded ({daily_usage}/{max_daily})"
+                        )
+
+                return f(*args, **kwargs)
+
+            except Exception as e:
+                if isinstance(e, AuthorizationError):
+                    raise e
+                current_app.logger.error(f"Task limit check failed: {e}")
+                raise AuthorizationError("Task limit check failed")
+
+        return decorated_function
+
+    return decorator
+
+
+def require_feature_enabled(feature_name):
+    """要求功能启用的装饰器"""
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # 检查功能是否启用
+            feature_enabled = current_app.config.get(
+                f"{feature_name.upper()}_ENABLED", True
+            )
+
+            if not feature_enabled:
+                raise AuthorizationError(f"{feature_name} feature is disabled")
+
             return f(*args, **kwargs)
 
         return decorated_function

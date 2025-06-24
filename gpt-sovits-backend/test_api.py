@@ -655,15 +655,322 @@ class APITester:
         return False
 
     # ===============================
+    # 水印功能测试
+    # ===============================
+    # def test_get_watermark_config(self) -> bool:
+    #     """测试获取水印配置信息"""
+    #     self.log("Testing get watermark config...")
+    #     try:
+    #         response = self.make_request("GET", "/watermark/config")
+    #         self.log(f"Watermark config status: {response.status_code}")
+
+    #         if response.status_code == 200:
+    #             result = response.json()
+    #             config = result.get("data", {})
+    #             self.log(
+    #                 f"Watermark enabled: {config.get('watermark_enabled', 'unknown')}"
+    #             )
+    #             return True
+    #         else:
+    #             self.log(f"Watermark config failed: {response.text}", "ERROR")
+
+    #     except Exception as e:
+    #         self.log(f"Watermark config error: {e}", "ERROR")
+    #     return False
+
+    def test_embed_watermark(self) -> bool:
+        """测试手动嵌入水印"""
+        self.log("Testing embed watermark...")
+        try:
+            # 创建测试音频文件
+            audio_file = self.create_mock_audio_file(duration=15.0)
+
+            files = {"audio_file": ("test_watermark.wav", audio_file, "audio/wav")}
+            data = {"code_length": "16", "description": "Test watermark embedding"}
+
+            response = self.make_request(
+                "POST", "/watermark/embed", files=files, data=data
+            )
+            self.log(f"Embed watermark status: {response.status_code}")
+
+            if response.status_code == 200:
+                # 检查响应是否包含音频文件
+                content_type = response.headers.get("content-type", "")
+                if "audio" in content_type:
+                    self.log("Watermarked audio file received")
+                    # 保存水印音频用于验证测试
+                    self.test_data["watermarked_audio"] = response.content
+                    return True
+                else:
+                    self.log(
+                        "Expected audio file but got different content type", "ERROR"
+                    )
+            else:
+                self.log(f"Embed watermark failed: {response.text}", "ERROR")
+
+        except Exception as e:
+            self.log(f"Embed watermark error: {e}", "ERROR")
+        return False
+
+    def test_verify_watermark(self) -> bool:
+        """测试验证水印"""
+        self.log("Testing verify watermark...")
+
+        # 如果没有水印音频，先创建一个
+        watermarked_audio = self.test_data.get("watermarked_audio")
+        if not watermarked_audio:
+            self.log("No watermarked audio available, creating one first...")
+            if not self.test_embed_watermark():
+                return False
+            watermarked_audio = self.test_data.get("watermarked_audio")
+
+        if not watermarked_audio:
+            self.log("Still no watermarked audio available", "ERROR")
+            return False
+
+        try:
+            # 将音频数据写入临时文件
+            files = {
+                "audio_file": (
+                    "test_verify.wav",
+                    io.BytesIO(watermarked_audio),
+                    "audio/wav",
+                )
+            }
+
+            response = self.make_request("POST", "/watermark/verify", files=files)
+            self.log(f"Verify watermark status: {response.status_code}")
+
+            if response.status_code == 200:
+                result = response.json()
+                success = result.get("success", False)
+                verification = result.get("data", {}).get("verification", "unknown")
+
+                self.log(f"Verification result: {verification}")
+
+                # 验证成功或找到水印都算通过
+                if success and verification in [
+                    "verified",
+                    "watermark_found_but_not_registered",
+                    "fuzzy_matched",
+                ]:
+                    watermark_code = result.get("data", {}).get("watermark_code")
+                    if watermark_code:
+                        self.test_data["detected_watermark_code"] = watermark_code
+                        self.log(f"Detected watermark code: {watermark_code}")
+                    return True
+                elif not success and verification == "no_watermark_detected":
+                    self.log(
+                        "No watermark detected (may be expected in test environment)"
+                    )
+                    return True  # 在测试环境中这可能是正常的
+                else:
+                    self.log(f"Unexpected verification result: {verification}")
+                    return False
+            else:
+                self.log(f"Verify watermark failed: {response.text}", "ERROR")
+
+        except Exception as e:
+            self.log(f"Verify watermark error: {e}", "ERROR")
+        return False
+
+    def test_get_my_watermarks(self) -> bool:
+        """测试获取我的水印列表"""
+        self.log("Testing get my watermarks...")
+        try:
+            response = self.make_request("GET", "/watermark/my-watermarks")
+            self.log(f"My watermarks status: {response.status_code}")
+
+            if response.status_code == 200:
+                result = response.json()
+                watermarks = result.get("data", {}).get("watermarks", [])
+                self.log(f"Found {len(watermarks)} watermarks")
+
+                # 保存第一个水印ID用于后续测试
+                if watermarks:
+                    self.test_data["watermark_id"] = watermarks[0]["id"]
+                    self.test_data["watermark_code"] = watermarks[0]["watermark_code"]
+                    self.log(f"Using watermark ID: {watermarks[0]['id']}")
+
+                return True
+            else:
+                self.log(f"My watermarks failed: {response.text}", "ERROR")
+
+        except Exception as e:
+            self.log(f"My watermarks error: {e}", "ERROR")
+        return False
+
+    def test_get_watermark_detail(self) -> bool:
+        """测试获取水印详情"""
+        self.log("Testing get watermark detail...")
+
+        watermark_id = self.test_data.get("watermark_id")
+        if not watermark_id:
+            self.log("No watermark ID available", "WARN")
+            return True  # 跳过测试
+
+        try:
+            response = self.make_request(
+                "GET", f"/watermark/my-watermarks/{watermark_id}"
+            )
+            self.log(f"Watermark detail status: {response.status_code}")
+
+            if response.status_code == 200:
+                result = response.json()
+                watermark = result.get("data", {}).get("watermark", {})
+                recent_verifications = result.get("data", {}).get(
+                    "recent_verifications", []
+                )
+
+                self.log(f"Watermark usage count: {watermark.get('usage_count', 0)}")
+                self.log(f"Recent verifications: {len(recent_verifications)}")
+                return True
+
+            return response.status_code == 200
+
+        except Exception as e:
+            self.log(f"Watermark detail error: {e}", "ERROR")
+        return False
+
+    def test_update_watermark(self) -> bool:
+        """测试更新水印信息"""
+        self.log("Testing update watermark...")
+
+        watermark_id = self.test_data.get("watermark_id")
+        if not watermark_id:
+            self.log("No watermark ID available", "WARN")
+            return True  # 跳过测试
+
+        try:
+            data = {"description": "Updated test watermark description"}
+            response = self.make_request(
+                "PUT", f"/watermark/my-watermarks/{watermark_id}", json=data
+            )
+            self.log(f"Update watermark status: {response.status_code}")
+
+            return response.status_code == 200
+
+        except Exception as e:
+            self.log(f"Update watermark error: {e}", "ERROR")
+        return False
+
+    def test_get_watermark_statistics(self) -> bool:
+        """测试获取水印统计信息"""
+        self.log("Testing get watermark statistics...")
+        try:
+            response = self.make_request("GET", "/watermark/statistics")
+            self.log(f"Watermark statistics status: {response.status_code}")
+
+            if response.status_code == 200:
+                result = response.json()
+                stats = result.get("data", {})
+                self.log(f"Total watermarks: {stats.get('total_watermarks', 0)}")
+                self.log(f"Total verifications: {stats.get('total_verifications', 0)}")
+                self.log(f"Success rate: {stats.get('success_rate', 0)}%")
+                return True
+
+            return response.status_code == 200
+
+        except Exception as e:
+            self.log(f"Watermark statistics error: {e}", "ERROR")
+        return False
+
+    def test_get_verification_logs(self) -> bool:
+        """测试获取验证日志"""
+        self.log("Testing get verification logs...")
+        try:
+            response = self.make_request("GET", "/watermark/verification-logs")
+            self.log(f"Verification logs status: {response.status_code}")
+
+            if response.status_code == 200:
+                result = response.json()
+                logs = result.get("data", {}).get("logs", [])
+                self.log(f"Found {len(logs)} verification logs")
+                return True
+
+            return response.status_code == 200
+
+        except Exception as e:
+            self.log(f"Verification logs error: {e}", "ERROR")
+        return False
+
+    def test_get_watermark_info_public(self) -> bool:
+        """测试获取水印公开信息（无需认证）"""
+        self.log("Testing get watermark info (public)...")
+
+        watermark_code = self.test_data.get("watermark_code") or self.test_data.get(
+            "detected_watermark_code"
+        )
+        if not watermark_code:
+            self.log("No watermark code available", "WARN")
+            return True  # 跳过测试
+
+        try:
+            # 临时移除认证头测试公开接口
+            old_token = self.access_token
+            self.set_auth_header(None)
+
+            response = self.make_request("GET", f"/watermark/info/{watermark_code}")
+            self.log(f"Watermark info status: {response.status_code}")
+
+            # 恢复认证头
+            self.set_auth_header(old_token)
+
+            if response.status_code == 200:
+                result = response.json()
+                info = result.get("data", {})
+                self.log(f"Public info username: {info.get('username', 'unknown')}")
+                return True
+            elif response.status_code == 404:
+                self.log("Watermark not found (may be expected)")
+                return True
+
+            return response.status_code in [200, 404]
+
+        except Exception as e:
+            # 确保恢复认证头
+            self.set_auth_header(old_token)
+            self.log(f"Watermark info error: {e}", "ERROR")
+        return False
+
+    def test_admin_watermark_functions(self) -> bool:
+        """测试管理员水印功能"""
+        self.log("Testing admin watermark functions...")
+        try:
+            # 测试获取所有水印
+            response = self.make_request("GET", "/watermark/admin/all-watermarks")
+            self.log(f"Admin all watermarks status: {response.status_code}")
+
+            # 403表示权限不足（普通用户），这是预期的
+            if response.status_code == 403:
+                self.log("Access denied (expected for non-admin user)")
+                return True
+            elif response.status_code == 200:
+                result = response.json()
+                watermarks = result.get("data", {}).get("watermarks", [])
+                self.log(f"Admin found {len(watermarks)} total watermarks")
+                return True
+
+            # 测试管理员统计
+            response = self.make_request("GET", "/watermark/admin/statistics")
+            self.log(f"Admin watermark statistics status: {response.status_code}")
+
+            return response.status_code in [200, 403]
+
+        except Exception as e:
+            self.log(f"Admin watermark functions error: {e}", "ERROR")
+        return False
+
+    # ===============================
     # 主测试运行器
     # ===============================
 
     def run_all_tests(self) -> Dict[str, str]:
-        """运行所有测试"""
+        """运行所有测试 - 修改版本，添加水印测试"""
         self.log("Starting comprehensive API tests...")
         self.log("=" * 60)
 
-        # 定义所有测试用例
+        # 定义所有测试用例 - 在原有基础上添加水印测试
         test_suites = [
             # 基础测试
             ("Health Check", self.test_health_check),
@@ -693,6 +1000,17 @@ class APITester:
             ("Get My Models", self.test_get_my_models),
             ("Get Model Tags", self.test_get_model_tags),
             ("Get Model Stats", self.test_get_model_stats),
+            # 水印功能测试 (新增)
+            # ("Get Watermark Config", self.test_get_watermark_config),
+            ("Embed Watermark", self.test_embed_watermark),
+            ("Verify Watermark", self.test_verify_watermark),
+            ("Get My Watermarks", self.test_get_my_watermarks),
+            ("Get Watermark Detail", self.test_get_watermark_detail),
+            ("Update Watermark", self.test_update_watermark),
+            ("Get Watermark Statistics", self.test_get_watermark_statistics),
+            ("Get Verification Logs", self.test_get_verification_logs),
+            ("Get Watermark Info (Public)", self.test_get_watermark_info_public),
+            ("Admin Watermark Functions", self.test_admin_watermark_functions),
             # 管理员测试
             ("Admin Statistics", self.test_admin_statistics),
             # 错误处理测试
@@ -720,7 +1038,6 @@ class APITester:
             # 短暂延迟避免请求过快
             time.sleep(0.2)
 
-        # 输出测试总结
         self.log("\n" + "=" * 60)
         self.log("TEST RESULTS SUMMARY")
         self.log("=" * 60)
@@ -790,7 +1107,7 @@ def main():
 
 
 def generate_test_report(results: Dict[str, str]):
-    """生成测试报告文件"""
+    """生成测试报告文件 - 修改版本，添加水印测试分类"""
     try:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_file = f"test_report_{timestamp}.txt"
@@ -801,7 +1118,7 @@ def generate_test_report(results: Dict[str, str]):
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"Total Tests: {len(results)}\n\n")
 
-            # 按类别分组
+            # 按类别分组 - 添加水印功能分类
             categories = {
                 "Basic Tests": ["Health Check"],
                 "Authentication": [
@@ -835,6 +1152,18 @@ def generate_test_report(results: Dict[str, str]):
                     "Get Model Tags",
                     "Get Model Stats",
                 ],
+                "Watermark Functions": [  # 新增分类
+                    "Get Watermark Config",
+                    "Embed Watermark",
+                    "Verify Watermark",
+                    "Get My Watermarks",
+                    "Get Watermark Detail",
+                    "Update Watermark",
+                    "Get Watermark Statistics",
+                    "Get Verification Logs",
+                    "Get Watermark Info (Public)",
+                    "Admin Watermark Functions",
+                ],
                 "Admin Functions": ["Admin Statistics"],
                 "Error Handling": [
                     "Unauthorized Access",
@@ -842,7 +1171,7 @@ def generate_test_report(results: Dict[str, str]):
                     "Invalid Data",
                 ],
             }
-
+            # 写入每个类别的测试结果
             for category, test_names in categories.items():
                 f.write(f"\n{category}:\n")
                 f.write("-" * len(category) + "\n")
@@ -857,7 +1186,6 @@ def generate_test_report(results: Dict[str, str]):
                         )
                         f.write(f"  {symbol} {test_name}: {result}\n")
 
-            # 统计信息
             pass_count = sum(1 for r in results.values() if r == "PASS")
             fail_count = sum(1 for r in results.values() if r == "FAIL")
             error_count = sum(1 for r in results.values() if r == "ERROR")

@@ -11,13 +11,199 @@ from app.utils.helpers import log_user_action
 
 
 class TaskService:
-    """任务管理服务"""
+    """任务管理服务 - 优化配置使用版本"""
 
     @staticmethod
-    def get_task_statistics(user_id=None, time_period_days=30):
-        """获取任务统计信息"""
+    def get_user_task_limits(user_id):
+        """获取用户任务限制 - 使用环境变量配置"""
         try:
-            from datetime import datetime, timedelta
+            user = User.query.get(user_id)
+            if not user:
+                raise ResourceNotFoundError("User not found")
+
+            # 根据用户角色设置不同的限制 - 从配置中获取
+            if user.role >= 2:  # 管理员
+                limits = {
+                    "max_concurrent_vc": current_app.config.get(
+                        "MAX_CONCURRENT_VC_TASKS", 5
+                    )
+                    * 2,
+                    "max_concurrent_tts": current_app.config.get(
+                        "MAX_CONCURRENT_TTS_TASKS", 10
+                    )
+                    * 2,
+                    "max_daily_vc": current_app.config.get("MAX_DAILY_VC_TASKS", 20)
+                    * 2,
+                    "max_daily_tts": current_app.config.get("MAX_DAILY_TTS_TASKS", 100)
+                    * 2,
+                }
+            elif user.role >= 1:  # 审核员
+                limits = {
+                    "max_concurrent_vc": current_app.config.get(
+                        "MAX_CONCURRENT_VC_TASKS", 3
+                    ),
+                    "max_concurrent_tts": current_app.config.get(
+                        "MAX_CONCURRENT_TTS_TASKS", 8
+                    ),
+                    "max_daily_vc": current_app.config.get("MAX_DAILY_VC_TASKS", 15),
+                    "max_daily_tts": current_app.config.get("MAX_DAILY_TTS_TASKS", 80),
+                }
+            else:  # 普通用户
+                limits = {
+                    "max_concurrent_vc": current_app.config.get(
+                        "MAX_CONCURRENT_VC_TASKS", 2
+                    ),
+                    "max_concurrent_tts": current_app.config.get(
+                        "MAX_CONCURRENT_TTS_TASKS", 5
+                    ),
+                    "max_daily_vc": current_app.config.get("MAX_DAILY_VC_TASKS", 10),
+                    "max_daily_tts": current_app.config.get("MAX_DAILY_TTS_TASKS", 50),
+                }
+
+            # 获取当前使用情况
+            current_vc = VoiceCloneTask.query.filter(
+                VoiceCloneTask.user_id == user_id,
+                VoiceCloneTask.status.in_(["pending", "processing"]),
+            ).count()
+
+            current_tts = TTSTask.query.filter(
+                TTSTask.user_id == user_id,
+                TTSTask.status.in_(["pending", "processing"]),
+            ).count()
+
+            # 今日任务数
+            today = datetime.utcnow().date()
+            today_vc = VoiceCloneTask.query.filter(
+                VoiceCloneTask.user_id == user_id, VoiceCloneTask.created_at >= today
+            ).count()
+
+            today_tts = TTSTask.query.filter(
+                TTSTask.user_id == user_id, TTSTask.created_at >= today
+            ).count()
+
+            return {
+                "limits": limits,
+                "current_usage": {
+                    "concurrent_vc": current_vc,
+                    "concurrent_tts": current_tts,
+                    "daily_vc": today_vc,
+                    "daily_tts": today_tts,
+                },
+                "can_create_vc": (
+                    current_vc < limits["max_concurrent_vc"]
+                    and today_vc < limits["max_daily_vc"]
+                ),
+                "can_create_tts": (
+                    current_tts < limits["max_concurrent_tts"]
+                    and today_tts < limits["max_daily_tts"]
+                ),
+            }
+
+        except Exception as e:
+            current_app.logger.error(f"Get user task limits error: {e}")
+            raise TaskProcessingError(f"Failed to get user task limits: {str(e)}")
+
+    @staticmethod
+    def cleanup_old_tasks(days_threshold=None, keep_completed=True):
+        """清理旧任务 - 使用配置中的阈值"""
+        try:
+            # 使用配置的清理阈值
+            if days_threshold is None:
+                days_threshold = current_app.config.get("TASK_CLEANUP_DAYS", 30)
+
+            cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+
+            # 清理语音克隆任务
+            vc_query = VoiceCloneTask.query.filter(
+                VoiceCloneTask.created_at < cutoff_date
+            )
+
+            if keep_completed:
+                vc_query = vc_query.filter(
+                    VoiceCloneTask.status.in_(["failed", "cancelled"])
+                )
+
+            vc_tasks_to_delete = vc_query.all()
+            vc_deleted_count = 0
+
+            for task in vc_tasks_to_delete:
+                try:
+                    # 清理相关文件
+                    TaskService._cleanup_task_files(task)
+                    db.session.delete(task)
+                    vc_deleted_count += 1
+                except Exception as e:
+                    current_app.logger.warning(
+                        f"Failed to delete VC task {task.id}: {e}"
+                    )
+
+            # 清理TTS任务
+            tts_query = TTSTask.query.filter(TTSTask.created_at < cutoff_date)
+
+            if keep_completed:
+                tts_query = tts_query.filter(
+                    TTSTask.status.in_(["failed", "cancelled"])
+                )
+
+            tts_tasks_to_delete = tts_query.all()
+            tts_deleted_count = 0
+
+            for task in tts_tasks_to_delete:
+                try:
+                    # 清理音频文件
+                    if task.audio_path and os.path.exists(task.audio_path):
+                        os.remove(task.audio_path)
+                    db.session.delete(task)
+                    tts_deleted_count += 1
+                except Exception as e:
+                    current_app.logger.warning(
+                        f"Failed to delete TTS task {task.id}: {e}"
+                    )
+
+            db.session.commit()
+
+            return {
+                "voice_clone_deleted": vc_deleted_count,
+                "tts_deleted": tts_deleted_count,
+                "total_deleted": vc_deleted_count + tts_deleted_count,
+                "days_threshold": days_threshold,
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Cleanup old tasks error: {e}")
+            raise TaskProcessingError(f"Failed to cleanup old tasks: {str(e)}")
+
+    @staticmethod
+    def _cleanup_task_files(task):
+        """清理任务相关文件 - 使用配置的路径"""
+        try:
+            if hasattr(task, "get_audio_samples"):
+                # 语音克隆任务的样本文件通常不删除，因为可能被其他任务使用
+                pass
+
+            # 清理工作目录 - 使用配置的上传路径
+            work_dir = os.path.join(
+                current_app.config["UPLOAD_FOLDER"], "temp", f"voice_clone_{task.id}"
+            )
+
+            if os.path.exists(work_dir):
+                import shutil
+
+                shutil.rmtree(work_dir, ignore_errors=True)
+
+        except Exception as e:
+            current_app.logger.warning(
+                f"Failed to cleanup files for task {task.id}: {e}"
+            )
+
+    @staticmethod
+    def get_task_statistics(user_id=None, time_period_days=None):
+        """获取任务统计信息 - 使用配置的默认时间段"""
+        try:
+            # 使用配置的默认统计时间段
+            if time_period_days is None:
+                time_period_days = current_app.config.get("TASK_STATS_PERIOD_DAYS", 30)
 
             # 设置时间范围
             if time_period_days:
@@ -136,100 +322,19 @@ class TaskService:
                 "voice_clone_active": vc_count,
                 "tts_active": tts_count,
                 "total_active": vc_count + tts_count,
+                "max_concurrent_allowed": current_app.config.get(
+                    "MAX_CONCURRENT_TASKS", 5
+                ),
             }
 
         except Exception as e:
             current_app.logger.error(f"Get active tasks count error: {e}")
-            return {"voice_clone_active": 0, "tts_active": 0, "total_active": 0}
-
-    @staticmethod
-    def cleanup_old_tasks(days_threshold=30, keep_completed=True):
-        """清理旧任务"""
-        try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
-
-            # 清理语音克隆任务
-            vc_query = VoiceCloneTask.query.filter(
-                VoiceCloneTask.created_at < cutoff_date
-            )
-
-            if keep_completed:
-                vc_query = vc_query.filter(
-                    VoiceCloneTask.status.in_(["failed", "cancelled"])
-                )
-
-            vc_tasks_to_delete = vc_query.all()
-            vc_deleted_count = 0
-
-            for task in vc_tasks_to_delete:
-                try:
-                    # 清理相关文件
-                    TaskService._cleanup_task_files(task)
-                    db.session.delete(task)
-                    vc_deleted_count += 1
-                except Exception as e:
-                    current_app.logger.warning(
-                        f"Failed to delete VC task {task.id}: {e}"
-                    )
-
-            # 清理TTS任务
-            tts_query = TTSTask.query.filter(TTSTask.created_at < cutoff_date)
-
-            if keep_completed:
-                tts_query = tts_query.filter(
-                    TTSTask.status.in_(["failed", "cancelled"])
-                )
-
-            tts_tasks_to_delete = tts_query.all()
-            tts_deleted_count = 0
-
-            for task in tts_tasks_to_delete:
-                try:
-                    # 清理音频文件
-                    if task.audio_path and os.path.exists(task.audio_path):
-                        os.remove(task.audio_path)
-                    db.session.delete(task)
-                    tts_deleted_count += 1
-                except Exception as e:
-                    current_app.logger.warning(
-                        f"Failed to delete TTS task {task.id}: {e}"
-                    )
-
-            db.session.commit()
-
             return {
-                "voice_clone_deleted": vc_deleted_count,
-                "tts_deleted": tts_deleted_count,
-                "total_deleted": vc_deleted_count + tts_deleted_count,
+                "voice_clone_active": 0,
+                "tts_active": 0,
+                "total_active": 0,
+                "max_concurrent_allowed": 0,
             }
-
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Cleanup old tasks error: {e}")
-            raise TaskProcessingError(f"Failed to cleanup old tasks: {str(e)}")
-
-    @staticmethod
-    def _cleanup_task_files(task):
-        """清理任务相关文件"""
-        try:
-            if hasattr(task, "get_audio_samples"):
-                # 语音克隆任务的样本文件通常不删除，因为可能被其他任务使用
-                pass
-
-            # 清理工作目录
-            work_dir = os.path.join(
-                current_app.config["UPLOAD_FOLDER"], "temp", f"voice_clone_{task.id}"
-            )
-
-            if os.path.exists(work_dir):
-                import shutil
-
-                shutil.rmtree(work_dir, ignore_errors=True)
-
-        except Exception as e:
-            current_app.logger.warning(
-                f"Failed to cleanup files for task {task.id}: {e}"
-            )
 
     @staticmethod
     def cancel_user_tasks(user_id, task_type=None):
@@ -316,6 +421,12 @@ class TaskService:
                     "scheduled_tasks": scheduled_tasks,
                     "reserved_tasks": reserved_tasks,
                 },
+                "config": {
+                    "max_concurrent_tasks": current_app.config.get(
+                        "MAX_CONCURRENT_TASKS", 5
+                    ),
+                    "task_timeout": current_app.config.get("TASK_TIMEOUT", 600),
+                },
             }
 
         except Exception as e:
@@ -324,6 +435,12 @@ class TaskService:
                 "database_status": TaskService._get_db_task_status(),
                 "celery_status": {
                     "error": str(e),
+                },
+                "config": {
+                    "max_concurrent_tasks": current_app.config.get(
+                        "MAX_CONCURRENT_TASKS", 5
+                    ),
+                    "task_timeout": current_app.config.get("TASK_TIMEOUT", 600),
                 },
             }
 
@@ -349,179 +466,3 @@ class TaskService:
                 "tts_pending": 0,
                 "tts_processing": 0,
             }
-
-    @staticmethod
-    def retry_failed_task(task_id, task_type, user_id):
-        """重试失败的任务"""
-        try:
-            if task_type == "voice_clone":
-                task = VoiceCloneTask.query.filter_by(
-                    id=task_id, user_id=user_id, status="failed"
-                ).first()
-
-                if not task:
-                    raise ResourceNotFoundError(
-                        "Voice clone task not found or not failed"
-                    )
-
-                # 重置任务状态
-                task.status = "pending"
-                task.progress = 0
-                task.error_message = None
-                task.started_at = None
-                task.completed_at = None
-
-                db.session.commit()
-
-                # 重新启动任务
-                if celery:
-                    from app.services.voice_clone_service import start_voice_clone_task
-
-                    celery_task = start_voice_clone_task.delay(task.id)
-                    task.celery_task_id = celery_task.id
-                    db.session.commit()
-
-                return task.to_dict()
-
-            elif task_type == "tts":
-                task = TTSTask.query.filter_by(
-                    id=task_id, user_id=user_id, status="failed"
-                ).first()
-
-                if not task:
-                    raise ResourceNotFoundError("TTS task not found or not failed")
-
-                # 重置任务状态
-                task.status = "pending"
-                task.error_message = None
-                task.started_at = None
-                task.completed_at = None
-                task.audio_path = None
-                task.audio_url = None
-
-                db.session.commit()
-
-                # 重新启动任务
-                if celery:
-                    from app.services.tts_service import generate_speech_task
-
-                    celery_task = generate_speech_task.delay(task.id)
-                    task.celery_task_id = celery_task.id
-                    db.session.commit()
-
-                return task.to_dict()
-
-            else:
-                raise TaskProcessingError("Invalid task type")
-
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Retry failed task error: {e}")
-            raise e
-
-    @staticmethod
-    def get_user_task_limits(user_id):
-        """获取用户任务限制"""
-        try:
-            user = User.query.get(user_id)
-            if not user:
-                raise ResourceNotFoundError("User not found")
-
-            # 根据用户角色设置不同的限制
-            if user.role >= 2:  # 管理员
-                limits = {
-                    "max_concurrent_vc": 10,
-                    "max_concurrent_tts": 20,
-                    "max_daily_vc": 50,
-                    "max_daily_tts": 200,
-                }
-            elif user.role >= 1:  # 审核员
-                limits = {
-                    "max_concurrent_vc": 5,
-                    "max_concurrent_tts": 15,
-                    "max_daily_vc": 30,
-                    "max_daily_tts": 150,
-                }
-            else:  # 普通用户
-                limits = {
-                    "max_concurrent_vc": 2,
-                    "max_concurrent_tts": 5,
-                    "max_daily_vc": 10,
-                    "max_daily_tts": 50,
-                }
-
-            # 获取当前使用情况
-            current_vc = VoiceCloneTask.query.filter(
-                VoiceCloneTask.user_id == user_id,
-                VoiceCloneTask.status.in_(["pending", "processing"]),
-            ).count()
-
-            current_tts = TTSTask.query.filter(
-                TTSTask.user_id == user_id,
-                TTSTask.status.in_(["pending", "processing"]),
-            ).count()
-
-            # 今日任务数
-            today = datetime.utcnow().date()
-            today_vc = VoiceCloneTask.query.filter(
-                VoiceCloneTask.user_id == user_id, VoiceCloneTask.created_at >= today
-            ).count()
-
-            today_tts = TTSTask.query.filter(
-                TTSTask.user_id == user_id, TTSTask.created_at >= today
-            ).count()
-
-            return {
-                "limits": limits,
-                "current_usage": {
-                    "concurrent_vc": current_vc,
-                    "concurrent_tts": current_tts,
-                    "daily_vc": today_vc,
-                    "daily_tts": today_tts,
-                },
-                "can_create_vc": (
-                    current_vc < limits["max_concurrent_vc"]
-                    and today_vc < limits["max_daily_vc"]
-                ),
-                "can_create_tts": (
-                    current_tts < limits["max_concurrent_tts"]
-                    and today_tts < limits["max_daily_tts"]
-                ),
-            }
-
-        except Exception as e:
-            current_app.logger.error(f"Get user task limits error: {e}")
-            raise TaskProcessingError(f"Failed to get user task limits: {str(e)}")
-
-    @staticmethod
-    def get_system_load():
-        """获取系统负载情况"""
-        try:
-            # CPU和内存使用情况（如果可用）
-            system_info = {}
-
-            try:
-                import psutil
-
-                system_info["cpu_percent"] = psutil.cpu_percent()
-                system_info["memory_percent"] = psutil.virtual_memory().percent
-                system_info["disk_usage"] = psutil.disk_usage("/").percent
-            except ImportError:
-                system_info["note"] = "psutil not available"
-
-            # 任务队列负载
-            queue_status = TaskService.get_task_queue_status()
-
-            # 活跃任务统计
-            active_tasks = TaskService.get_active_tasks_count()
-
-            return {
-                "system_info": system_info,
-                "queue_status": queue_status,
-                "active_tasks": active_tasks,
-                "timestamp": datetime.utcnow().isoformat(),
-            }
-
-        except Exception as e:
-            current_app.logger.error(f"Get system load error: {e}")
-            return {"error": str(e), "timestamp": datetime.utcnow().isoformat()}

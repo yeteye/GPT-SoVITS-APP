@@ -15,7 +15,9 @@
     "/api/admin/audit-logs": {
       "get": {
         "summary": "Get Audit Logs",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "get_admin.get_audit_logs",
         "parameters": [
           {
@@ -74,7 +76,9 @@
     "/api/admin/cleanup": {
       "post": {
         "summary": "System Cleanup",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "post_admin.system_cleanup",
         "parameters": [],
         "responses": {
@@ -87,7 +91,9 @@
     "/api/admin/models": {
       "get": {
         "summary": "Get All Models",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "get_admin.get_all_models",
         "parameters": [
           {
@@ -146,7 +152,9 @@
     "/api/admin/models/{model_id}/review": {
       "post": {
         "summary": "Review Model",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "post_admin.review_model",
         "parameters": [
           {
@@ -188,7 +196,9 @@
     "/api/admin/statistics": {
       "get": {
         "summary": "Get System Statistics",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "get_admin.get_system_statistics",
         "parameters": [],
         "responses": {
@@ -201,7 +211,9 @@
     "/api/admin/tags": {
       "post": {
         "summary": "Create Tag",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "post_admin.create_tag",
         "parameters": [],
         "responses": {
@@ -237,7 +249,9 @@
     "/api/admin/tags/{tag_id}": {
       "delete": {
         "summary": "Delete Tag",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "delete_admin.delete_tag",
         "parameters": [
           {
@@ -260,7 +274,9 @@
     "/api/admin/upload-official-model": {
       "post": {
         "summary": "Upload Official Model",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "post_admin.upload_official_model",
         "parameters": [],
         "responses": {
@@ -273,7 +289,9 @@
     "/api/admin/users": {
       "get": {
         "summary": "Get All Users",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "get_admin.get_all_users",
         "parameters": [
           {
@@ -323,7 +341,9 @@
     "/api/admin/users/{user_id}/role": {
       "put": {
         "summary": "Update User Role",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "put_admin.update_user_role",
         "parameters": [
           {
@@ -361,7 +381,9 @@
     "/api/admin/users/{user_id}/status": {
       "put": {
         "summary": "Update User Status",
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "operationId": "put_admin.update_user_status",
         "parameters": [
           {
@@ -399,7 +421,9 @@
     "/api/auth/change-password": {
       "post": {
         "summary": "Change Password",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "post_auth.change_password",
         "parameters": [],
         "responses": {
@@ -431,7 +455,9 @@
     "/api/auth/forgot-password": {
       "post": {
         "summary": "Forgot Password",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "post_auth.forgot_password",
         "parameters": [],
         "responses": {
@@ -459,7 +485,9 @@
     "/api/auth/login": {
       "post": {
         "summary": "Login",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "post_auth.login",
         "parameters": [],
         "responses": {
@@ -491,7 +519,9 @@
     "/api/auth/logout": {
       "post": {
         "summary": "Logout",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "post_auth.logout",
         "parameters": [],
         "responses": {
@@ -504,7 +534,9 @@
     "/api/auth/refresh": {
       "post": {
         "summary": "Refresh",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "post_auth.refresh",
         "parameters": [],
         "responses": {
@@ -517,7 +549,9 @@
     "/api/auth/register": {
       "post": {
         "summary": "Register",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "post_auth.register",
         "parameters": [],
         "responses": {
@@ -553,7 +587,9 @@
     "/api/auth/reset-password/{token}": {
       "post": {
         "summary": "Reset Password",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "post_auth.reset_password",
         "parameters": [
           {
@@ -591,7 +627,9 @@
     "/api/auth/verify-email/{token}": {
       "get": {
         "summary": "Verify Email",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "get_auth.verify_email",
         "parameters": [
           {
@@ -614,7 +652,9 @@
     "/api/health": {
       "get": {
         "summary": "Health Check",
-        "tags": ["health"],
+        "tags": [
+          "health"
+        ],
         "operationId": "get_health.health_check",
         "parameters": [],
         "responses": {
@@ -627,7 +667,9 @@
     "/api/models/{model_id}": {
       "get": {
         "summary": "Get Model Detail",
-        "tags": ["models"],
+        "tags": [
+          "models"
+        ],
         "operationId": "get_models.get_model_detail",
         "parameters": [
           {
@@ -648,7 +690,9 @@
       },
       "put": {
         "summary": "Update Model",
-        "tags": ["models"],
+        "tags": [
+          "models"
+        ],
         "operationId": "put_models.update_model",
         "parameters": [
           {
@@ -669,7 +713,9 @@
       },
       "delete": {
         "summary": "Delete Model",
-        "tags": ["models"],
+        "tags": [
+          "models"
+        ],
         "operationId": "delete_models.delete_model",
         "parameters": [
           {
@@ -692,7 +738,9 @@
     "/api/models/{model_id}/toggle-public": {
       "post": {
         "summary": "Toggle Model Public",
-        "tags": ["models"],
+        "tags": [
+          "models"
+        ],
         "operationId": "post_models.toggle_model_public",
         "parameters": [
           {
@@ -715,7 +763,9 @@
     "/api/models/my-models": {
       "get": {
         "summary": "Get My Models",
-        "tags": ["models"],
+        "tags": [
+          "models"
+        ],
         "operationId": "get_models.get_my_models",
         "parameters": [
           {
@@ -756,7 +806,9 @@
     "/api/models/stats": {
       "get": {
         "summary": "Get Model Stats",
-        "tags": ["models"],
+        "tags": [
+          "models"
+        ],
         "operationId": "get_models.get_model_stats",
         "parameters": [],
         "responses": {
@@ -769,7 +821,9 @@
     "/api/models/tags": {
       "get": {
         "summary": "Get Tags",
-        "tags": ["models"],
+        "tags": [
+          "models"
+        ],
         "operationId": "get_models.get_tags",
         "parameters": [],
         "responses": {
@@ -782,7 +836,9 @@
     "/api/tts/emotions": {
       "get": {
         "summary": "Get Supported Emotions",
-        "tags": ["tts"],
+        "tags": [
+          "tts"
+        ],
         "operationId": "get_tts.get_supported_emotions",
         "parameters": [],
         "responses": {
@@ -795,7 +851,9 @@
     "/api/tts/generate": {
       "post": {
         "summary": "Generate Speech",
-        "tags": ["tts"],
+        "tags": [
+          "tts"
+        ],
         "operationId": "post_tts.generate_speech",
         "parameters": [],
         "responses": {
@@ -835,7 +893,9 @@
     "/api/tts/models": {
       "get": {
         "summary": "Get Available Models",
-        "tags": ["tts"],
+        "tags": [
+          "tts"
+        ],
         "operationId": "get_tts.get_available_models",
         "parameters": [
           {
@@ -885,7 +945,9 @@
     "/api/tts/models/{model_id}": {
       "get": {
         "summary": "Get Model Detail",
-        "tags": ["tts"],
+        "tags": [
+          "tts"
+        ],
         "operationId": "get_tts.get_model_detail",
         "parameters": [
           {
@@ -908,7 +970,9 @@
     "/api/tts/tasks": {
       "get": {
         "summary": "Get Tts Tasks",
-        "tags": ["tts"],
+        "tags": [
+          "tts"
+        ],
         "operationId": "get_tts.get_tts_tasks",
         "parameters": [
           {
@@ -949,7 +1013,9 @@
     "/api/tts/tasks/{task_id}": {
       "get": {
         "summary": "Get Tts Task Detail",
-        "tags": ["tts"],
+        "tags": [
+          "tts"
+        ],
         "operationId": "get_tts.get_tts_task_detail",
         "parameters": [
           {
@@ -972,7 +1038,9 @@
     "/api/tts/tasks/{task_id}/download": {
       "get": {
         "summary": "Download Audio",
-        "tags": ["tts"],
+        "tags": [
+          "tts"
+        ],
         "operationId": "get_tts.download_audio",
         "parameters": [
           {
@@ -995,7 +1063,9 @@
     "/api/user/delete-account": {
       "delete": {
         "summary": "Delete Account",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "operationId": "delete_user.delete_account",
         "parameters": [],
         "responses": {
@@ -1008,7 +1078,9 @@
     "/api/user/profile": {
       "get": {
         "summary": "Get Profile",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "operationId": "get_user.get_profile",
         "parameters": [],
         "responses": {
@@ -1019,7 +1091,9 @@
       },
       "put": {
         "summary": "Update Profile",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "operationId": "put_user.update_profile",
         "parameters": [],
         "responses": {
@@ -1032,7 +1106,9 @@
     "/api/user/statistics": {
       "get": {
         "summary": "Get User Statistics",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "operationId": "get_user.get_user_statistics",
         "parameters": [],
         "responses": {
@@ -1045,7 +1121,9 @@
     "/api/user/tasks/history": {
       "get": {
         "summary": "Get Task History",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "operationId": "get_user.get_task_history",
         "parameters": [
           {
@@ -1095,7 +1173,9 @@
     "/api/user/uploads": {
       "get": {
         "summary": "Get User Uploads",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "operationId": "get_user.get_user_uploads",
         "parameters": [
           {
@@ -1136,7 +1216,9 @@
     "/api/user/uploads/{upload_id}": {
       "delete": {
         "summary": "Delete Upload",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "operationId": "delete_user.delete_upload",
         "parameters": [
           {
@@ -1159,7 +1241,9 @@
     "/api/voice-clone/samples": {
       "get": {
         "summary": "Get User Samples",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "get_voice_clone.get_user_samples",
         "parameters": [
           {
@@ -1191,7 +1275,9 @@
     "/api/voice-clone/samples/{sample_id}": {
       "delete": {
         "summary": "Delete Sample",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "delete_voice_clone.delete_sample",
         "parameters": [
           {
@@ -1214,7 +1300,9 @@
     "/api/voice-clone/start-training": {
       "post": {
         "summary": "Start Training",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "post_voice_clone.start_training",
         "parameters": [],
         "responses": {
@@ -1250,7 +1338,9 @@
     "/api/voice-clone/tasks": {
       "get": {
         "summary": "Get User Tasks",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "get_voice_clone.get_user_tasks",
         "parameters": [
           {
@@ -1291,7 +1381,9 @@
     "/api/voice-clone/tasks/{task_id}": {
       "get": {
         "summary": "Get Task Detail",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "get_voice_clone.get_task_detail",
         "parameters": [
           {
@@ -1314,7 +1406,9 @@
     "/api/voice-clone/tasks/{task_id}/cancel": {
       "post": {
         "summary": "Cancel Task",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "post_voice_clone.cancel_task",
         "parameters": [
           {
@@ -1337,7 +1431,9 @@
     "/api/voice-clone/tasks/{task_id}/result": {
       "get": {
         "summary": "Get Task Result",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "get_voice_clone.get_task_result",
         "parameters": [
           {
@@ -1360,7 +1456,9 @@
     "/api/voice-clone/tasks/{task_id}/retry": {
       "post": {
         "summary": "Retry Task",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "post_voice_clone.retry_task",
         "parameters": [
           {
@@ -1383,8 +1481,347 @@
     "/api/voice-clone/upload-sample": {
       "post": {
         "summary": "Upload Audio Sample",
-        "tags": ["voice_clone"],
+        "tags": [
+          "voice_clone"
+        ],
         "operationId": "post_voice_clone.upload_audio_sample",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/admin/all-watermarks": {
+      "get": {
+        "summary": "Admin Get All Watermarks",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.admin_get_all_watermarks",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: username",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: is_active",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/admin/statistics": {
+      "get": {
+        "summary": "Admin Get Statistics",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.admin_get_statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/admin/verification-logs": {
+      "get": {
+        "summary": "Admin Get Verification Logs",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.admin_get_verification_logs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "success",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: success",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "watermark_code",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: watermark_code",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/embed": {
+      "post": {
+        "summary": "Embed Watermark",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "post_watermark.embed_watermark",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/info/{watermark_code}": {
+      "get": {
+        "summary": "Get Watermark Info",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.get_watermark_info",
+        "parameters": [
+          {
+            "name": "watermark_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: watermark_code"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/my-watermarks": {
+      "get": {
+        "summary": "Get My Watermarks",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.get_my_watermarks",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "model_id",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: model_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/my-watermarks/{watermark_id}": {
+      "get": {
+        "summary": "Get Watermark Detail",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.get_watermark_detail",
+        "parameters": [
+          {
+            "name": "watermark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: watermark_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Watermark",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "put_watermark.update_watermark",
+        "parameters": [
+          {
+            "name": "watermark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: watermark_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Deactivate Watermark",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "delete_watermark.deactivate_watermark",
+        "parameters": [
+          {
+            "name": "watermark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "路径参数: watermark_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/statistics": {
+      "get": {
+        "summary": "Get Watermark Statistics",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.get_watermark_statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/verification-logs": {
+      "get": {
+        "summary": "Get Verification Logs",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "get_watermark.get_verification_logs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "查询参数: per_page",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          }
+        }
+      }
+    },
+    "/api/watermark/verify": {
+      "post": {
+        "summary": "Verify Watermark",
+        "tags": [
+          "watermark"
+        ],
+        "operationId": "post_watermark.verify_watermark",
         "parameters": [],
         "responses": {
           "200": {

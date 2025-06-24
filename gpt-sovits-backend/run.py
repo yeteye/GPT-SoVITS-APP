@@ -21,6 +21,8 @@ from app.models import (
     UserUpload,
     Tag,
     AuthToken,
+    Watermark,  # 新增
+    WatermarkVerificationLog,  # 新增
 )
 
 # 创建应用实例

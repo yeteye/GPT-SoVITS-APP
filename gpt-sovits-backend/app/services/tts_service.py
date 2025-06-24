@@ -1,4 +1,4 @@
-# ./gpt-sovits-backend/app/services/tts_service.py
+# ./gpt-sovits-backend/app/services/tts_service.py (修复后的完整版本)
 import os
 import numpy as np
 from datetime import datetime
@@ -50,7 +50,7 @@ class MockCeleryResult:
 
 @get_celery_task_decorator()
 def generate_speech_task(self, task_id):
-    """生成语音任务（支持Celery和测试环境）"""
+    """生成语音任务（支持Celery和测试环境）- 集成水印功能"""
     try:
         # 获取任务信息 - 修复：使用现代SQLAlchemy语法
         task = db.session.get(TTSTask, task_id)
@@ -66,17 +66,19 @@ def generate_speech_task(self, task_id):
 
             is_testing = current_app.config.get("TESTING", False)
             has_celery = celery is not None
+            watermark_enabled = current_app.config.get("WATERMARK_ENABLED", True)
         except RuntimeError:
             # 不在应用上下文中，假设是测试环境
             is_testing = True
             has_celery = False
+            watermark_enabled = True
 
         if is_testing or not has_celery:
             # 测试环境：直接模拟处理结果
-            result = mock_speech_generation(task)
+            result = mock_speech_generation(task, watermark_enabled)
         else:
             # 生产环境：执行实际的语音生成
-            result = process_speech_generation(task)
+            result = process_speech_generation(task, watermark_enabled)
 
         # 保存结果
         task.set_result(
@@ -86,18 +88,26 @@ def generate_speech_task(self, task_id):
         )
 
         # 记录成功日志
+        log_message = (
+            f'Speech generated successfully. Duration: {result["duration"]:.2f}s'
+        )
+        if result.get("watermark_embedded"):
+            log_message += f', Watermark: {result.get("watermark_code", "N/A")}'
+
         log_user_action(
             user_id=task.user_id,
             action="speech_generation_completed",
             resource_type="tts_task",
             resource_id=task.id,
-            details=f'Speech generated successfully. Duration: {result["duration"]:.2f}s',
+            details=log_message,
         )
 
         return {
             "status": "completed",
             "audio_url": result["audio_url"],
             "duration": result["duration"],
+            "watermark_embedded": result.get("watermark_embedded", False),
+            "watermark_code": result.get("watermark_code"),
             "message": "Speech generation completed successfully",
         }
 
@@ -126,8 +136,8 @@ def generate_speech_task(self, task_id):
         raise TaskProcessingError(f"Speech generation failed: {str(e)}")
 
 
-def mock_speech_generation(task):
-    """模拟语音生成过程（用于测试）"""
+def mock_speech_generation(task, watermark_enabled=True):
+    """模拟语音生成过程（用于测试）- 集成水印功能"""
     try:
         # 使用try-except来处理current_app访问
         try:
@@ -153,18 +163,46 @@ def mock_speech_generation(task):
         mock_path = f"/mock/generated/{filename}"
         mock_url = f"/api/tts/tasks/{task.id}/download"
 
-        return {
+        result = {
             "audio_path": mock_path,
             "audio_url": mock_url,
             "duration": round(duration, 2),
+            "watermark_embedded": False,
+            "watermark_code": None,
         }
+
+        # 模拟水印嵌入
+        if watermark_enabled:
+            try:
+                # 模拟水印码生成
+                import secrets
+                import string
+
+                watermark_code = "".join(
+                    secrets.choice(string.ascii_lowercase + string.digits)
+                    for _ in range(16)
+                )
+
+                result.update(
+                    {
+                        "watermark_embedded": True,
+                        "watermark_code": watermark_code,
+                        "audio_path": f"/mock/generated/watermarked_{filename}",
+                    }
+                )
+
+                print(f"Mock: Embedded watermark {watermark_code} into {filename}")
+            except Exception as e:
+                print(f"Mock: Watermark embedding simulation failed: {e}")
+
+        return result
 
     except Exception as e:
         raise TaskProcessingError(f"Mock speech generation failed: {str(e)}")
 
 
-def process_speech_generation(task):
-    """处理语音生成（生产环境）"""
+def process_speech_generation(task, watermark_enabled=True):
+    """处理语音生成（生产环境）- 集成水印功能"""
     try:
         # 1. 加载语音模型
         update_tts_task_status(task, "Loading voice model...")
@@ -187,14 +225,93 @@ def process_speech_generation(task):
         update_tts_task_status(task, "Post-processing audio...")
         audio_data = post_process_audio(audio_data, task.speed)
 
-        # 5. 保存音频文件
+        # 5. 保存音频文件（暂不嵌入水印）
         update_tts_task_status(task, "Saving audio file...")
-        audio_info = save_generated_audio(audio_data, task)
+        audio_info = save_generated_audio(audio_data, task, embed_watermark=False)
+
+        # 6. 嵌入水印（如果启用）
+        if watermark_enabled:
+            try:
+                update_tts_task_status(task, "Embedding watermark...")
+                watermarked_info = embed_watermark_to_tts_audio(task, audio_info)
+                if watermarked_info:
+                    audio_info.update(watermarked_info)
+            except Exception as e:
+                # 水印嵌入失败不影响主要功能
+                try:
+                    from flask import current_app
+
+                    current_app.logger.warning(
+                        f"Watermark embedding failed for task {task.id}: {e}"
+                    )
+                except RuntimeError:
+                    print(
+                        f"Warning: Watermark embedding failed for task {task.id}: {e}"
+                    )
 
         return audio_info
 
     except Exception as e:
         raise TaskProcessingError(f"Speech generation failed: {str(e)}")
+
+
+def embed_watermark_to_tts_audio(task, audio_info):
+    """为TTS生成的音频嵌入水印"""
+    try:
+        from app.services.watermark_service import WatermarkService
+        from app.models.user import User
+
+        # 获取用户信息
+        user = db.session.get(User, task.user_id)
+        if not user:
+            raise Exception("User not found")
+
+        # 初始化水印服务
+        watermark_service = WatermarkService()
+
+        # 获取或创建用户水印
+        watermark_code = watermark_service.get_or_create_user_watermark(
+            user_id=user.id, username=user.username, model_id=task.model_id
+        )
+
+        # 检查原始音频文件是否存在
+        original_path = audio_info["audio_path"]
+        if not os.path.exists(original_path):
+            raise Exception(f"Original audio file not found: {original_path}")
+
+        # 嵌入水印
+        watermarked_path = watermark_service.embed_watermark_to_audio(
+            original_path=original_path,
+            watermark_code=watermark_code,
+            user_id=user.id,
+            output_dir=os.path.dirname(original_path),
+        )
+
+        # 删除原始文件，使用带水印的文件
+        if watermarked_path != original_path:
+            try:
+                os.remove(original_path)
+            except Exception as e:
+                print(f"Warning: Failed to remove original file: {e}")
+
+        return {
+            "audio_path": watermarked_path,
+            "watermark_embedded": True,
+            "watermark_code": watermark_code,
+        }
+
+    except Exception as e:
+        try:
+            from flask import current_app
+
+            current_app.logger.error(
+                f"Failed to embed watermark for TTS task {task.id}: {e}"
+            )
+        except RuntimeError:
+            print(f"Error: Failed to embed watermark for TTS task {task.id}: {e}")
+
+        # 返回None，表示水印嵌入失败，但不影响主要功能
+        return None
 
 
 def load_voice_model(model_id):
@@ -231,7 +348,12 @@ def preprocess_text(text):
         return processed_text
 
     except Exception as e:
-        current_app.logger.warning(f"Text preprocessing failed: {e}")
+        try:
+            from flask import current_app
+
+            current_app.logger.warning(f"Text preprocessing failed: {e}")
+        except RuntimeError:
+            print(f"Warning: Text preprocessing failed: {e}")
         return text
 
 
@@ -297,35 +419,64 @@ def post_process_audio(audio_info, speed=1.0):
         return audio_info
 
     except Exception as e:
-        current_app.logger.warning(f"Audio post-processing failed: {e}")
+        try:
+            from flask import current_app
+
+            current_app.logger.warning(f"Audio post-processing failed: {e}")
+        except RuntimeError:
+            print(f"Warning: Audio post-processing failed: {e}")
         return audio_info
 
 
-def save_generated_audio(audio_info, task):
+def save_generated_audio(audio_info, task, embed_watermark=True):
     """保存生成的音频文件"""
     try:
         # 生成文件名
         filename = generate_unique_filename(f"tts_{task.id}.wav", "generated")
 
         # 创建保存目录
-        save_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "generated")
+        try:
+            from flask import current_app
+
+            save_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "generated")
+        except RuntimeError:
+            save_dir = "./uploads/generated"
+
         os.makedirs(save_dir, exist_ok=True)
 
         # 完整文件路径
         file_path = os.path.join(save_dir, filename)
 
-        # 模拟保存音频文件
-        with open(file_path, "wb") as f:
-            f.write(b"RIFF" + b"\x00" * 40 + b"WAVE")
+        # 模拟保存音频文件（在实际应用中应该使用真实的音频库）
+        import wave
+        import struct
+
+        # 保存为WAV文件
+        with wave.open(file_path, "wb") as wav_file:
+            wav_file.setnchannels(1)  # 单声道
+            wav_file.setsampwidth(2)  # 16位
+            wav_file.setframerate(int(audio_info["sample_rate"]))
+
+            # 将浮点音频数据转换为16位整数
+            audio_data = audio_info["audio_data"]
+            audio_int16 = (audio_data * 32767).astype(np.int16)
+
+            # 写入音频数据
+            for sample in audio_int16:
+                wav_file.writeframes(struct.pack("<h", sample))
 
         # 生成访问URL
         audio_url = f"/api/tts/tasks/{task.id}/download"
 
-        return {
+        result = {
             "audio_path": file_path,
             "audio_url": audio_url,
             "duration": audio_info["duration"],
+            "watermark_embedded": False,
+            "watermark_code": None,
         }
+
+        return result
 
     except Exception as e:
         raise TaskProcessingError(f"Failed to save audio file: {str(e)}")
@@ -342,7 +493,12 @@ def update_tts_task_status(task, message):
                 state="PROGRESS", meta={"message": message}
             )
     except Exception as e:
-        current_app.logger.warning(f"Failed to update TTS task status: {e}")
+        try:
+            from flask import current_app
+
+            current_app.logger.warning(f"Failed to update TTS task status: {e}")
+        except RuntimeError:
+            print(f"Warning: Failed to update TTS task status: {e}")
 
 
 def get_tts_task_status(task_id):
@@ -367,7 +523,12 @@ def get_tts_task_status(task_id):
             ),
         }
     except Exception as e:
-        current_app.logger.error(f"Failed to get TTS task status: {e}")
+        try:
+            from flask import current_app
+
+            current_app.logger.error(f"Failed to get TTS task status: {e}")
+        except RuntimeError:
+            print(f"Error: Failed to get TTS task status: {e}")
         return None
 
 
@@ -391,5 +552,10 @@ def cancel_tts_task(task_id):
         return True
 
     except Exception as e:
-        current_app.logger.error(f"Failed to cancel TTS task: {e}")
+        try:
+            from flask import current_app
+
+            current_app.logger.error(f"Failed to cancel TTS task: {e}")
+        except RuntimeError:
+            print(f"Error: Failed to cancel TTS task: {e}")
         return False
