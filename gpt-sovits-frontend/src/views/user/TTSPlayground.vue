@@ -1,20 +1,5 @@
 <template>
   <div class="tts-playground">
-    <!-- 顶部菜单栏，可选，如已有全局布局可移除 -->
-    <header class="header">
-      <div class="header-left">
-        <img src="@/assets/logo.svg" class="logo" alt="logo" />
-        <h1 class="title">GPT-SoVITS 文本转语音</h1>
-      </div>
-      <nav class="nav-menu">
-        <el-menu mode="horizontal" :default-active="active" class="el-menu-demo" @select="onSelect">
-          <el-menu-item index="Home">首页</el-menu-item>
-          <el-menu-item index="VoiceClone">音色克隆</el-menu-item>
-          <el-menu-item index="VoiceLibrary">音色库</el-menu-item>
-          <el-menu-item index="TaskHistory">历史记录</el-menu-item>
-        </el-menu>
-      </nav>
-    </header>
 
     <!-- 主体内容区域 -->
     <el-container class="main-content">
@@ -60,7 +45,7 @@
       <el-main class="voice-library">
         <h2>音色选择</h2>
         <el-row :gutter="20">
-          <el-col :span="8" v-for="(voice, index) in voices" :key="voice.id">
+          <el-col :span="8" v-for="(voice) in voices" :key="voice.id">
             <el-card :class="{ selected: selectedVoice === voice.id }" @click="selectVoice(voice.id)" shadow="hover">
               <div class="voice-name">{{ voice.name }}</div>
               <p>{{ voice.description }}</p>
@@ -78,6 +63,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import { synthesizeTTS } from '@/api/tts'
+import request from '@/utils/request'
 
 const router = useRouter()
 const active = ref('TTSPlayground')
@@ -93,8 +79,8 @@ const models = ref([])
 // 获取模型列表，从后端接口
 async function fetchModels() {
   try {
-    const res = await axios.get('/api/models') // 假设后端 GET /api/models 返回 [{id, name, t2s_path, vits_path}, ...]
-    models.value = res.data
+    const res = await request.get('/models/my-models') // 分页查询后需修改 假设后端 GET 返回 [{id, name, t2s_path, vits_path}, ...]
+    models.value = res.data.models || []
   } catch (err) {
     console.error('获取模型列表失败', err)
     ElMessage.error('无法获取模型列表')
