@@ -80,6 +80,7 @@ const models = ref([])
 async function fetchModels() {
   try {
     const res = await request.get('/models/my-models') // 分页查询后需修改 假设后端 GET 返回 [{id, name, t2s_path, vits_path}, ...]
+    // console.log('获取模型列表成功', res.data)
     models.value = res.data.models || []
   } catch (err) {
     console.error('获取模型列表失败', err)
