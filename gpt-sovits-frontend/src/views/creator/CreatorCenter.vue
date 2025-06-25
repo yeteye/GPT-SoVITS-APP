@@ -1,7 +1,6 @@
 <template>
   <div class="creator-center">
     <div class="creator-header">
-      <img class="creator-avatar" src="@/assets/logo.svg" alt="avatar" />
       <div class="creator-info">
         <h2>创作者中心</h2>
         <p>欢迎上传和管理你的音频与音色模型，构建你的专属声音品牌。</p>
