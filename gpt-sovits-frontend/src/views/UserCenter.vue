@@ -25,6 +25,12 @@
         </template>
         <el-button type="primary" @click="goToTasks">查看任务记录</el-button>
         <el-button type="success" @click="goToVoice">管理我的音色</el-button>
+        <!-- 只有管理员 role===2 时显示 -->
+        <el-button
+          v-if="user.role === 2"
+          type="danger"
+          @click="goToAdmin"
+        >进入管理员界面</el-button>
       </el-card>
     </el-main>
 
@@ -62,27 +68,38 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
 const router = useRouter()
 
+// 用户信息
 const user = ref({ email: '', username: '', role: 0 })
+// 根据 role 转为文本
 const roleText = computed(() => {
   const map = { 0: '普通用户', 1: '审核员', 2: '管理员' }
   return map[user.value.role] || '未知角色'
 })
 
+// 页面加载时获取用户信息
 onMounted(() => {
-  request.get('/user/profile').then(res => {
-    user.value = res.data.profile
-    localStorage.setItem('user', JSON.stringify(res.data.profile))
-  }).catch(() => {
-    ElMessage.warning('请先登录')
-    router.push({ name: 'Login' })
-  })
+  request.get('/user/profile')
+    .then(res => {
+      // 假定后端返回 { data: { profile: { email, username, role } } }
+      if (res.data && res.data.profile) {
+        user.value = res.data.profile
+        localStorage.setItem('user', JSON.stringify(res.data.profile))
+      } else {
+        throw new Error('获取用户信息格式异常')
+      }
+    })
+    .catch(() => {
+      ElMessage.warning('请先登录')
+      router.push({ name: 'Login' })
+    })
 })
 
+// 退出登录
 function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
@@ -90,6 +107,7 @@ function logout() {
   router.push({ name: 'Login' })
 }
 
+// 注销账号相关
 const deleteDialogVisible = ref(false)
 const deleteForm = ref({ password: '' })
 const deleteRules = {
@@ -103,25 +121,32 @@ function openDeleteDialog() {
 }
 
 function confirmDelete() {
-  deleteFormRef.value.validate(valid => {
+  deleteFormRef.value.validate((valid) => {
     if (!valid) return
-    request.delete('/user/delete-account', { data: deleteForm.value }).then(() => {
-      ElMessage.success('账号已删除')
-      logout()
-    }).catch(() => {
-      ElMessage.error('删除失败')
-    })
+    request.delete('/user/delete-account', { data: deleteForm.value })
+      .then(() => {
+        ElMessage.success('账号已删除')
+        logout()
+      })
+      .catch(err => {
+        ElMessage.error(err?.response?.data?.message || '删除失败')
+      })
   })
 }
 
+// 快捷跳转
 function goToTasks() {
   router.push({ name: 'TaskHistory' })
 }
-
 function goToVoice() {
   router.push({ name: 'VoiceLibrary' })
 }
+function goToAdmin() {
+  // 确保路由中已配置 /admin 对应的管理员页面
+  router.push({ path: '/admin' })
+}
 
+// 修改密码相关
 const pwdDialogVisible = ref(false)
 const pwdForm = ref({
   current_password: '',
