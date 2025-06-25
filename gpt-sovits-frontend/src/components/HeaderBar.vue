@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="header-left" @click="goHome">
-      <img src="@/assets/logo.svg" class="logo" alt="logo" />
+      <img src="@/assets/music.svg" class="logo" alt="logo" />
       <h1 class="title">GPT-SoVITS 在线语音克隆平台</h1>
     </div>
     <nav class="nav-menu">
