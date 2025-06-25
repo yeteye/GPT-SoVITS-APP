@@ -100,6 +100,11 @@ const routes = [
     component: () => import('@/views/admin/SystemLog.vue')
     },
     {
+    path: '/help',
+    name: 'HelpCenter',
+    component: () => import('@/views/HelpCenter.vue')
+    },
+    {
         path: '/generate',
         name: 'Generate',
         component: Generate
