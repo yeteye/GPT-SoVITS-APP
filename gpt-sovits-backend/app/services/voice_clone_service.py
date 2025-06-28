@@ -1,4 +1,4 @@
-# ./gpt-sovits-backend/app/services/voice_clone_service.py (修改后的版本)
+# app/services/voice_clone_service.py
 import os
 import shutil
 import subprocess
@@ -6,38 +6,41 @@ import soundfile as sf
 from pydub import AudioSegment
 from datetime import datetime
 from flask import current_app
-from app.extensions import celery, db
+from app.extensions import db
 from app.models.task import VoiceCloneTask
 from app.models.model import VoiceModel
 from app.utils.exceptions import TaskProcessingError
 from app.utils.helpers import log_user_action
 
 
-def get_celery_task_decorator():
-    """获取Celery任务装饰器，如果Celery不可用则返回普通函数装饰器"""
-    if celery is not None:
-        return celery.task(
-            bind=True, name="app.services.voice_clone_service.start_voice_clone_task"
-        )
-    else:
-        # 测试环境或没有Celery时的装饰器
-        def mock_decorator(func):
-            def wrapper(self_or_task_id, task_id=None):
-                # 处理两种调用方式：
-                # 1. 直接调用：func(None, task_id)
-                # 2. Celery风格调用：func(self, task_id)
-                if task_id is None:
-                    # 直接调用：第一个参数是task_id
-                    return func(None, self_or_task_id)
-                else:
-                    # Celery风格调用：第一个参数是self
-                    return func(self_or_task_id, task_id)
+# 修复：在模块级别检查并创建装饰器
+def create_task_decorator():
+    """创建任务装饰器 - 修复：延迟检查Celery可用性"""
+    try:
+        # 延迟导入，在实际使用时检查
+        from app.extensions import celery
 
-            wrapper.delay = lambda task_id: MockCeleryResult()
-            wrapper.apply_async = lambda task_id: MockCeleryResult()
-            return wrapper
+        if celery is not None:
+            return celery.task(
+                bind=True,
+                name="app.services.voice_clone_service.start_voice_clone_task",
+            )
+        else:
+            # 返回无操作装饰器
+            def noop_decorator(func):
+                func.delay = lambda *args, **kwargs: MockCeleryResult()
+                func.apply_async = lambda *args, **kwargs: MockCeleryResult()
+                return func
 
-        return mock_decorator
+            return noop_decorator
+    except ImportError:
+        # Celery不可用时的装饰器
+        def fallback_decorator(func):
+            func.delay = lambda *args, **kwargs: MockCeleryResult()
+            func.apply_async = lambda *args, **kwargs: MockCeleryResult()
+            return func
+
+        return fallback_decorator
 
 
 class MockCeleryResult:
@@ -51,34 +54,44 @@ class MockCeleryResult:
         return {"status": "completed", "message": "Mock task completed"}
 
 
-# 使用动态装饰器
-@get_celery_task_decorator()
-def start_voice_clone_task(self, task_id):
-    """启动语音克隆任务（支持Celery和测试环境）"""
+def start_voice_clone_task(self_or_task_id, task_id=None):
+    """启动语音克隆任务 - 修复：稳定的任务函数"""
     try:
+        # 处理参数：支持直接调用和Celery调用
+        if task_id is None:
+            # 直接调用模式
+            actual_task_id = self_or_task_id
+            celery_self = None
+        else:
+            # Celery调用模式
+            celery_self = self_or_task_id
+            actual_task_id = task_id
+
         # 获取任务信息
-        task = db.session.get(VoiceCloneTask, task_id)
+        task = db.session.get(VoiceCloneTask, actual_task_id)
         if not task:
             raise TaskProcessingError("Task not found")
 
         # 更新任务状态
         task.update_status("processing", progress=0)
 
-        # 检查是否在测试环境
+        # 检查运行环境
         try:
             is_testing = current_app.config.get("TESTING", False)
-            has_celery = celery is not None
+            from app.extensions import celery
+
+            has_celery = celery is not None and celery_self is not None
         except RuntimeError:
-            # 不在应用上下文中，假设是测试环境
+            # 不在应用上下文中
             is_testing = True
             has_celery = False
 
         if is_testing or not has_celery:
-            # 测试环境：直接模拟处理结果
+            # 测试环境或无Celery：直接处理
             result = mock_voice_clone_process(task)
         else:
-            # 生产环境：执行实际的语音克隆
-            result = process_voice_clone(task)
+            # 生产环境：执行实际处理
+            result = process_voice_clone(task, celery_self)
 
         # 任务完成
         task.update_status("completed", progress=100)
@@ -101,12 +114,9 @@ def start_voice_clone_task(self, task_id):
         }
 
     except Exception as e:
-        # 任务失败
+        # 任务失败处理
         if "task" in locals() and task:
             task.update_status("failed", error_message=str(e))
-
-        # 记录错误日志
-        if "task" in locals() and task:
             log_user_action(
                 user_id=task.user_id,
                 action="voice_clone_failed",
@@ -116,9 +126,9 @@ def start_voice_clone_task(self, task_id):
             )
 
         try:
-            current_app.logger.error(f"Voice clone task {task_id} failed: {e}")
+            current_app.logger.error(f"Voice clone task {actual_task_id} failed: {e}")
         except RuntimeError:
-            print(f"Voice clone task {task_id} failed: {e}")
+            print(f"Voice clone task {actual_task_id} failed: {e}")
 
         raise TaskProcessingError(f"Voice clone training failed: {str(e)}")
 
@@ -175,32 +185,32 @@ def mock_voice_clone_process(task):
         raise TaskProcessingError(f"Mock voice clone process failed: {str(e)}")
 
 
-def process_voice_clone(task):
-    """处理语音克隆流程（生产环境）"""
+def process_voice_clone(task, celery_self=None):
+    """处理语音克隆流程 - 修复：接受celery_self参数"""
     try:
         # 1. 准备工作目录
         work_dir = prepare_training_environment(task)
 
         # 2. 预处理音频文件
-        update_task_progress(task, 10, "Preprocessing audio files...")
+        update_task_progress(task, 10, "Preprocessing audio files...", celery_self)
         preprocessed_files = preprocess_audio_files(
             task, work_dir, target_sample_rate=16000
         )
 
         # 3. 提取音频特征
-        update_task_progress(task, 30, "Extracting audio features...")
+        update_task_progress(task, 30, "Extracting audio features...", celery_self)
         features = extract_audio_features(preprocessed_files, work_dir)
 
         # 4. 训练语音模型 - 修改：支持GPT+SoVITS双模型训练
-        update_task_progress(task, 50, "Training GPT and SoVITS models...")
+        update_task_progress(task, 50, "Training GPT and SoVITS models...", celery_self)
         model_files = train_gpt_sovits_models(features, work_dir, task)
 
         # 5. 验证模型质量
-        update_task_progress(task, 80, "Validating model quality...")
+        update_task_progress(task, 80, "Validating model quality...", celery_self)
         quality_score = validate_model_quality(model_files, preprocessed_files)
 
         # 6. 保存模型
-        update_task_progress(task, 90, "Saving models...")
+        update_task_progress(task, 90, "Saving models...", celery_self)
         model_info = save_trained_models(task, model_files, quality_score)
 
         # 7. 清理临时文件
@@ -439,15 +449,15 @@ def cleanup_training_environment(work_dir):
             print(f"Warning: Failed to cleanup training environment: {e}")
 
 
-def update_task_progress(task, progress, message=None):
-    """更新任务进度"""
+def update_task_progress(task, progress, message=None, celery_self=None):
+    """更新任务进度 - 修复：支持Celery状态更新"""
     try:
         task.progress = progress
         db.session.commit()
 
-        # 如果有Celery，更新Celery任务状态
-        if celery and hasattr(celery, "current_task") and celery.current_task:
-            celery.current_task.update_state(
+        # 如果有Celery实例，更新Celery任务状态
+        if celery_self is not None:
+            celery_self.update_state(
                 state="PROGRESS", meta={"progress": progress, "message": message}
             )
     except Exception as e:
@@ -494,8 +504,13 @@ def cancel_training_task(task_id):
             return False
 
         # 如果有Celery，取消Celery任务
-        if celery and task.celery_task_id:
-            celery.control.revoke(task.celery_task_id, terminate=True)
+        try:
+            from app.extensions import celery
+
+            if celery and task.celery_task_id:
+                celery.control.revoke(task.celery_task_id, terminate=True)
+        except ImportError:
+            pass
 
         # 更新任务状态
         task.update_status("failed", error_message="Cancelled by user")
@@ -514,3 +529,8 @@ def cancel_training_task(task_id):
         except RuntimeError:
             print(f"Error: Failed to cancel training task: {e}")
         return False
+
+
+# 在模块末尾应用装饰器
+task_decorator = create_task_decorator()
+start_voice_clone_task = task_decorator(start_voice_clone_task)
