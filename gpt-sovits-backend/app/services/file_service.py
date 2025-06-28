@@ -207,7 +207,7 @@ def delete_file(upload_id, user_id, force_delete=False):
 
 
 def is_file_in_use(upload):
-    """检查文件是否正在使用"""
+    """检查文件是否正在使用 - 修复：使用正确的字段名"""
     try:
         if upload.file_type == "audio":
             # 检查是否在进行中的语音克隆任务中
@@ -224,13 +224,14 @@ def is_file_in_use(upload):
                     return True
 
         elif upload.file_type == "model":
-            # 检查是否有关联的语音模型
+            # 🔧 修复：检查新的模型字段
             from app.models.model import VoiceModel
 
             model = VoiceModel.query.filter(
-                (VoiceModel.model_path == upload.file_path)
-                | (VoiceModel.config_path == upload.file_path)
-                | (VoiceModel.index_path == upload.file_path)
+                db.or_(
+                    VoiceModel.gpt_model_path == upload.file_path,  # 新字段
+                    VoiceModel.sovits_model_path == upload.file_path,  # 新字段
+                )
             ).first()
 
             if model and model.status == "active":

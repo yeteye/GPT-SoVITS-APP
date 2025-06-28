@@ -320,21 +320,24 @@ def embed_watermark_to_tts_audio(task, audio_info):
 
 
 def load_voice_model(model_id):
-    """加载语音模型"""
+    """加载语音模型 - 修复：使用正确的字段名"""
     try:
         model = db.session.get(VoiceModel, model_id)
         if not model:
             raise TaskProcessingError("Voice model not found")
 
-        if not os.path.exists(model.model_path):
-            raise TaskProcessingError("Model file not found")
+        # 🔧 修复：使用新的字段名检查文件存在性
+        if not model.gpt_model_path or not os.path.exists(model.gpt_model_path):
+            raise TaskProcessingError("GPT model file not found")
 
-        # 模拟模型加载
+        if not model.sovits_model_path or not os.path.exists(model.sovits_model_path):
+            raise TaskProcessingError("SoVITS model file not found")
+
+        # 🔧 修复：返回正确的模型信息
         model_info = {
             "model_id": model.id,
-            "model_path": model.model_path,
-            "config_path": model.config_path,
-            "index_path": model.index_path,
+            "gpt_model_path": model.gpt_model_path,  # 新字段
+            "sovits_model_path": model.sovits_model_path,  # 新字段
             "supported_emotions": model.get_supported_emotions(),
             "supported_languages": model.get_supported_languages(),
         }

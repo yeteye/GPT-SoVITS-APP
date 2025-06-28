@@ -211,7 +211,7 @@ def get_model_usage_statistics(model_id):
 
 
 def cleanup_inactive_models(days_threshold=90):
-    """清理长期未使用的非活跃模型"""
+    """清理长期未使用的非活跃模型 - 修复：使用正确的字段名"""
     try:
         from datetime import datetime, timedelta
 
@@ -228,19 +228,23 @@ def cleanup_inactive_models(days_threshold=90):
 
         for model in inactive_models:
             try:
-                # 删除物理文件
+                # 🔧 修复：删除正确的模型文件
                 files_to_delete = [
-                    model.model_path,
-                    model.config_path,
-                    model.index_path,
+                    model.gpt_model_path,  # 新字段
+                    model.sovits_model_path,  # 新字段
                 ]
+
                 for file_path in files_to_delete:
                     if file_path and os.path.exists(file_path):
                         os.remove(file_path)
 
-                # 删除模型目录
-                if model.model_path:
-                    model_dir = os.path.dirname(model.model_path)
+                # 删除模型目录（如果为空）
+                model_dirs = set()
+                for file_path in files_to_delete:
+                    if file_path:
+                        model_dirs.add(os.path.dirname(file_path))
+
+                for model_dir in model_dirs:
                     if os.path.exists(model_dir) and not os.listdir(model_dir):
                         os.rmdir(model_dir)
 

@@ -1,4 +1,4 @@
-# ./gpt-sovits-backend/app/models/model.py
+# ./gpt-sovits-backend/app/models/model.py (修复后的版本)
 from datetime import datetime
 from app.extensions import db
 import uuid
@@ -15,7 +15,7 @@ model_tags = db.Table(
 
 
 class VoiceModel(db.Model):
-    """语音模型"""
+    """语音模型 - 修复：统一使用 gpt_model_path 和 sovits_model_path"""
 
     __tablename__ = "voice_models"
 
@@ -28,13 +28,14 @@ class VoiceModel(db.Model):
     # 模型类型: user_trained(用户训练), official(官方预训练)
     model_type = db.Column(db.String(20), default="user_trained", nullable=False)
 
-    # 所有者信息 - 修复：添加索引约束
+    # 所有者信息
     owner_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True)
 
-    # 模型文件路径
-    model_path = db.Column(db.String(255), nullable=False)  # 主模型文件路径
-    config_path = db.Column(db.String(255))  # 配置文件路径
-    index_path = db.Column(db.String(255))  # 索引文件路径
+    # 🔧 修复：GPT-SoVITS 双模型文件路径
+    gpt_model_path = db.Column(db.String(255), nullable=False)  # GPT模型文件路径 (.pth)
+    sovits_model_path = db.Column(
+        db.String(255), nullable=False
+    )  # SoVITS模型文件路径 (.ckpt)
 
     # 模型特性
     supported_emotions = db.Column(db.Text)  # JSON格式存储支持的情感列表
@@ -53,12 +54,12 @@ class VoiceModel(db.Model):
     is_public = db.Column(db.Boolean, default=False, nullable=False)  # 是否公开
     is_featured = db.Column(db.Boolean, default=False, nullable=False)  # 是否为精选模型
 
-    # 审核信息 - 修复：分离审核者外键，避免循环引用
+    # 审核信息
     review_status = db.Column(
         db.String(20), default="pending"
     )  # pending, approved, rejected
     review_message = db.Column(db.Text)  # 审核意见
-    reviewed_by = db.Column(db.String(36))  # 只存储用户ID，不建立外键关系
+    reviewed_by = db.Column(db.String(36))  # 审核者用户ID
     reviewed_at = db.Column(db.DateTime)
 
     # 时间戳
@@ -67,7 +68,7 @@ class VoiceModel(db.Model):
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    # 关联关系 - 修复：简化关系定义
+    # 关联关系
     tags = db.relationship(
         "Tag",
         secondary=model_tags,
@@ -75,7 +76,6 @@ class VoiceModel(db.Model):
         backref=db.backref("models", lazy=True),
     )
 
-    # 修复：使用简单的外键关系，避免多个外键路径
     def set_supported_emotions(self, emotions):
         """设置支持的情感列表"""
         self.supported_emotions = json.dumps(emotions)
@@ -110,7 +110,7 @@ class VoiceModel(db.Model):
         """设置审核结果"""
         self.review_status = status
         self.review_message = message
-        self.reviewed_by = reviewer_id  # 直接存储ID
+        self.reviewed_by = reviewer_id
         self.reviewed_at = datetime.utcnow()
 
         if status == "approved":
@@ -119,6 +119,54 @@ class VoiceModel(db.Model):
             self.status = "inactive"
 
         db.session.commit()
+
+    # 🔧 修复：添加向后兼容的属性
+    @property
+    def model_path(self):
+        """向后兼容：返回 GPT 模型路径"""
+        return self.gpt_model_path
+
+    @model_path.setter
+    def model_path(self, value):
+        """向后兼容：设置 GPT 模型路径"""
+        self.gpt_model_path = value
+
+    @property
+    def index_path(self):
+        """向后兼容：返回 SoVITS 模型路径"""
+        return self.sovits_model_path
+
+    @index_path.setter
+    def index_path(self, value):
+        """向后兼容：设置 SoVITS 模型路径"""
+        self.sovits_model_path = value
+
+    def get_model_files(self):
+        """获取所有模型文件路径"""
+        files = {
+            "gpt_model_path": self.gpt_model_path,
+            "sovits_model_path": self.sovits_model_path,
+        }
+        if self.config_path:
+            files["config_path"] = self.config_path
+        return files
+
+    def validate_model_files(self):
+        """验证模型文件是否存在"""
+        import os
+
+        issues = []
+
+        if not self.gpt_model_path or not os.path.exists(self.gpt_model_path):
+            issues.append("GPT model file not found")
+
+        if not self.sovits_model_path or not os.path.exists(self.sovits_model_path):
+            issues.append("SoVITS model file not found")
+
+        if self.config_path and not os.path.exists(self.config_path):
+            issues.append("Config file not found")
+
+        return len(issues) == 0, issues
 
     def to_dict(self, include_paths=False):
         """转换为字典"""
@@ -146,9 +194,12 @@ class VoiceModel(db.Model):
         if include_paths:
             data.update(
                 {
-                    "model_path": self.model_path,
+                    "gpt_model_path": self.gpt_model_path,
+                    "sovits_model_path": self.sovits_model_path,
                     "config_path": self.config_path,
-                    "index_path": self.index_path,
+                    # 向后兼容
+                    "model_path": self.gpt_model_path,
+                    "index_path": self.sovits_model_path,
                 }
             )
 
@@ -159,7 +210,7 @@ class VoiceModel(db.Model):
 
 
 class Tag(db.Model):
-    """标签模型"""
+    """标签模型 - 保持不变"""
 
     __tablename__ = "tags"
 
