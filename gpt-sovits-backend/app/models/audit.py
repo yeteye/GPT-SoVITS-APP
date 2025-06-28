@@ -1,0 +1,253 @@
+# ./gpt-sovits-backend/app/models/audit.py
+from datetime import datetime
+from app.extensions import db
+import uuid
+import json
+
+
+class AuditLog(db.Model):
+    """审计日志模型"""
+
+    __tablename__ = "audit_logs"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    # 操作信息
+    action = db.Column(db.String(50), nullable=False)  # 操作类型
+    resource_type = db.Column(db.String(50), nullable=False)  # 资源类型
+    resource_id = db.Column(db.String(36))  # 资源ID
+
+    # 用户信息
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"))
+    ip_address = db.Column(db.String(45))  # 支持IPv6
+    user_agent = db.Column(db.String(500))
+
+    # 操作详情
+    old_values = db.Column(db.Text)  # JSON格式存储修改前的值
+    new_values = db.Column(db.Text)  # JSON格式存储修改后的值
+    description = db.Column(db.Text)  # 操作描述
+
+    # 结果信息
+    status = db.Column(db.String(20), default="success")  # success, failed, error
+    error_message = db.Column(db.Text)
+
+    # 时间戳
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # 关联关系
+    user = db.relationship("User", backref="audit_logs")
+
+    @classmethod
+    def log_action(
+        cls,
+        action,
+        resource_type,
+        user_id=None,
+        resource_id=None,
+        old_values=None,
+        new_values=None,
+        description=None,
+        ip_address=None,
+        user_agent=None,
+        status="success",
+        error_message=None,
+    ):
+        """记录操作日志 - 修复：避免事务冲突"""
+        try:
+            log = cls(
+                action=action,
+                resource_type=resource_type,
+                user_id=user_id,
+                resource_id=resource_id,
+                old_values=json.dumps(old_values) if old_values else None,
+                new_values=json.dumps(new_values) if new_values else None,
+                description=description,
+                ip_address=ip_address or "127.0.0.1",
+                user_agent=user_agent or "Unknown",
+                status=status,
+                error_message=error_message,
+            )
+
+            # 修复：使用独立的数据库会话避免事务冲突
+            try:
+                # 检查当前是否在事务中
+                if db.session.is_active:
+                    # 在活跃事务中，使用flush而不是commit
+                    db.session.add(log)
+                    db.session.flush()
+                    return log
+                else:
+                    # 不在事务中，可以安全提交
+                    db.session.add(log)
+                    db.session.commit()
+                    return log
+            except Exception as session_error:
+                # 修复：更智能的错误处理
+                try:
+                    # 尝试回滚当前操作，但不影响主事务
+                    db.session.expunge(log)
+
+                    # 使用新的数据库会话
+                    from sqlalchemy import create_engine
+                    from sqlalchemy.orm import sessionmaker
+
+                    engine = db.get_engine()
+                    Session = sessionmaker(bind=engine)
+                    new_session = Session()
+
+                    try:
+                        new_log = cls(
+                            action=action,
+                            resource_type=resource_type,
+                            user_id=user_id,
+                            resource_id=resource_id,
+                            old_values=json.dumps(old_values) if old_values else None,
+                            new_values=json.dumps(new_values) if new_values else None,
+                            description=description,
+                            ip_address=ip_address or "127.0.0.1",
+                            user_agent=user_agent or "Unknown",
+                            status=status,
+                            error_message=error_message,
+                        )
+                        new_session.add(new_log)
+                        new_session.commit()
+                        return new_log
+                    finally:
+                        new_session.close()
+
+                except Exception as fallback_error:
+                    # 最后的错误处理：记录到应用日志
+                    try:
+                        from flask import current_app
+
+                        current_app.logger.warning(
+                            f"Failed to log audit action {action}: {fallback_error}"
+                        )
+                    except RuntimeError:
+                        print(
+                            f"Warning: Failed to log audit action {action}: {fallback_error}"
+                        )
+
+                    return None
+
+        except Exception as e:
+            # 创建日志对象失败
+            try:
+                from flask import current_app
+
+                current_app.logger.warning(f"Failed to create audit log: {e}")
+            except RuntimeError:
+                print(f"Warning: Failed to create audit log: {e}")
+            return None
+
+    def get_old_values(self):
+        """获取修改前的值"""
+        if self.old_values:
+            try:
+                return json.loads(self.old_values)
+            except:
+                return {}
+        return {}
+
+    def get_new_values(self):
+        """获取修改后的值"""
+        if self.new_values:
+            try:
+                return json.loads(self.new_values)
+            except:
+                return {}
+        return {}
+
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            "id": self.id,
+            "action": self.action,
+            "resource_type": self.resource_type,
+            "resource_id": self.resource_id,
+            "user_id": self.user_id,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "old_values": self.get_old_values(),
+            "new_values": self.get_new_values(),
+            "description": self.description,
+            "status": self.status,
+            "error_message": self.error_message,
+            "created_at": self.created_at.isoformat(),
+        }
+
+    def __repr__(self):
+        return f"<AuditLog {self.action} on {self.resource_type}>"
+
+
+class UserUpload(db.Model):
+    """用户上传文件记录"""
+
+    __tablename__ = "user_uploads"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
+
+    # 文件信息
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.BigInteger, nullable=False)  # 文件大小(字节)
+    file_type = db.Column(db.String(50), nullable=False)  # audio, model, image等
+    mime_type = db.Column(db.String(100))
+    file_hash = db.Column(db.String(64))  # SHA256哈希值，用于去重
+
+    # 文件状态
+    status = db.Column(
+        db.String(20), default="uploaded"
+    )  # uploaded, processing, processed, failed
+    is_deleted = db.Column(db.Boolean, default=False)
+
+    # 关联信息
+    related_task_id = db.Column(db.String(36))  # 关联的任务ID
+    related_model_id = db.Column(db.String(36))  # 关联的模型ID
+
+    # 元数据
+    file_metadata = db.Column(db.Text)  # JSON格式存储文件元数据
+
+    # 时间戳
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    def set_metadata(self, metadata):
+        """设置元数据"""
+        self.file_metadata = json.dumps(metadata)
+
+    def get_metadata(self):
+        """获取元数据"""
+        if self.file_metadata:
+            return json.loads(self.file_metadata)
+        return {}
+
+    def mark_deleted(self):
+        """标记为已删除"""
+        self.is_deleted = True
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            "id": self.id,
+            "filename": self.filename,
+            "original_filename": self.original_filename,
+            "file_size": self.file_size,
+            "file_type": self.file_type,
+            "mime_type": self.mime_type,
+            "status": self.status,
+            "related_task_id": self.related_task_id,
+            "related_model_id": self.related_model_id,
+            "file_metadata": self.get_metadata(),
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+
+    def __repr__(self):
+        return f"<UserUpload {self.filename}>"

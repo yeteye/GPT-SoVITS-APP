@@ -1,0 +1,4544 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "GPT-SoVITS",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "admin"
+    },
+    {
+      "name": "auth"
+    },
+    {
+      "name": "health"
+    },
+    {
+      "name": "models"
+    },
+    {
+      "name": "tts"
+    },
+    {
+      "name": "user"
+    },
+    {
+      "name": "voice_clone"
+    },
+    {
+      "name": "watermark"
+    }
+  ],
+  "paths": {
+    "/api/admin/audit-logs": {
+      "get": {
+        "summary": "获取审计日志",
+        "deprecated": false,
+        "description": "获取审计日志",
+        "operationId": "get_admin_get_audit_logs",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "description": "查询参数: action",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "description": "查询参数: resource_type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "查询参数: user_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/cleanup": {
+      "post": {
+        "summary": "系统清理",
+        "deprecated": false,
+        "description": "系统清理",
+        "operationId": "post_admin_system_cleanup",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/models": {
+      "get": {
+        "summary": "获取所有模型列表（管理员视图）",
+        "deprecated": false,
+        "description": "获取所有模型列表（管理员视图）",
+        "operationId": "get_admin_get_all_models",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "查询参数: type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "查询参数: status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "description": "查询参数: review_status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/models/{model_id}/review": {
+      "post": {
+        "summary": "审核模型",
+        "deprecated": false,
+        "description": "审核模型",
+        "operationId": "post_admin_review_model",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "description": "路径参数: model_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "description": "JSON 字段: status"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "JSON 字段: message",
+                    "default": ""
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/statistics": {
+      "get": {
+        "summary": "获取系统统计信息",
+        "deprecated": false,
+        "description": "获取系统统计信息",
+        "operationId": "get_admin_get_system_statistics",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "models": {
+                          "type": "object",
+                          "properties": {
+                            "official": {
+                              "type": "integer"
+                            },
+                            "pending_review": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "user_trained": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "official",
+                            "pending_review",
+                            "total",
+                            "user_trained"
+                          ]
+                        },
+                        "storage": {
+                          "type": "object",
+                          "properties": {
+                            "total_size_bytes": {
+                              "type": "integer"
+                            },
+                            "total_size_mb": {
+                              "type": "string"
+                            },
+                            "total_uploads": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "total_size_bytes",
+                            "total_size_mb",
+                            "total_uploads"
+                          ]
+                        },
+                        "tasks": {
+                          "type": "object",
+                          "properties": {
+                            "tts_today": {
+                              "type": "integer"
+                            },
+                            "tts_total": {
+                              "type": "integer"
+                            },
+                            "voice_clone_today": {
+                              "type": "integer"
+                            },
+                            "voice_clone_total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "tts_today",
+                            "tts_total",
+                            "voice_clone_today",
+                            "voice_clone_total"
+                          ]
+                        },
+                        "users": {
+                          "type": "object",
+                          "properties": {
+                            "active": {
+                              "type": "integer"
+                            },
+                            "new_today": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "active",
+                            "new_today",
+                            "total"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "models",
+                        "storage",
+                        "tasks",
+                        "users"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/tags": {
+      "post": {
+        "summary": "创建新标签",
+        "deprecated": false,
+        "description": "创建新标签",
+        "operationId": "post_admin_create_tag",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "JSON 字段: name",
+                    "default": ""
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "JSON 字段: description",
+                    "default": ""
+                  },
+                  "color": {
+                    "type": "string",
+                    "description": "JSON 字段: color",
+                    "default": "#007bff"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/tags/{tag_id}": {
+      "delete": {
+        "summary": "删除标签",
+        "deprecated": false,
+        "description": "删除标签",
+        "operationId": "delete_admin_delete_tag",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "tag_id",
+            "in": "path",
+            "description": "路径参数: tag_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/upload-official-model": {
+      "post": {
+        "summary": "上传官方预训练模型",
+        "deprecated": false,
+        "description": "上传官方预训练模型",
+        "operationId": "post_admin_upload_official_model",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "model_file": {
+                    "description": "模型文件",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "model_name": {
+                    "description": "模型名称",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "description": {
+                    "description": "模型描述",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "supported_emotions": {
+                    "description": "支持的情感标签 可选：[\"neutral\", \"happy\", \"sad\"]",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "supported_languages": {
+                    "description": "支持语言 可选：[\"zh-CN\"]",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "tags": {
+                    "description": "模型标签 可选：[\"官方\", \"测试\"]",
+                    "example": "",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "model_file",
+                  "model_name",
+                  "description",
+                  "supported_emotions",
+                  "supported_languages",
+                  "tags"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "获取所有用户列表",
+        "deprecated": false,
+        "description": "获取所有用户列表",
+        "operationId": "get_admin_get_all_users",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "查询参数: role 可填：0/1/2",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "description": "查询参数: is_active 可选：true/false",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "has_next": {
+                              "type": "boolean"
+                            },
+                            "has_prev": {
+                              "type": "boolean"
+                            },
+                            "page": {
+                              "type": "integer"
+                            },
+                            "pages": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "has_next",
+                            "has_prev",
+                            "page",
+                            "pages",
+                            "per_page",
+                            "total"
+                          ]
+                        },
+                        "users": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "avatar_url": {
+                                "type": "string"
+                              },
+                              "created_at": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "is_active": {
+                                "type": "boolean"
+                              },
+                              "is_verified": {
+                                "type": "boolean"
+                              },
+                              "last_login_at": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "integer"
+                              },
+                              "username": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "avatar_url",
+                              "created_at",
+                              "email",
+                              "id",
+                              "is_active",
+                              "is_verified",
+                              "last_login_at",
+                              "role",
+                              "username"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "pagination",
+                        "users"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{user_id}/role": {
+      "put": {
+        "summary": "更新用户角色",
+        "deprecated": false,
+        "description": "更新用户角色",
+        "operationId": "put_admin_update_user_role",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "路径参数: user_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "description": "JSON 字段: role"
+                  }
+                },
+                "required": [
+                  "role"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{user_id}/status": {
+      "put": {
+        "summary": "更新用户状态（激活/禁用）",
+        "deprecated": false,
+        "description": "更新用户状态（激活/禁用）",
+        "operationId": "put_admin_update_user_status",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "路径参数: user_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "is_active": {
+                    "type": "string",
+                    "description": "JSON 字段: is_active"
+                  }
+                },
+                "required": [
+                  "is_active"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "summary": "修改密码",
+        "deprecated": false,
+        "description": "修改密码",
+        "operationId": "post_auth_change_password",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "description": "JSON 字段: current_password",
+                    "default": ""
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "description": "JSON 字段: new_password",
+                    "default": ""
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "summary": "忘记密码",
+        "deprecated": false,
+        "description": "忘记密码",
+        "operationId": "post_auth_forgot_password",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": "JSON 字段: email",
+                    "default": ""
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "用户登录",
+        "deprecated": false,
+        "description": "用户身份验证",
+        "operationId": "post_auth_login",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "identifier",
+                  "password"
+                ],
+                "properties": {
+                  "identifier": {
+                    "type": "string",
+                    "description": "用户名或邮箱"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "密码"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "access_token": {
+                          "type": "string"
+                        },
+                        "refresh_token": {
+                          "type": "string"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "avatar_url": {
+                              "type": "null"
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "is_active": {
+                              "type": "boolean"
+                            },
+                            "is_verified": {
+                              "type": "boolean"
+                            },
+                            "last_login_at": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "integer"
+                            },
+                            "username": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "avatar_url",
+                            "created_at",
+                            "email",
+                            "id",
+                            "is_active",
+                            "is_verified",
+                            "last_login_at",
+                            "role",
+                            "username"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "access_token",
+                        "refresh_token",
+                        "user"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "用户登出",
+        "deprecated": false,
+        "description": "用户登出",
+        "operationId": "post_auth_logout",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "刷新访问令牌",
+        "deprecated": false,
+        "description": "刷新访问令牌",
+        "operationId": "post_auth_refresh",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "用户注册",
+        "deprecated": false,
+        "description": "创建新的用户账户",
+        "operationId": "post_auth_register",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "用户名"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "邮箱地址"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "密码"
+                  }
+                },
+                "required": [
+                  "username",
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "201": {
+            "description": "注册成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "409": {
+            "description": "用户名或邮箱已存在",
+            "headers": {}
+          },
+          "422": {
+            "description": "参数验证失败",
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/reset-password/{token}": {
+      "post": {
+        "summary": "重置密码",
+        "deprecated": false,
+        "description": "重置密码",
+        "operationId": "post_auth_reset_password",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "路径参数: token",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "JSON 字段: password",
+                    "default": ""
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/verify-email/{token}": {
+      "get": {
+        "summary": "验证邮箱",
+        "deprecated": false,
+        "description": "验证邮箱",
+        "operationId": "get_auth_verify_email",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "路径参数: token",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "系统健康检查 - 修复版本",
+        "deprecated": false,
+        "description": "系统健康检查 - 修复版本",
+        "operationId": "get_health_health_check",
+        "tags": [
+          "health"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "database_time": {
+                      "type": "string"
+                    },
+                    "environment": {
+                      "type": "string"
+                    },
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "celery": {
+                          "type": "string"
+                        },
+                        "database": {
+                          "type": "string"
+                        },
+                        "redis": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "celery",
+                        "database",
+                        "redis"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "database_time",
+                    "environment",
+                    "services",
+                    "status"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/models/{model_id}": {
+      "get": {
+        "summary": "获取模型详情",
+        "deprecated": false,
+        "description": "获取模型详情",
+        "operationId": "get_models_get_model_detail",
+        "tags": [
+          "models"
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "description": "路径参数: model_id",
+            "required": true,
+            "example": "1",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新模型信息",
+        "deprecated": false,
+        "description": "更新模型信息",
+        "operationId": "put_models_update_model",
+        "tags": [
+          "models"
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "description": "路径参数: model_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除模型",
+        "deprecated": false,
+        "description": "删除模型",
+        "operationId": "delete_models_delete_model",
+        "tags": [
+          "models"
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "description": "路径参数: model_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/models/{model_id}/toggle-public": {
+      "post": {
+        "summary": "切换模型公开状态",
+        "deprecated": false,
+        "description": "切换模型公开状态",
+        "operationId": "post_models_toggle_model_public",
+        "tags": [
+          "models"
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "description": "路径参数: model_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/models/my-models": {
+      "get": {
+        "summary": "获取用户的模型列表",
+        "deprecated": false,
+        "description": "获取用户的模型列表",
+        "operationId": "get_models_get_my_models",
+        "tags": [
+          "models"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "查询参数: status  可选值：active/inactive",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/models/stats": {
+      "get": {
+        "summary": "获取用户模型统计信息",
+        "deprecated": false,
+        "description": "获取用户模型统计信息",
+        "operationId": "get_models_get_model_stats",
+        "tags": [
+          "models"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/models/tags": {
+      "get": {
+        "summary": "获取可用标签列表",
+        "deprecated": false,
+        "description": "获取可用标签列表",
+        "operationId": "get_models_get_tags",
+        "tags": [
+          "models"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tts/emotions": {
+      "get": {
+        "summary": "获取支持的情感列表",
+        "deprecated": false,
+        "description": "获取支持的情感列表",
+        "operationId": "get_tts_get_supported_emotions",
+        "tags": [
+          "tts"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tts/generate": {
+      "post": {
+        "summary": "生成语音",
+        "deprecated": false,
+        "description": "生成语音",
+        "operationId": "post_tts_generate_speech",
+        "tags": [
+          "tts"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "JSON 字段: text"
+                  },
+                  "model_id": {
+                    "type": "string",
+                    "description": "JSON 字段: model_id"
+                  },
+                  "emotion": {
+                    "type": "string",
+                    "description": "JSON 字段: emotion"
+                  },
+                  "speed": {
+                    "type": "number",
+                    "description": "JSON 字段: speed"
+                  }
+                },
+                "required": [
+                  "text",
+                  "model_id"
+                ]
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tts/models": {
+      "get": {
+        "summary": "获取可用的语音模型列表",
+        "deprecated": false,
+        "description": "获取可用的语音模型列表",
+        "operationId": "get_tts_get_available_models",
+        "tags": [
+          "tts"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "查询参数: type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "description": "查询参数: featured",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tts/models/{model_id}": {
+      "get": {
+        "summary": "获取模型详情",
+        "deprecated": false,
+        "description": "获取模型详情",
+        "operationId": "get_tts_get_model_detail",
+        "tags": [
+          "tts"
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "description": "路径参数: model_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tts/tasks": {
+      "get": {
+        "summary": "获取用户的TTS任务列表",
+        "deprecated": false,
+        "description": "获取用户的TTS任务列表",
+        "operationId": "get_tts_get_tts_tasks",
+        "tags": [
+          "tts"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "查询参数: status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tts/tasks/{task_id}": {
+      "get": {
+        "summary": "获取TTS任务详情",
+        "deprecated": false,
+        "description": "获取TTS任务详情",
+        "operationId": "get_tts_get_tts_task_detail",
+        "tags": [
+          "tts"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "description": "路径参数: task_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tts/tasks/{task_id}/download": {
+      "get": {
+        "summary": "下载生成的音频",
+        "deprecated": false,
+        "description": "下载生成的音频",
+        "operationId": "get_tts_download_audio",
+        "tags": [
+          "tts"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "description": "路径参数: task_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/user/delete-account": {
+      "delete": {
+        "summary": "删除用户账户",
+        "deprecated": false,
+        "description": "删除用户账户",
+        "operationId": "delete_user_delete_account",
+        "tags": [
+          "user"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/user/profile": {
+      "get": {
+        "summary": "获取用户个人资料",
+        "deprecated": false,
+        "description": "获取用户个人资料",
+        "operationId": "get_user_get_profile",
+        "tags": [
+          "user"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新用户个人资料",
+        "deprecated": false,
+        "description": "更新用户个人资料",
+        "operationId": "put_user_update_profile",
+        "tags": [
+          "user"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "avatar_url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username",
+                  "avatar_url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profile": {
+                          "type": "object",
+                          "properties": {
+                            "avatar_url": {
+                              "type": "string"
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "is_active": {
+                              "type": "boolean"
+                            },
+                            "is_verified": {
+                              "type": "boolean"
+                            },
+                            "last_login_at": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "integer"
+                            },
+                            "username": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "avatar_url",
+                            "created_at",
+                            "email",
+                            "id",
+                            "is_active",
+                            "is_verified",
+                            "last_login_at",
+                            "role",
+                            "username"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "profile"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/user/statistics": {
+      "get": {
+        "summary": "获取用户统计信息",
+        "deprecated": false,
+        "description": "获取用户统计信息",
+        "operationId": "get_user_get_user_statistics",
+        "tags": [
+          "user"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/user/tasks/history": {
+      "get": {
+        "summary": "获取用户任务历史",
+        "deprecated": false,
+        "description": "获取用户任务历史",
+        "operationId": "get_user_get_task_history",
+        "tags": [
+          "user"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "查询参数: type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "查询参数: status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/user/uploads": {
+      "get": {
+        "summary": "获取用户上传文件列表",
+        "deprecated": false,
+        "description": "获取用户上传文件列表",
+        "operationId": "get_user_get_user_uploads",
+        "tags": [
+          "user"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "查询参数: type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/user/uploads/{upload_id}": {
+      "delete": {
+        "summary": "删除上传文件",
+        "deprecated": false,
+        "description": "删除上传文件",
+        "operationId": "delete_user_delete_upload",
+        "tags": [
+          "user"
+        ],
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "description": "路径参数: upload_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/samples": {
+      "get": {
+        "summary": "获取用户的音频样本列表",
+        "deprecated": false,
+        "description": "获取用户的音频样本列表",
+        "operationId": "get_voice_clone_get_user_samples",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/samples/{sample_id}": {
+      "delete": {
+        "summary": "删除音频样本",
+        "deprecated": false,
+        "description": "删除音频样本",
+        "operationId": "delete_voice_clone_delete_sample",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [
+          {
+            "name": "sample_id",
+            "in": "path",
+            "description": "路径参数: sample_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/start-training": {
+      "post": {
+        "summary": "开始训练",
+        "deprecated": false,
+        "description": "使用上传的音频样本开始语音克隆训练",
+        "operationId": "post_voice_clone_start_training",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "model_name": {
+                    "type": "string",
+                    "description": "模型名称"
+                  },
+                  "sample_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "音频样本ID列表"
+                  }
+                },
+                "required": [
+                  "model_name",
+                  "sample_ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "estimated_completion": {
+                          "type": "string"
+                        },
+                        "sample_count": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "task_id": {
+                          "type": "string"
+                        },
+                        "total_duration": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "estimated_completion",
+                        "sample_count",
+                        "status",
+                        "task_id",
+                        "total_duration"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/tasks": {
+      "get": {
+        "summary": "获取用户的音色克隆任务列表",
+        "deprecated": false,
+        "description": "获取用户的音色克隆任务列表",
+        "operationId": "get_voice_clone_get_user_tasks",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "查询参数: status",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}": {
+      "get": {
+        "summary": "获取任务详情",
+        "deprecated": false,
+        "description": "获取任务详情",
+        "operationId": "get_voice_clone_get_task_detail",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "description": "路径参数: task_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}/cancel": {
+      "post": {
+        "summary": "取消训练任务",
+        "deprecated": false,
+        "description": "取消训练任务",
+        "operationId": "post_voice_clone_cancel_task",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "description": "路径参数: task_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}/result": {
+      "get": {
+        "summary": "获取训练结果",
+        "deprecated": false,
+        "description": "获取训练结果",
+        "operationId": "get_voice_clone_get_task_result",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "description": "路径参数: task_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/tasks/{task_id}/retry": {
+      "post": {
+        "summary": "重试失败的任务",
+        "deprecated": false,
+        "description": "重试失败的任务",
+        "operationId": "post_voice_clone_retry_task",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "description": "路径参数: task_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/upload-sample": {
+      "post": {
+        "summary": "上传音频样本",
+        "deprecated": false,
+        "description": "上传音频样本",
+        "operationId": "post_voice_clone_upload_audio_sample",
+        "tags": [
+          "voice_clone"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio_file": {
+                    "description": "上传音频文件",
+                    "example": "E:\\Programs\\Code_VSCode\\gpt-sovits-apply\\gpt-sovits-backend\\uploads\\audio_samples\\1.wav",
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "audio_file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "duration": {
+                          "type": "integer"
+                        },
+                        "file_size": {
+                          "type": "integer"
+                        },
+                        "filename": {
+                          "type": "string"
+                        },
+                        "sample_rate": {
+                          "type": "integer"
+                        },
+                        "upload_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "duration",
+                        "file_size",
+                        "filename",
+                        "sample_rate",
+                        "upload_id"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/admin/all-watermarks": {
+      "get": {
+        "summary": "管理员获取所有水印",
+        "deprecated": false,
+        "description": "管理员获取所有水印",
+        "operationId": "get_watermark_admin_get_all_watermarks",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "description": "查询参数: username",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "description": "查询参数: is_active",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/admin/statistics": {
+      "get": {
+        "summary": "管理员获取系统水印统计",
+        "deprecated": false,
+        "description": "管理员获取系统水印统计",
+        "operationId": "get_watermark_admin_get_statistics",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/admin/verification-logs": {
+      "get": {
+        "summary": "管理员获取所有验证日志",
+        "deprecated": false,
+        "description": "管理员获取所有验证日志",
+        "operationId": "get_watermark_admin_get_verification_logs",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "success",
+            "in": "query",
+            "description": "查询参数: success",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "watermark_code",
+            "in": "query",
+            "description": "查询参数: watermark_code",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/embed": {
+      "post": {
+        "summary": "手动嵌入水印API - 修复：添加参数验证",
+        "deprecated": false,
+        "description": "手动嵌入水印API - 修复：添加参数验证",
+        "operationId": "post_watermark_embed_watermark",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio_file": {
+                    "example": "",
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "code_length": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "description": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "model_id": {
+                    "example": "",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "audio_file",
+                  "code_length",
+                  "description",
+                  "model_id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/info/{watermark_code}": {
+      "get": {
+        "summary": "根据水印码获取公开信息（无需认证）",
+        "deprecated": false,
+        "description": "根据水印码获取公开信息（无需认证）",
+        "operationId": "get_watermark_get_watermark_info",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "watermark_code",
+            "in": "path",
+            "description": "路径参数: watermark_code",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/my-watermarks": {
+      "get": {
+        "summary": "获取我的水印列表",
+        "deprecated": false,
+        "description": "获取我的水印列表",
+        "operationId": "get_watermark_get_my_watermarks",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "model_id",
+            "in": "query",
+            "description": "查询参数: model_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/my-watermarks/{watermark_id}": {
+      "get": {
+        "summary": "获取水印详情",
+        "deprecated": false,
+        "description": "获取水印详情",
+        "operationId": "get_watermark_get_watermark_detail",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "watermark_id",
+            "in": "path",
+            "description": "路径参数: watermark_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新水印信息 - 修复：改进请求体验证",
+        "deprecated": false,
+        "description": "更新水印信息 - 修复：改进请求体验证",
+        "operationId": "put_watermark_update_watermark",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "watermark_id",
+            "in": "path",
+            "description": "路径参数: watermark_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "停用水印（软删除）",
+        "deprecated": false,
+        "description": "停用水印（软删除）",
+        "operationId": "delete_watermark_deactivate_watermark",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "watermark_id",
+            "in": "path",
+            "description": "路径参数: watermark_id",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/statistics": {
+      "get": {
+        "summary": "获取用户水印统计",
+        "deprecated": false,
+        "description": "获取用户水印统计",
+        "operationId": "get_watermark_get_watermark_statistics",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/verification-logs": {
+      "get": {
+        "summary": "获取用户的水印验证日志",
+        "deprecated": false,
+        "description": "获取用户的水印验证日志",
+        "operationId": "get_watermark_get_verification_logs",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "查询参数: page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "查询参数: per_page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/watermark/verify": {
+      "post": {
+        "summary": "验证水印API",
+        "deprecated": false,
+        "description": "验证水印API",
+        "operationId": "post_watermark_verify_watermark",
+        "tags": [
+          "watermark"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio_file": {
+                    "example": "",
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "audio_file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "headers": {}
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "access_token": {
+                "type": "string"
+              },
+              "refresh_token": {
+                "type": "string"
+              },
+              "user": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "examples": [
+              false
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "error_code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": [],
+  "security": []
+}
