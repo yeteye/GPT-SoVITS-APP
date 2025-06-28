@@ -15,7 +15,11 @@ model_tags = db.Table(
 
 
 class VoiceModel(db.Model):
-    """语音模型 - 修复：统一使用 gpt_model_path 和 sovits_model_path"""
+    """语音模型 - GPT-SoVITS 双模型架构
+
+    gpt_model_path: GPT模型文件路径 (.pth格式)
+    sovits_model_path: SoVITS模型文件路径 (.ckpt格式)
+    """
 
     __tablename__ = "voice_models"
 
@@ -120,53 +124,37 @@ class VoiceModel(db.Model):
 
         db.session.commit()
 
-    # 🔧 修复：添加向后兼容的属性
-    @property
-    def model_path(self):
-        """向后兼容：返回 GPT 模型路径"""
-        return self.gpt_model_path
-
-    @model_path.setter
-    def model_path(self, value):
-        """向后兼容：设置 GPT 模型路径"""
-        self.gpt_model_path = value
-
-    @property
-    def index_path(self):
-        """向后兼容：返回 SoVITS 模型路径"""
-        return self.sovits_model_path
-
-    @index_path.setter
-    def index_path(self, value):
-        """向后兼容：设置 SoVITS 模型路径"""
-        self.sovits_model_path = value
-
     def get_model_files(self):
         """获取所有模型文件路径"""
         files = {
             "gpt_model_path": self.gpt_model_path,
             "sovits_model_path": self.sovits_model_path,
         }
-        if self.config_path:
-            files["config_path"] = self.config_path
+
         return files
 
     def validate_model_files(self):
-        """验证模型文件是否存在"""
+        """验证GPT和SoVITS模型文件是否都存在"""
         import os
 
-        issues = []
+        gpt_exists = self.gpt_model_path and os.path.exists(self.gpt_model_path)
+        sovits_exists = self.sovits_model_path and os.path.exists(
+            self.sovits_model_path
+        )
 
-        if not self.gpt_model_path or not os.path.exists(self.gpt_model_path):
-            issues.append("GPT model file not found")
-
-        if not self.sovits_model_path or not os.path.exists(self.sovits_model_path):
-            issues.append("SoVITS model file not found")
-
-        if self.config_path and not os.path.exists(self.config_path):
-            issues.append("Config file not found")
-
-        return len(issues) == 0, issues
+        return {
+            "all_files_exist": gpt_exists and sovits_exists,
+            "gpt_model_exists": gpt_exists,
+            "sovits_model_exists": sovits_exists,
+            "missing_files": [
+                f
+                for f, exists in [
+                    ("gpt_model", gpt_exists),
+                    ("sovits_model", sovits_exists),
+                ]
+                if not exists
+            ],
+        }
 
     def to_dict(self, include_paths=False):
         """转换为字典"""
@@ -196,10 +184,6 @@ class VoiceModel(db.Model):
                 {
                     "gpt_model_path": self.gpt_model_path,
                     "sovits_model_path": self.sovits_model_path,
-                    "config_path": self.config_path,
-                    # 向后兼容
-                    "model_path": self.gpt_model_path,
-                    "index_path": self.sovits_model_path,
                 }
             )
 

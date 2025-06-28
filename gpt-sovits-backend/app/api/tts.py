@@ -276,7 +276,7 @@ def download_audio(task_id):
     except ResourceNotFoundError as e:
         return jsonify(create_response(False, str(e))), 404
     except ValidationError as e:
-        return jsonify(create_response(False, str(e))), 400  # 修复：使用400而不是422
+        return jsonify(create_response(False, str(e))), 422
     except Exception as e:
         current_app.logger.error(f"Download audio error: {e}")
         return jsonify(create_response(False, "Failed to download audio")), 500

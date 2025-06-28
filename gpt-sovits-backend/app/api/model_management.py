@@ -1,5 +1,7 @@
 # ./gpt-sovits-backend/app/api/model_management.py
 from flask import Blueprint, request, jsonify, current_app
+import os
+from datetime import datetime
 from app.extensions import db
 from app.models.model import VoiceModel, Tag
 from app.auth.decorators import auth_required, rate_limit, log_action, verify_ownership
@@ -208,49 +210,133 @@ def update_model(model_id):
 @rate_limit(requests_per_minute=5)
 @log_action("delete_voice_model", "voice_model")
 def delete_model(model_id):
-    """删除模型"""
+    """删除模型 - 修复：使用正确的模型字段名"""
     try:
         user = request.current_user
         model = request.current_resource
 
         # 检查模型是否正在使用中
-        from app.models.task import TTSTask
+        from app.models.task import TTSTask, VoiceCloneTask
 
-        active_tasks = TTSTask.query.filter_by(
+        # 检查TTS任务
+        active_tts_tasks = TTSTask.query.filter_by(
             model_id=model.id, status="processing"
         ).count()
 
-        if active_tasks > 0:
+        # 检查语音克隆任务
+        active_vc_tasks = VoiceCloneTask.query.filter_by(
+            result_model_id=model.id, status="processing"
+        ).count()
+
+        if active_tts_tasks > 0 or active_vc_tasks > 0:
             raise ValidationError(
-                "Cannot delete model while it is being used in active tasks"
+                f"Cannot delete model while it is being used in {active_tts_tasks + active_vc_tasks} active tasks"
             )
+
+        # 检查是否是官方模型（额外保护）
+        if model.model_type == "official" and not user.is_admin():
+            raise AuthorizationError("Only administrators can delete official models")
+
+        # 记录删除前的信息用于日志
+        model_info = {
+            "model_name": model.name,
+            "model_type": model.model_type,
+            "gpt_model_path": model.gpt_model_path,
+            "sovits_model_path": model.sovits_model_path,
+        }
 
         # 软删除：设置状态为inactive
         model.status = "inactive"
-        db.session.commit()
+        model.updated_at = datetime.utcnow()
 
-        # 可选：删除物理文件
-        import os
+        # 🔧 修复：删除正确的物理文件
+        deleted_files = []
+        failed_files = []
 
-        files_to_delete = [model.model_path, model.config_path, model.index_path]
+        files_to_delete = [
+            model.gpt_model_path,  # 新字段：GPT模型文件
+            model.sovits_model_path,  # 新字段：SoVITS模型文件
+        ]
+
         for file_path in files_to_delete:
             if file_path and os.path.exists(file_path):
                 try:
                     os.remove(file_path)
+                    deleted_files.append(file_path)
+                    current_app.logger.info(f"Deleted model file: {file_path}")
                 except Exception as e:
+                    failed_files.append({"path": file_path, "error": str(e)})
                     current_app.logger.warning(
                         f"Failed to delete file {file_path}: {e}"
                     )
 
-        return jsonify(
-            create_response(success=True, message="Model deleted successfully")
+        # 尝试删除空的模型目录
+        model_dirs = set()
+        for file_path in files_to_delete:
+            if file_path:
+                model_dirs.add(os.path.dirname(file_path))
+
+        deleted_dirs = []
+        for model_dir in model_dirs:
+            try:
+                if os.path.exists(model_dir) and not os.listdir(model_dir):
+                    os.rmdir(model_dir)
+                    deleted_dirs.append(model_dir)
+                    current_app.logger.info(
+                        f"Deleted empty model directory: {model_dir}"
+                    )
+            except Exception as e:
+                current_app.logger.warning(
+                    f"Failed to delete directory {model_dir}: {e}"
+                )
+
+        db.session.commit()
+
+        # 记录详细的删除日志
+        log_details = {
+            "model_info": model_info,
+            "deleted_files": deleted_files,
+            "failed_files": failed_files,
+            "deleted_directories": deleted_dirs,
+            "deletion_type": "soft_delete_with_file_cleanup",
+        }
+
+        # 更新审计日志
+        from app.utils.helpers import log_user_action
+
+        log_user_action(
+            user_id=user.id,
+            action="delete_voice_model_complete",
+            resource_type="voice_model",
+            resource_id=model.id,
+            details=f"Model '{model.name}' deleted with {len(deleted_files)} files removed",
         )
 
-    except (ValidationError, ResourceNotFoundError) as e:
+        response_data = {
+            "model_id": model.id,
+            "model_name": model.name,
+            "deleted_files_count": len(deleted_files),
+            "failed_files_count": len(failed_files),
+            "deleted_directories_count": len(deleted_dirs),
+        }
+
+        # 如果有文件删除失败，在响应中包含警告
+        if failed_files:
+            response_data["warnings"] = [
+                f"Failed to delete {len(failed_files)} files. Manual cleanup may be required."
+            ]
+
+        return jsonify(
+            create_response(
+                success=True, message="Model deleted successfully", data=response_data
+            )
+        )
+
+    except (ValidationError, ResourceNotFoundError, AuthorizationError) as e:
         return jsonify(create_response(False, str(e))), e.status_code
     except Exception as e:
         current_app.logger.error(f"Delete model error: {e}")
-        return jsonify(create_response(False, "Failed to delete model")), 500
+        return jsonify(create_response(False, f"Failed to delete model: {str(e)}")), 500
 
 
 @model_bp.route("/<model_id>/toggle-public", methods=["POST"])

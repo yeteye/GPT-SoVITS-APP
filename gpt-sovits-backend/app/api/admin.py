@@ -671,7 +671,7 @@ def get_system_statistics():
 @rate_limit(requests_per_minute=5)
 @log_action("system_cleanup", "system")
 def system_cleanup():
-    """系统清理"""
+    """系统清理 - 修复：使用正确的模型字段名"""
     try:
         data = request.get_json() or {}
         cleanup_types = data.get("types", ["temp_files", "expired_tokens"])
@@ -681,53 +681,116 @@ def system_cleanup():
         if "temp_files" in cleanup_types:
             from app.utils.helpers import clean_temp_files
 
-            clean_temp_files()
-            results["temp_files"] = "Cleaned"
+            cleaned_count = clean_temp_files()
+            results["temp_files"] = f"Cleaned {cleaned_count} temporary files"
 
         if "expired_tokens" in cleanup_types:
             from app.auth.utils import clean_expired_tokens
 
             count = clean_expired_tokens()
-            results["expired_tokens"] = f"Cleaned {count} tokens"
+            results["expired_tokens"] = f"Cleaned {count} expired tokens"
 
         if "inactive_models" in cleanup_types:
-            # 清理长期未使用的非活跃模型
+            # 🔧 修复：清理长期未使用的非活跃模型，使用正确字段名
             cutoff_date = datetime.utcnow() - timedelta(days=90)
             inactive_models = VoiceModel.query.filter(
-                VoiceModel.status == "inactive", VoiceModel.updated_at < cutoff_date
+                VoiceModel.status == "inactive",
+                VoiceModel.updated_at < cutoff_date,
+                VoiceModel.model_type
+                == "user_trained",  # 只清理用户训练的模型，保护官方模型
             ).all()
 
+            cleaned_models = 0
             for model in inactive_models:
-                # 删除物理文件
-                files_to_delete = [
-                    model.model_path,
-                    model.config_path,
-                    model.index_path,
-                ]
-                for file_path in files_to_delete:
-                    if file_path and os.path.exists(file_path):
-                        try:
-                            os.remove(file_path)
-                        except Exception:
-                            pass
+                try:
+                    # 🔧 修复：删除正确的模型文件
+                    files_to_delete = [
+                        model.gpt_model_path,  # 新字段：GPT模型文件
+                        model.sovits_model_path,  # 新字段：SoVITS模型文件
+                    ]
 
-                # 删除数据库记录
-                db.session.delete(model)
+                    # 删除物理文件
+                    for file_path in files_to_delete:
+                        if file_path and os.path.exists(file_path):
+                            try:
+                                os.remove(file_path)
+                                current_app.logger.info(f"Deleted file: {file_path}")
+                            except Exception as file_error:
+                                current_app.logger.warning(
+                                    f"Failed to delete file {file_path}: {file_error}"
+                                )
+
+                    # 尝试删除空的模型目录
+                    model_dirs = set()
+                    for file_path in files_to_delete:
+                        if file_path:
+                            model_dirs.add(os.path.dirname(file_path))
+
+                    for model_dir in model_dirs:
+                        try:
+                            if os.path.exists(model_dir) and not os.listdir(model_dir):
+                                os.rmdir(model_dir)
+                                current_app.logger.info(
+                                    f"Deleted empty directory: {model_dir}"
+                                )
+                        except Exception as dir_error:
+                            current_app.logger.warning(
+                                f"Failed to delete directory {model_dir}: {dir_error}"
+                            )
+
+                    # 删除数据库记录
+                    db.session.delete(model)
+                    cleaned_models += 1
+
+                except Exception as model_error:
+                    current_app.logger.error(
+                        f"Failed to cleanup model {model.id}: {model_error}"
+                    )
+                    continue
 
             db.session.commit()
-            results["inactive_models"] = f"Cleaned {len(inactive_models)} models"
+            results["inactive_models"] = f"Cleaned {cleaned_models} inactive models"
+
+        if "orphaned_files" in cleanup_types:
+            # 🔧 新增：清理孤立文件
+            from app.services.file_service import cleanup_orphaned_files
+
+            try:
+                orphaned_count = cleanup_orphaned_files()
+                results["orphaned_files"] = f"Cleaned {orphaned_count} orphaned files"
+            except Exception as e:
+                current_app.logger.error(f"Orphaned files cleanup failed: {e}")
+                results["orphaned_files"] = f"Failed: {str(e)}"
+
+        if "old_tasks" in cleanup_types:
+            # 🔧 新增：清理旧任务
+            from app.services.task_service import TaskService
+
+            try:
+                cleanup_result = TaskService.cleanup_old_tasks(
+                    days_threshold=30, keep_completed=True
+                )
+                total_cleaned = cleanup_result["total_deleted"]
+                results["old_tasks"] = f"Cleaned {total_cleaned} old tasks"
+            except Exception as e:
+                current_app.logger.error(f"Old tasks cleanup failed: {e}")
+                results["old_tasks"] = f"Failed: {str(e)}"
 
         return jsonify(
             create_response(
                 success=True,
                 message="System cleanup completed",
-                data={"results": results},
+                data={
+                    "results": results,
+                    "cleanup_types": cleanup_types,
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
             )
         )
 
     except Exception as e:
         current_app.logger.error(f"System cleanup error: {e}")
-        return jsonify(create_response(False, "System cleanup failed")), 500
+        return jsonify(create_response(False, f"System cleanup failed: {str(e)}")), 500
 
 
 @admin_bp.route("/tags", methods=["POST"])

@@ -56,7 +56,6 @@ class Watermark(db.Model):
     def create_for_user(
         cls,
         user_id: str,
-        username: str,  # 保留参数兼容性，但不存储
         model_id: str = None,
         code_length: int = 16,
         description: str = "",
@@ -81,11 +80,6 @@ class Watermark(db.Model):
                 return watermark
 
         raise Exception("无法生成唯一的水印码")
-
-    @property
-    def username(self):
-        """动态获取用户名 - 修复：通过关系获取而不是存储"""
-        return self.user.username if self.user else "Unknown"
 
     def increment_usage(self):
         """增加使用次数"""

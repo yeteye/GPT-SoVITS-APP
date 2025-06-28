@@ -207,7 +207,7 @@ def create_sample_models():
     for model_data in sample_models:
         existing_model = VoiceModel.query.filter_by(name=model_data["name"]).first()
         if not existing_model:
-            # 创建模型文件路径（实际应用中应该是真实的模型文件）
+            # 创建模型文件路径
             model_dir = os.path.join(
                 app.config["UPLOAD_FOLDER"],
                 "models",
@@ -216,25 +216,27 @@ def create_sample_models():
             )
             os.makedirs(model_dir, exist_ok=True)
 
-            model_path = os.path.join(
-                model_dir, f'{model_data["name"].lower().replace(" ", "_")}.pth'
-            )
-            config_path = os.path.join(
-                model_dir, f'{model_data["name"].lower().replace(" ", "_")}_config.json'
+            # 🔧 修复：创建正确的模型文件路径
+            model_name_safe = model_data["name"].lower().replace(" ", "_")
+            gpt_model_path = os.path.join(model_dir, f"{model_name_safe}_gpt.pth")
+            sovits_model_path = os.path.join(
+                model_dir, f"{model_name_safe}_sovits.ckpt"
             )
 
             # 创建模拟文件
-            with open(model_path, "w") as f:
-                f.write(f'# Simulated model file for {model_data["name"]}\n')
-            with open(config_path, "w") as f:
-                f.write(f'{{"model_name": "{model_data["name"]}", "version": "1.0"}}\n')
+            with open(gpt_model_path, "w") as f:
+                f.write(f'# Simulated GPT model file for {model_data["name"]}\n')
 
+            with open(sovits_model_path, "w") as f:
+                f.write(f'# Simulated SoVITS model file for {model_data["name"]}\n')
+
+            # 🔧 修复：使用正确的字段名创建模型
             model = VoiceModel(
                 name=model_data["name"],
                 description=model_data["description"],
                 model_type=model_data["model_type"],
-                model_path=model_path,
-                config_path=config_path,
+                gpt_model_path=gpt_model_path,  # 正确字段
+                sovits_model_path=sovits_model_path,  # 正确字段
                 voice_characteristics=model_data["voice_characteristics"],
                 quality_score=model_data["quality_score"],
                 status="active",
