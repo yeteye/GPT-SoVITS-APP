@@ -10,33 +10,6 @@ from app.utils.exceptions import TaskProcessingError
 from app.utils.helpers import log_user_action, generate_unique_filename
 
 
-def get_celery_task_decorator():
-    """获取Celery任务装饰器，如果Celery不可用则返回普通函数装饰器"""
-    if celery is not None:
-        return celery.task(
-            bind=True, name="app.services.tts_service.generate_speech_task"
-        )
-    else:
-        # 测试环境或没有Celery时的装饰器
-        def mock_decorator(func):
-            def wrapper(self_or_task_id, task_id=None):
-                # 处理两种调用方式：
-                # 1. 直接调用：func(None, task_id)
-                # 2. Celery风格调用：func(self, task_id)
-                if task_id is None:
-                    # 直接调用：第一个参数是task_id
-                    return func(None, self_or_task_id)
-                else:
-                    # Celery风格调用：第一个参数是self
-                    return func(self_or_task_id, task_id)
-
-            wrapper.delay = lambda task_id: MockCeleryResult()
-            wrapper.apply_async = lambda task_id: MockCeleryResult()
-            return wrapper
-
-        return mock_decorator
-
-
 class MockCeleryResult:
     """模拟Celery任务结果"""
 
@@ -48,11 +21,73 @@ class MockCeleryResult:
         return {"status": "completed", "message": "Mock TTS task completed"}
 
 
-@get_celery_task_decorator()
-def generate_speech_task(self, task_id):
-    """生成语音任务（支持Celery和测试环境）- 集成水印功能"""
+def create_task_decorator():
+    """创建任务装饰器 - 修复版本"""
     try:
-        # 获取任务信息 - 修复：使用现代SQLAlchemy语法
+        from flask import current_app
+
+        # 检查是否在测试环境
+        is_testing = current_app.config.get("TESTING", False)
+        has_celery = celery is not None
+
+        if not is_testing and has_celery:
+            # 生产环境：使用真实 Celery
+            def celery_decorator(func):
+                @celery.task(
+                    bind=True, name=f"app.services.tts_service.{func.__name__}"
+                )
+                def wrapper(self, task_id):
+                    return func(self, task_id)
+
+                return wrapper
+
+            return celery_decorator
+        else:
+            # 测试环境或无 Celery：使用模拟装饰器
+            def mock_decorator(func):
+                def wrapper(task_id_or_self, task_id=None):
+                    # 统一参数处理：如果只有一个参数，说明是直接调用
+                    if task_id is None:
+                        # 直接调用：wrapper(task_id)
+                        actual_task_id = task_id_or_self
+                        return func(None, actual_task_id)
+                    else:
+                        # Celery 风格调用：wrapper(self, task_id)
+                        return func(task_id_or_self, task_id)
+
+                # 添加 delay 方法模拟
+                wrapper.delay = lambda task_id: MockCeleryResult(task_id)
+                wrapper.apply_async = lambda args=None, **kwargs: MockCeleryResult(
+                    args[0] if args else "mock-task"
+                )
+                return wrapper
+
+            return mock_decorator
+
+    except RuntimeError:
+        # 不在应用上下文中，返回测试装饰器
+        def mock_decorator(func):
+            def wrapper(task_id_or_self, task_id=None):
+                if task_id is None:
+                    return func(None, task_id_or_self)
+                else:
+                    return func(task_id_or_self, task_id)
+
+            wrapper.delay = lambda task_id: MockCeleryResult(task_id)
+            wrapper.apply_async = lambda args=None, **kwargs: MockCeleryResult(
+                args[0] if args else "mock-task"
+            )
+            return wrapper
+
+        return mock_decorator
+
+
+# 应用装饰器
+@create_task_decorator()
+def generate_speech_task(self, task_id):
+    """生成语音任务 - 修复版本"""
+    try:
+        # 获取任务信息
         task = db.session.get(TTSTask, task_id)
         if not task:
             raise TaskProcessingError("Task not found")
@@ -60,12 +95,10 @@ def generate_speech_task(self, task_id):
         # 更新任务状态
         task.update_status("processing")
 
-        # 检查是否在测试环境 - 安全地访问current_app
+        # 检查环境
         try:
-            from flask import current_app
-
             is_testing = current_app.config.get("TESTING", False)
-            has_celery = celery is not None
+            has_celery = celery is not None and self is not None
             watermark_enabled = current_app.config.get("WATERMARK_ENABLED", True)
         except RuntimeError:
             # 不在应用上下文中，假设是测试环境
@@ -127,8 +160,6 @@ def generate_speech_task(self, task_id):
             )
 
         try:
-            from flask import current_app
-
             current_app.logger.error(f"TTS task {task_id} failed: {e}")
         except RuntimeError:
             print(f"TTS task {task_id} failed: {e}")
@@ -137,18 +168,15 @@ def generate_speech_task(self, task_id):
 
 
 def mock_speech_generation(task, watermark_enabled=True):
-    """模拟语音生成过程（用于测试）- 修复：改进错误处理"""
+    """模拟语音生成过程（用于测试）"""
     try:
         # 安全的应用上下文处理
         try:
-            from flask import current_app
-
-            current_app.logger.info(f"Mock processing TTS task: {task.id}")
             upload_folder = current_app.config.get("UPLOAD_FOLDER", "/tmp")
+            current_app.logger.info(f"Mock processing TTS task: {task.id}")
         except RuntimeError:
-            # 如果不在应用上下文中，直接打印并使用默认路径
-            print(f"Mock processing TTS task: {task.id}")
             upload_folder = "/tmp"
+            print(f"Mock processing TTS task: {task.id}")
 
         # 模拟处理时间
         import time
@@ -157,7 +185,7 @@ def mock_speech_generation(task, watermark_enabled=True):
 
         # 计算模拟音频时长
         text_length = len(task.text)
-        duration = max(1.0, (text_length * 0.15) / task.speed)  # 最少1秒
+        duration = max(1.0, (text_length * 0.15) / task.speed)
 
         # 生成模拟文件路径
         filename = f"mock_tts_{task.id}.wav"
@@ -320,20 +348,20 @@ def embed_watermark_to_tts_audio(task, audio_info):
 
 
 def load_voice_model(model_id):
-    """加载语音模型 - 修复：使用正确的字段名"""
+    """加载语音模型 - 修复版本：使用正确的字段名"""
     try:
         model = db.session.get(VoiceModel, model_id)
         if not model:
             raise TaskProcessingError("Voice model not found")
 
-        # 🔧 修复：使用新的字段名检查文件存在性
+        # 修复：使用新的字段名检查文件存在性
         if not model.gpt_model_path or not os.path.exists(model.gpt_model_path):
             raise TaskProcessingError("GPT model file not found")
 
         if not model.sovits_model_path or not os.path.exists(model.sovits_model_path):
             raise TaskProcessingError("SoVITS model file not found")
 
-        # 🔧 修复：返回正确的模型信息
+        # 修复：返回正确的模型信息
         model_info = {
             "model_id": model.id,
             "gpt_model_path": model.gpt_model_path,  # 新字段
@@ -351,7 +379,6 @@ def load_voice_model(model_id):
 def preprocess_text(text):
     """预处理文本"""
     try:
-        # 清理和标准化文本
         processed_text = text.strip()
         return processed_text
 

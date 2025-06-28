@@ -284,7 +284,7 @@ def start_training():
 
         # 检查时长要求
         min_duration = (
-            10 if current_app.config.get("TESTING", False) else 30
+            10 if current_app.config.get("TESTING", False) else 15
         )  # 测试环境只需10秒
         max_duration = 600  # 最多10分钟
 

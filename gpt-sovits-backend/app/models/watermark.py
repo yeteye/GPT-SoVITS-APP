@@ -1,4 +1,4 @@
-# app/models/watermark.py
+# ./gpt-sovits-backend/app/models/watermark.py
 from datetime import datetime
 from app.extensions import db
 import uuid
@@ -8,14 +8,14 @@ import string
 
 
 class Watermark(db.Model):
-    """音频水印模型 - 修复外键关系"""
+    """音频水印模型 - 修复版本"""
 
     __tablename__ = "watermarks"
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     watermark_code = db.Column(db.String(64), unique=True, nullable=False, index=True)
 
-    # 用户关联 - 修复：移除冗余的username字段
+    # 用户关联
     user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
 
     # 模型关联
@@ -34,7 +34,7 @@ class Watermark(db.Model):
     # 状态
     is_active = db.Column(db.Boolean, default=True, nullable=False)
 
-    # 关联关系 - 修复：简化关系定义
+    # 关联关系
     user = db.relationship("User", backref=db.backref("watermarks", lazy=True))
     model = db.relationship("VoiceModel", backref=db.backref("watermarks", lazy=True))
 
@@ -60,7 +60,7 @@ class Watermark(db.Model):
         code_length: int = 16,
         description: str = "",
     ):
-        """为用户创建水印 - 修复：移除username存储"""
+        """为用户创建水印"""
         max_attempts = 10
         for _ in range(max_attempts):
             watermark_code = cls.generate_watermark_code(code_length)
@@ -97,12 +97,17 @@ class Watermark(db.Model):
             return json.loads(self.file_info)
         return {}
 
+    @property
+    def username(self):
+        """动态获取用户名 - 通过关系访问"""
+        return self.user.username if self.user else "Unknown"
+
     def to_dict(self):
-        """转换为字典 - 修复：动态获取用户名"""
+        """转换为字典 - 修复版本"""
         return {
             "id": self.id,
             "watermark_code": self.watermark_code,
-            "username": self.username,  # 动态获取
+            "username": self.username,  # 现在通过 property 动态获取
             "user_id": self.user_id,
             "model_id": self.model_id,
             "code_length": self.code_length,

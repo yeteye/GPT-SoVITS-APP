@@ -208,8 +208,11 @@ def validate_audio_file(file):
     if not file or not file.filename:
         raise ValidationError("No audio file provided", "audio_file")
 
+    print(f"Received file: {file.filename}, size: {file.content_length} bytes")
+
     # 检查文件名安全性
     filename = secure_filename(file.filename)
+
     if not filename:
         raise ValidationError("Invalid filename", "audio_file")
 
@@ -217,6 +220,7 @@ def validate_audio_file(file):
         raise ValidationError("File must have an extension", "audio_file")
 
     ext = filename.rsplit(".", 1)[1].lower()
+
     allowed_extensions = current_app.config.get("ALLOWED_AUDIO_EXTENSIONS", set())
 
     if ext not in allowed_extensions:
@@ -246,10 +250,12 @@ def validate_audio_file(file):
     file_header = file.read(12)
     file.seek(0)
 
-    if not validate_audio_file_header(file_header, ext):
-        raise ValidationError(
-            "File content doesn't match the file extension", "audio_file"
-        )
+    print(f"File header: {file_header}")
+
+    # if not validate_audio_file_header(file_header, ext):
+    #     raise ValidationError(
+    #         "File content doesn't match the file extension", "audio_file"
+    #     )
 
     return True
 

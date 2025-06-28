@@ -1,4 +1,4 @@
-# ./gpt-sovits-backend/app/models/audit.py
+# ./gpt-sovits-backend/app/models/audit.py (修复版本)
 from datetime import datetime
 from app.extensions import db
 import uuid
@@ -6,7 +6,7 @@ import json
 
 
 class AuditLog(db.Model):
-    """审计日志模型"""
+    """审计日志模型 - 修复事务处理"""
 
     __tablename__ = "audit_logs"
 
@@ -52,7 +52,7 @@ class AuditLog(db.Model):
         status="success",
         error_message=None,
     ):
-        """记录操作日志 - 修复：避免事务冲突"""
+        """记录操作日志 - 修复版本：简化事务处理"""
         try:
             log = cls(
                 action=action,
@@ -68,70 +68,54 @@ class AuditLog(db.Model):
                 error_message=error_message,
             )
 
-            # 修复：使用独立的数据库会话避免事务冲突
+            # 修复：使用独立的事务处理
             try:
-                # 检查当前是否在事务中
-                if db.session.is_active:
-                    # 在活跃事务中，使用flush而不是commit
-                    db.session.add(log)
-                    db.session.flush()
-                    return log
-                else:
-                    # 不在事务中，可以安全提交
-                    db.session.add(log)
-                    db.session.commit()
-                    return log
-            except Exception as session_error:
-                # 修复：更智能的错误处理
+                # 创建新的数据库会话专门用于日志记录
+                from sqlalchemy.orm import sessionmaker
+                from app.extensions import db
+
+                # 获取引擎
+                engine = db.get_engine()
+                Session = sessionmaker(bind=engine)
+
+                # 使用独立会话
+                with Session() as log_session:
+                    # 创建新的日志对象，使用独立会话
+                    independent_log = cls(
+                        action=action,
+                        resource_type=resource_type,
+                        user_id=user_id,
+                        resource_id=resource_id,
+                        old_values=json.dumps(old_values) if old_values else None,
+                        new_values=json.dumps(new_values) if new_values else None,
+                        description=description,
+                        ip_address=ip_address or "127.0.0.1",
+                        user_agent=user_agent or "Unknown",
+                        status=status,
+                        error_message=error_message,
+                    )
+
+                    log_session.add(independent_log)
+                    log_session.commit()
+
+                    return independent_log
+
+            except Exception as db_error:
+                # 如果数据库记录失败，尝试记录到应用日志
                 try:
-                    # 尝试回滚当前操作，但不影响主事务
-                    db.session.expunge(log)
+                    from flask import current_app
 
-                    # 使用新的数据库会话
-                    from sqlalchemy import create_engine
-                    from sqlalchemy.orm import sessionmaker
+                    current_app.logger.warning(
+                        f"Failed to log audit action {action} for resource {resource_type}: {db_error}"
+                    )
+                except RuntimeError:
+                    # 不在应用上下文中，使用标准输出
+                    print(f"Warning: Failed to log audit action {action}: {db_error}")
 
-                    engine = db.get_engine()
-                    Session = sessionmaker(bind=engine)
-                    new_session = Session()
-
-                    try:
-                        new_log = cls(
-                            action=action,
-                            resource_type=resource_type,
-                            user_id=user_id,
-                            resource_id=resource_id,
-                            old_values=json.dumps(old_values) if old_values else None,
-                            new_values=json.dumps(new_values) if new_values else None,
-                            description=description,
-                            ip_address=ip_address or "127.0.0.1",
-                            user_agent=user_agent or "Unknown",
-                            status=status,
-                            error_message=error_message,
-                        )
-                        new_session.add(new_log)
-                        new_session.commit()
-                        return new_log
-                    finally:
-                        new_session.close()
-
-                except Exception as fallback_error:
-                    # 最后的错误处理：记录到应用日志
-                    try:
-                        from flask import current_app
-
-                        current_app.logger.warning(
-                            f"Failed to log audit action {action}: {fallback_error}"
-                        )
-                    except RuntimeError:
-                        print(
-                            f"Warning: Failed to log audit action {action}: {fallback_error}"
-                        )
-
-                    return None
+                return None
 
         except Exception as e:
-            # 创建日志对象失败
+            # 创建日志对象失败，记录警告但不影响主要功能
             try:
                 from flask import current_app
 
@@ -145,7 +129,7 @@ class AuditLog(db.Model):
         if self.old_values:
             try:
                 return json.loads(self.old_values)
-            except:
+            except json.JSONDecodeError:
                 return {}
         return {}
 
@@ -154,7 +138,7 @@ class AuditLog(db.Model):
         if self.new_values:
             try:
                 return json.loads(self.new_values)
-            except:
+            except json.JSONDecodeError:
                 return {}
         return {}
 
@@ -223,7 +207,10 @@ class UserUpload(db.Model):
     def get_metadata(self):
         """获取元数据"""
         if self.file_metadata:
-            return json.loads(self.file_metadata)
+            try:
+                return json.loads(self.file_metadata)
+            except json.JSONDecodeError:
+                return {}
         return {}
 
     def mark_deleted(self):

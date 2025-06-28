@@ -17,65 +17,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# 修复：稳定的Celery装饰器
-def create_celery_task_decorator():
-    """创建稳定的Celery任务装饰器"""
-    try:
-        from app.extensions import celery
-
-        if celery is not None:
-
-            def celery_task_decorator(func):
-                # 使用Celery任务装饰器
-                task_func = celery.task(
-                    bind=True,
-                    name=f"{func.__module__}.{func.__name__}",
-                    max_retries=3,
-                    default_retry_delay=60,
-                )(func)
-                return task_func
-
-            return celery_task_decorator
-        else:
-            # 无Celery时的模拟装饰器
-            def mock_task_decorator(func):
-                @wraps(func)
-                def wrapper(self_or_task_id, task_id=None):
-                    # 处理不同的调用方式
-                    if task_id is None:
-                        # 直接调用模式
-                        return func(None, self_or_task_id)
-                    else:
-                        # Celery调用模式
-                        return func(self_or_task_id, task_id)
-
-                # 添加模拟的delay方法
-                wrapper.delay = lambda task_id: MockCeleryResult(task_id)
-                wrapper.apply_async = lambda args, **kwargs: MockCeleryResult(
-                    args[0] if args else "mock"
-                )
-                return wrapper
-
-            return mock_task_decorator
-    except ImportError:
-        # Celery不可用
-        def fallback_decorator(func):
-            @wraps(func)
-            def wrapper(self_or_task_id, task_id=None):
-                if task_id is None:
-                    return func(None, self_or_task_id)
-                else:
-                    return func(self_or_task_id, task_id)
-
-            wrapper.delay = lambda task_id: MockCeleryResult(task_id)
-            wrapper.apply_async = lambda args, **kwargs: MockCeleryResult(
-                args[0] if args else "mock"
-            )
-            return wrapper
-
-        return fallback_decorator
-
-
 class MockCeleryResult:
     """模拟Celery任务结果"""
 
@@ -94,11 +35,75 @@ class MockCeleryResult:
         return True
 
 
+def create_voice_clone_decorator():
+    """创建语音克隆任务装饰器 - 修复版本"""
+    try:
+        from flask import current_app
+        from app.extensions import celery
+
+        # 检查环境
+        is_testing = current_app.config.get("TESTING", False)
+        has_celery = celery is not None
+
+        if not is_testing and has_celery:
+            # 生产环境：使用真实 Celery
+            def celery_decorator(func):
+                @celery.task(
+                    bind=True,
+                    name=f"app.services.voice_clone_service.{func.__name__}",
+                    max_retries=3,
+                    default_retry_delay=60,
+                )
+                def wrapper(self, task_id):
+                    return func(self, task_id)
+
+                return wrapper
+
+            return celery_decorator
+        else:
+            # 测试环境或无 Celery：使用模拟装饰器
+            def mock_decorator(func):
+                @wraps(func)
+                def wrapper(task_id_or_self, task_id=None):
+                    # 统一参数处理
+                    if task_id is None:
+                        # 直接调用：wrapper(task_id)
+                        actual_task_id = task_id_or_self
+                        return func(None, actual_task_id)
+                    else:
+                        # Celery 风格调用：wrapper(self, task_id)
+                        return func(task_id_or_self, task_id)
+
+                # 添加模拟的delay和apply_async方法
+                wrapper.delay = lambda task_id: MockCeleryResult(task_id)
+                wrapper.apply_async = lambda args=None, **kwargs: MockCeleryResult(
+                    args[0] if args else "mock"
+                )
+                return wrapper
+
+            return mock_decorator
+
+    except (RuntimeError, ImportError):
+        # 不在应用上下文或Celery不可用
+        def fallback_decorator(func):
+            @wraps(func)
+            def wrapper(task_id_or_self, task_id=None):
+                if task_id is None:
+                    return func(None, task_id_or_self)
+                else:
+                    return func(task_id_or_self, task_id)
+
+            wrapper.delay = lambda task_id: MockCeleryResult(task_id)
+            wrapper.apply_async = lambda args=None, **kwargs: MockCeleryResult(
+                args[0] if args else "mock"
+            )
+            return wrapper
+
+        return fallback_decorator
+
+
 # 应用装饰器
-task_decorator = create_celery_task_decorator()
-
-
-@task_decorator
+@create_voice_clone_decorator()
 def start_voice_clone_task(self, task_id):
     """启动语音克隆任务 - 修复版本"""
     try:
@@ -173,14 +178,14 @@ def start_voice_clone_task(self, task_id):
 
 
 def mock_voice_clone_process(task):
-    """模拟语音克隆处理过程 - 改进版本"""
+    """模拟语音克隆处理过程"""
     try:
         logger.info(f"Mock processing voice clone task: {task.id}")
 
         # 模拟处理延迟
         import time
 
-        time.sleep(0.2)  # 增加一点延迟使其更真实
+        time.sleep(0.2)
 
         # 获取任务配置
         config = task.get_config()
@@ -219,15 +224,15 @@ def mock_voice_clone_process(task):
                 f.write(f"# Generated from {task.sample_count} samples\n")
                 f.write(f"# Task ID: {task.id}\n")
 
-            # 创建模型记录
+            # 创建模型记录 - 确保必需字段存在
             voice_model = VoiceModel(
                 name=model_name,
                 description=f"Mock voice model from task {task.id} with {task.sample_count} samples",
                 model_type="user_trained",
                 owner_id=task.user_id,
-                gpt_model_path=gpt_model_path,
-                sovits_model_path=sovits_model_path,
-                quality_score=7.5 + (task.sample_count * 0.1),  # 样本越多质量越高
+                gpt_model_path=gpt_model_path,  # 必需字段
+                sovits_model_path=sovits_model_path,  # 必需字段
+                quality_score=7.5 + (task.sample_count * 0.1),
                 status="active",
                 is_public=False,
             )

@@ -1,4 +1,4 @@
-# ./gpt-sovits-backend/app/models/model.py (修复版)
+# ./gpt-sovits-backend/app/models/model.py (修复版本 - 统一字段使用)
 from datetime import datetime
 from app.extensions import db
 import uuid
@@ -16,14 +16,7 @@ model_tags = db.Table(
 
 
 class VoiceModel(db.Model):
-    """语音模型 - GPT-SoVITS 双模型架构
-
-    这个模型支持 GPT-SoVITS 的双模型结构：
-    - gpt_model_path: GPT模型文件路径 (.pth格式)
-    - sovits_model_path: SoVITS模型文件路径 (.ckpt格式)
-
-    两个文件必须同时存在才能正常工作
-    """
+    """语音模型 - GPT-SoVITS 双模型架构 - 修复版本"""
 
     __tablename__ = "voice_models"
 
@@ -93,14 +86,14 @@ class VoiceModel(db.Model):
     )
 
     def __init__(self, **kwargs):
-        """初始化时验证必需字段"""
+        """初始化时验证必需字段 - 修复版本"""
         super().__init__(**kwargs)
 
         # 确保必需字段存在
-        if not self.gpt_model_path:
-            raise ValueError("gpt_model_path is required")
-        if not self.sovits_model_path:
-            raise ValueError("sovits_model_path is required")
+        if not getattr(self, "gpt_model_path", None):
+            raise ValueError("gpt_model_path is required for all voice models")
+        if not getattr(self, "sovits_model_path", None):
+            raise ValueError("sovits_model_path is required for all voice models")
 
     def set_supported_emotions(self, emotions):
         """设置支持的情感列表"""
@@ -213,7 +206,7 @@ class VoiceModel(db.Model):
         db.session.commit()
 
     def validate_model_files(self):
-        """验证GPT和SoVITS模型文件是否都存在"""
+        """验证GPT和SoVITS模型文件是否都存在 - 修复版本"""
         result = {
             "all_files_exist": False,
             "gpt_model_exists": False,
@@ -283,7 +276,7 @@ class VoiceModel(db.Model):
         return result
 
     def get_model_files_info(self):
-        """获取所有模型文件的详细信息"""
+        """获取所有模型文件的详细信息 - 修复版本"""
         files_info = {
             "gpt_model": {
                 "path": self.gpt_model_path,
@@ -339,7 +332,7 @@ class VoiceModel(db.Model):
         return True, "Model is ready to use"
 
     def to_dict(self, include_paths=False, include_validation=False):
-        """转换为字典"""
+        """转换为字典 - 修复版本"""
         data = {
             "id": self.id,
             "name": self.name,
@@ -390,7 +383,7 @@ class VoiceModel(db.Model):
 
 
 class Tag(db.Model):
-    """标签模型 - 改进版本"""
+    """标签模型"""
 
     __tablename__ = "tags"
 

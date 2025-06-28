@@ -228,7 +228,7 @@ def cleanup_inactive_models(days_threshold=90):
 
         for model in inactive_models:
             try:
-                # 🔧 修复：删除正确的模型文件
+                # 删除模型文件
                 files_to_delete = [
                     model.gpt_model_path,  # 新字段
                     model.sovits_model_path,  # 新字段
