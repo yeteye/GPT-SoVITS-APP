@@ -43,12 +43,13 @@ def handle_file_too_large(e):
     )
 
 
+# app/api/admin.py - upload_official_model函数部分修改
 @admin_bp.route("/upload-official-model", methods=["POST"])
 @admin_required
 @rate_limit(requests_per_minute=5)
 @log_action("upload_official_model", "voice_model")
 def upload_official_model():
-    """上传官方预训练模型 - 修复：添加详细的错误处理和文件大小检查"""
+    """上传官方预训练模型 - 修复：要求必须上传两个文件"""
     try:
         user = request.current_user
 
@@ -62,12 +63,15 @@ def upload_official_model():
                 f"请求大小 {content_length/(1024*1024):.1f}MB 超过限制 {max_size_mb:.0f}MB"
             )
 
-        # 检查文件上传
+        # 检查文件上传 - 修复：要求必须提供两个文件
         gpt_file = request.files.get("gpt_model_file")
         sovits_file = request.files.get("sovits_model_file")
 
-        if not gpt_file and not sovits_file:
-            raise ValidationError("必须提供至少一个模型文件 (GPT .pth 或 SoVITS .ckpt)")
+        if not gpt_file:
+            raise ValidationError("GPT模型文件(.pth)是必需的", "gpt_model_file")
+
+        if not sovits_file:
+            raise ValidationError("SoVITS模型文件(.ckpt)是必需的", "sovits_model_file")
 
         # 获取并验证文件大小
         def check_file_size(file, file_type):
@@ -89,8 +93,8 @@ def upload_official_model():
                 )
                 return size
 
-        gpt_size = check_file_size(gpt_file, "GPT") if gpt_file else 0
-        sovits_size = check_file_size(sovits_file, "SoVITS") if sovits_file else 0
+        gpt_size = check_file_size(gpt_file, "GPT")
+        sovits_size = check_file_size(sovits_file, "SoVITS")
         total_size = gpt_size + sovits_size
 
         # 检查总大小
@@ -128,31 +132,34 @@ def upload_official_model():
         current_app.logger.info(f"开始保存模型文件: {model_name}")
 
         # 保存模型文件
-        gpt_file_info = None
-        sovits_file_info = None
-
         try:
-            if gpt_file:
-                current_app.logger.info("保存GPT模型文件...")
-                validate_model_file(gpt_file, expected_type="gpt")
-                gpt_file_info = save_uploaded_file(gpt_file, "models/official", "gpt")
-                current_app.logger.info(f"GPT文件已保存: {gpt_file_info['file_path']}")
+            current_app.logger.info("保存GPT模型文件...")
+            validate_model_file(gpt_file, expected_type="gpt")
+            gpt_file_info = save_uploaded_file(gpt_file, "models/official", "gpt")
+            current_app.logger.info(f"GPT文件已保存: {gpt_file_info['file_path']}")
 
-            if sovits_file:
-                current_app.logger.info("保存SoVITS模型文件...")
-                validate_model_file(sovits_file, expected_type="sovits")
-                sovits_file_info = save_uploaded_file(
-                    sovits_file, "models/official", "sovits"
-                )
-                current_app.logger.info(
-                    f"SoVITS文件已保存: {sovits_file_info['file_path']}"
-                )
+            current_app.logger.info("保存SoVITS模型文件...")
+            validate_model_file(sovits_file, expected_type="sovits")
+            sovits_file_info = save_uploaded_file(
+                sovits_file, "models/official", "sovits"
+            )
+            current_app.logger.info(
+                f"SoVITS文件已保存: {sovits_file_info['file_path']}"
+            )
 
         except Exception as save_error:
             # 清理已保存的文件
-            if gpt_file_info and os.path.exists(gpt_file_info["file_path"]):
+            if (
+                "gpt_file_info" in locals()
+                and gpt_file_info
+                and os.path.exists(gpt_file_info["file_path"])
+            ):
                 os.remove(gpt_file_info["file_path"])
-            if sovits_file_info and os.path.exists(sovits_file_info["file_path"]):
+            if (
+                "sovits_file_info" in locals()
+                and sovits_file_info
+                and os.path.exists(sovits_file_info["file_path"])
+            ):
                 os.remove(sovits_file_info["file_path"])
             raise ValidationError(f"文件保存失败: {str(save_error)}")
 
@@ -161,10 +168,8 @@ def upload_official_model():
             name=model_name,
             description=description,
             model_type="official",
-            gpt_model_path=gpt_file_info["file_path"] if gpt_file_info else None,
-            sovits_model_path=(
-                sovits_file_info["file_path"] if sovits_file_info else None
-            ),
+            gpt_model_path=gpt_file_info["file_path"],
+            sovits_model_path=sovits_file_info["file_path"],
             status="active",
             is_public=True,
             is_featured=True,
