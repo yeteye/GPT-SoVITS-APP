@@ -84,8 +84,12 @@ export const userAPI = {
 
 // TTS相关API
 export const ttsAPI = {
-  // 获取可用模型列表
-  getAvailableModels(params) {
+  // 获取可用模型列表 - 修复per_page限制
+  getAvailableModels(params = {}) {
+    // 确保per_page不超过后端限制
+    if (params.per_page && params.per_page > 100) {
+      params.per_page = 100;
+    }
     return request.get("/tts/models", { params });
   },
 
@@ -125,7 +129,11 @@ export const ttsAPI = {
 // 模型相关API
 export const modelsAPI = {
   // 获取用户模型列表
-  getMyModels(params) {
+  getMyModels(params = {}) {
+    // 确保per_page不超过后端限制
+    if (params.per_page && params.per_page > 100) {
+      params.per_page = 100;
+    }
     return request.get("/models/my-models", { params });
   },
 
@@ -160,7 +168,7 @@ export const modelsAPI = {
   },
 };
 
-// 音色克隆相关API
+// 音色克隆相关API - 修复版
 export const voiceCloneAPI = {
   // 上传音频样本
   uploadSample(formData, config = {}) {
@@ -171,7 +179,11 @@ export const voiceCloneAPI = {
   },
 
   // 获取用户音频样本列表
-  getUserSamples(params) {
+  getUserSamples(params = {}) {
+    // 确保per_page不超过后端限制
+    if (params.per_page && params.per_page > 100) {
+      params.per_page = 100;
+    }
     return request.get("/voice-clone/samples", { params });
   },
 
@@ -186,12 +198,19 @@ export const voiceCloneAPI = {
   },
 
   // 获取用户任务列表
-  getUserTasks(params) {
+  getUserTasks(params = {}) {
+    // 确保per_page不超过后端限制
+    if (params.per_page && params.per_page > 100) {
+      params.per_page = 100;
+    }
     return request.get("/voice-clone/tasks", { params });
   },
 
-  // 获取任务详情
+  // 获取任务详情 - 添加参数验证
   getTaskDetail(taskId) {
+    if (!taskId || taskId === "undefined" || taskId === null) {
+      return Promise.reject(new Error("Invalid task ID"));
+    }
     return request.get(`/voice-clone/tasks/${taskId}`);
   },
 
@@ -208,6 +227,13 @@ export const voiceCloneAPI = {
   // 获取训练结果
   getTaskResult(taskId) {
     return request.get(`/voice-clone/tasks/${taskId}/result`);
+  },
+
+  // 上传模型文件
+  uploadModel(formData) {
+    return request.post("/voice-clone/upload-model", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   },
 };
 

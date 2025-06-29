@@ -828,13 +828,13 @@ function getTaskTitle(task) {
     'tts': '语音合成任务',
     'voice_clone': '音色克隆任务'
   }
-  return titleMap[task.type] || '未知任务'
+  return titleMap[task.task_type] || '未知任务'
 }
 
 function getTaskDescription(task) {
-  if (task.type === 'tts') {
+  if (task.task_type === 'tts') {
     return `生成了 "${task.text?.substring(0, 20) || ''}..." 的语音`
-  } else if (task.type === 'voice_clone') {
+  } else if (task.task_type === 'voice_clone') {
     return `训练了音色模型 "${task.model_name || '未命名'}"`
   }
   return '任务详情'

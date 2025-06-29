@@ -64,7 +64,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { House, ArrowLeft, Microphone, Magic, Microphone, QuestionFilled } from '@element-plus/icons-vue'
+import { House, ArrowLeft, Microphone, Magic, QuestionFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 

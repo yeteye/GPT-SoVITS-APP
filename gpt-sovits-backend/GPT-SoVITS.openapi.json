@@ -93,6 +93,72 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "logs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "has_next": {
+                              "type": "boolean"
+                            },
+                            "has_prev": {
+                              "type": "boolean"
+                            },
+                            "page": {
+                              "type": "integer"
+                            },
+                            "pages": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "has_next",
+                            "has_prev",
+                            "page",
+                            "pages",
+                            "per_page",
+                            "total"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "logs",
+                        "pagination"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -310,6 +376,153 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "object",
+                          "properties": {
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "download_count": {
+                              "type": "integer"
+                            },
+                            "gpt_model_path": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "is_featured": {
+                              "type": "boolean"
+                            },
+                            "is_public": {
+                              "type": "boolean"
+                            },
+                            "model_type": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "owner_id": {
+                              "type": "null"
+                            },
+                            "quality_score": {
+                              "type": "integer"
+                            },
+                            "review_status": {
+                              "type": "string"
+                            },
+                            "sovits_model_path": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "supported_emotions": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "supported_languages": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "color": {
+                                    "type": "string"
+                                  },
+                                  "created_at": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "null"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "is_active": {
+                                    "type": "boolean"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "usage_count": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            },
+                            "updated_at": {
+                              "type": "string"
+                            },
+                            "usage_count": {
+                              "type": "integer"
+                            },
+                            "voice_characteristics": {
+                              "type": "null"
+                            }
+                          },
+                          "required": [
+                            "created_at",
+                            "description",
+                            "download_count",
+                            "gpt_model_path",
+                            "id",
+                            "is_featured",
+                            "is_public",
+                            "model_type",
+                            "name",
+                            "owner_id",
+                            "quality_score",
+                            "review_status",
+                            "sovits_model_path",
+                            "status",
+                            "supported_emotions",
+                            "supported_languages",
+                            "tags",
+                            "updated_at",
+                            "usage_count",
+                            "voice_characteristics"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "model"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -539,8 +752,71 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "tag": {
+                          "type": "object",
+                          "properties": {
+                            "color": {
+                              "type": "string"
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "is_active": {
+                              "type": "boolean"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "usage_count": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "color",
+                            "created_at",
+                            "description",
+                            "id",
+                            "is_active",
+                            "name",
+                            "usage_count"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "tag"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -597,6 +873,25 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -645,52 +940,224 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "model_file": {
+                  "gpt_model_file": {
+                    "format": "binary",
+                    "type": "string",
                     "description": "模型文件",
-                    "example": "",
-                    "type": "string"
+                    "example": "file://C:\\Users\\86199\\OneDrive\\桌面\\model\\model\\lan\\lan_e25_s1475.pth"
+                  },
+                  "sovits_model_file": {
+                    "format": "binary",
+                    "type": "string",
+                    "example": "file://C:\\Users\\86199\\OneDrive\\桌面\\model\\model\\lan\\lan-e15.ckpt"
                   },
                   "model_name": {
                     "description": "模型名称",
-                    "example": "",
+                    "example": "official",
                     "type": "string"
                   },
                   "description": {
                     "description": "模型描述",
-                    "example": "",
+                    "example": "官方通用",
                     "type": "string"
                   },
                   "supported_emotions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
                     "description": "支持的情感标签 可选：[\"neutral\", \"happy\", \"sad\"]",
-                    "example": "",
-                    "type": "string"
+                    "example": [
+                      "neutral",
+                      "happy",
+                      "sad"
+                    ]
                   },
                   "supported_languages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
                     "description": "支持语言 可选：[\"zh-CN\"]",
-                    "example": "",
-                    "type": "string"
+                    "example": [
+                      "[\"zh-CN\"]"
+                    ]
                   },
                   "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
                     "description": "模型标签 可选：[\"官方\", \"测试\"]",
-                    "example": "",
-                    "type": "string"
+                    "example": [
+                      "[]"
+                    ]
                   }
                 },
                 "required": [
-                  "model_file",
+                  "gpt_model_file",
+                  "sovits_model_file",
                   "model_name",
                   "description",
                   "supported_emotions",
                   "supported_languages",
                   "tags"
                 ]
-              }
+              },
+              "examples": {}
             }
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "object",
+                          "properties": {
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "download_count": {
+                              "type": "integer"
+                            },
+                            "gpt_model_path": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "is_featured": {
+                              "type": "boolean"
+                            },
+                            "is_public": {
+                              "type": "boolean"
+                            },
+                            "model_type": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "owner_id": {
+                              "type": "null"
+                            },
+                            "quality_score": {
+                              "type": "integer"
+                            },
+                            "review_status": {
+                              "type": "string"
+                            },
+                            "sovits_model_path": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "supported_emotions": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "supported_languages": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "color": {
+                                    "type": "string"
+                                  },
+                                  "created_at": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "null"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "is_active": {
+                                    "type": "boolean"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "usage_count": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            },
+                            "updated_at": {
+                              "type": "string"
+                            },
+                            "usage_count": {
+                              "type": "integer"
+                            },
+                            "voice_characteristics": {
+                              "type": "null"
+                            }
+                          },
+                          "required": [
+                            "created_at",
+                            "description",
+                            "download_count",
+                            "gpt_model_path",
+                            "id",
+                            "is_featured",
+                            "is_public",
+                            "model_type",
+                            "name",
+                            "owner_id",
+                            "quality_score",
+                            "review_status",
+                            "sovits_model_path",
+                            "status",
+                            "supported_emotions",
+                            "supported_languages",
+                            "tags",
+                            "updated_at",
+                            "usage_count",
+                            "voice_characteristics"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "model"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -820,7 +1287,7 @@
                             "type": "object",
                             "properties": {
                               "avatar_url": {
-                                "type": "string"
+                                "type": "null"
                               },
                               "created_at": {
                                 "type": "string"
@@ -838,7 +1305,7 @@
                                 "type": "boolean"
                               },
                               "last_login_at": {
-                                "type": "string"
+                                "type": "null"
                               },
                               "role": {
                                 "type": "integer"
@@ -846,18 +1313,7 @@
                               "username": {
                                 "type": "string"
                               }
-                            },
-                            "required": [
-                              "avatar_url",
-                              "created_at",
-                              "email",
-                              "id",
-                              "is_active",
-                              "is_verified",
-                              "last_login_at",
-                              "role",
-                              "username"
-                            ]
+                            }
                           }
                         }
                       },
@@ -1029,6 +1485,77 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "avatar_url": {
+                              "type": "string"
+                            },
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "is_active": {
+                              "type": "boolean"
+                            },
+                            "is_verified": {
+                              "type": "boolean"
+                            },
+                            "last_login_at": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "integer"
+                            },
+                            "username": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "avatar_url",
+                            "created_at",
+                            "email",
+                            "id",
+                            "is_active",
+                            "is_verified",
+                            "last_login_at",
+                            "role",
+                            "username"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "user"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -1048,6 +1575,44 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/models/{model_id}/validate-files": {
+      "post": {
+        "summary": "模型有效性检查",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
                 }
               }
             },
@@ -1348,6 +1913,25 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -1613,6 +2197,25 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -2292,6 +2895,160 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "models": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "created_at": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "download_count": {
+                                "type": "integer"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "is_featured": {
+                                "type": "boolean"
+                              },
+                              "is_public": {
+                                "type": "boolean"
+                              },
+                              "model_type": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "owner_id": {
+                                "type": "string"
+                              },
+                              "quality_score": {
+                                "type": "integer"
+                              },
+                              "review_status": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "supported_emotions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "supported_languages": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "tags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "color": {
+                                      "type": "string"
+                                    },
+                                    "created_at": {
+                                      "type": "string"
+                                    },
+                                    "description": {
+                                      "type": "null"
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "is_active": {
+                                      "type": "boolean"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "usage_count": {
+                                      "type": "integer"
+                                    }
+                                  }
+                                }
+                              },
+                              "updated_at": {
+                                "type": "string"
+                              },
+                              "usage_count": {
+                                "type": "integer"
+                              },
+                              "voice_characteristics": {
+                                "type": "null"
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "has_next": {
+                              "type": "boolean"
+                            },
+                            "has_prev": {
+                              "type": "boolean"
+                            },
+                            "page": {
+                              "type": "integer"
+                            },
+                            "pages": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "has_next",
+                            "has_prev",
+                            "page",
+                            "pages",
+                            "per_page",
+                            "total"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "models",
+                        "pagination"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -2577,9 +3334,45 @@
           "user"
         ],
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "password"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -2889,6 +3682,72 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "has_next": {
+                              "type": "boolean"
+                            },
+                            "has_prev": {
+                              "type": "boolean"
+                            },
+                            "page": {
+                              "type": "integer"
+                            },
+                            "pages": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "has_next",
+                            "has_prev",
+                            "page",
+                            "pages",
+                            "per_page",
+                            "total"
+                          ]
+                        },
+                        "tasks": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "pagination",
+                        "tasks"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -2964,6 +3823,134 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "has_next": {
+                              "type": "boolean"
+                            },
+                            "has_prev": {
+                              "type": "boolean"
+                            },
+                            "page": {
+                              "type": "integer"
+                            },
+                            "pages": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "has_next",
+                            "has_prev",
+                            "page",
+                            "pages",
+                            "per_page",
+                            "total"
+                          ]
+                        },
+                        "uploads": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "created_at": {
+                                "type": "string"
+                              },
+                              "file_metadata": {
+                                "type": "object",
+                                "properties": {
+                                  "channels": {
+                                    "type": "integer"
+                                  },
+                                  "duration": {
+                                    "type": "number"
+                                  },
+                                  "is_valid": {
+                                    "type": "boolean"
+                                  },
+                                  "sample_rate": {
+                                    "type": "integer"
+                                  },
+                                  "validation_method": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "channels",
+                                  "duration",
+                                  "is_valid",
+                                  "sample_rate",
+                                  "validation_method"
+                                ]
+                              },
+                              "file_size": {
+                                "type": "integer"
+                              },
+                              "file_type": {
+                                "type": "string"
+                              },
+                              "filename": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "mime_type": {
+                                "type": "string"
+                              },
+                              "original_filename": {
+                                "type": "string"
+                              },
+                              "related_model_id": {
+                                "type": "null"
+                              },
+                              "related_task_id": {
+                                "type": "null"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "updated_at": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "pagination",
+                        "uploads"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -3020,6 +4007,25 @@
         "responses": {
           "200": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -3200,13 +4206,28 @@
                       "type": "string"
                     },
                     "description": "音频样本ID列表"
+                  },
+                  "supported_languages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "supported_emotions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 },
                 "required": [
                   "model_name",
-                  "sample_ids"
+                  "sample_ids",
+                  "supported_languages",
+                  "supported_emotions"
                 ]
-              }
+              },
+              "examples": {}
             }
           }
         },
@@ -3501,8 +4522,27 @@
           }
         ],
         "responses": {
-          "200": {
+          "400": {
             "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "success"
+                  ]
+                }
+              }
+            },
             "headers": {}
           },
           "401": {
@@ -3633,7 +4673,7 @@
                       "type": "object",
                       "properties": {
                         "duration": {
-                          "type": "integer"
+                          "type": "number"
                         },
                         "file_size": {
                           "type": "integer"
@@ -3690,6 +4730,228 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/voice-clone/upload-model": {
+      "post": {
+        "summary": "上传个人模型",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gpt_model_file": {
+                    "format": "binary",
+                    "type": "string",
+                    "example": ""
+                  },
+                  "sovits_model_file": {
+                    "format": "binary",
+                    "type": "string",
+                    "example": ""
+                  },
+                  "model_name": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "description": {
+                    "example": "",
+                    "type": "string"
+                  },
+                  "supported_languages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": ""
+                  },
+                  "supported_emotions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": ""
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": ""
+                  },
+                  "is_public": {
+                    "type": "boolean",
+                    "example": ""
+                  }
+                }
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "object",
+                          "properties": {
+                            "created_at": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "download_count": {
+                              "type": "integer"
+                            },
+                            "gpt_model_path": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "is_featured": {
+                              "type": "boolean"
+                            },
+                            "is_public": {
+                              "type": "boolean"
+                            },
+                            "model_type": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "owner_id": {
+                              "type": "string"
+                            },
+                            "quality_score": {
+                              "type": "integer"
+                            },
+                            "review_status": {
+                              "type": "string"
+                            },
+                            "sovits_model_path": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "supported_emotions": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "supported_languages": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "color": {
+                                    "type": "string"
+                                  },
+                                  "created_at": {
+                                    "type": "string"
+                                  },
+                                  "description": {
+                                    "type": "null"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "is_active": {
+                                    "type": "boolean"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "usage_count": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            },
+                            "updated_at": {
+                              "type": "string"
+                            },
+                            "usage_count": {
+                              "type": "integer"
+                            },
+                            "voice_characteristics": {
+                              "type": "null"
+                            }
+                          },
+                          "required": [
+                            "created_at",
+                            "description",
+                            "download_count",
+                            "gpt_model_path",
+                            "id",
+                            "is_featured",
+                            "is_public",
+                            "model_type",
+                            "name",
+                            "owner_id",
+                            "quality_score",
+                            "review_status",
+                            "sovits_model_path",
+                            "status",
+                            "supported_emotions",
+                            "supported_languages",
+                            "tags",
+                            "updated_at",
+                            "usage_count",
+                            "voice_characteristics"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "model"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "message",
+                    "success"
+                  ]
                 }
               }
             },

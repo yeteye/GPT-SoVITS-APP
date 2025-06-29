@@ -1,4 +1,4 @@
-<!-- ./gpt-sovits-frontend/src/views/WatermarkManagement.vue -->
+<!-- ./gpt-sovits-frontend/src/views/WatermarkManagement.vue - 修复版 -->
 <template>
     <div class="watermark-management">
         <div class="page-header">
@@ -6,15 +6,13 @@
                 <div class="header-text">
                     <h1>🔐 水印检查</h1>
                     <p>检测音频是否由AI模型生成，保护您的知识产权</p>
+                    <div class="notice">
+                        <el-alert title="说明" description="水印植入在文本转语音时自动完成，此页面仅用于验证检测音频中的水印信息" type="info"
+                            :closable="false" style="margin-top: 16px" />
+                    </div>
                 </div>
                 <div class="header-actions">
-                    <el-button type="primary" @click="showEmbedDialog">
-                        <el-icon>
-                            <Plus />
-                        </el-icon>
-                        嵌入水印
-                    </el-button>
-                    <el-button @click="showVerifyDialog">
+                    <el-button type="primary" @click="showVerifyDialog">
                         <el-icon>
                             <Search />
                         </el-icon>
@@ -26,7 +24,7 @@
 
         <!-- 功能卡片区域 -->
         <el-row :gutter="24" class="feature-cards">
-            <el-col :span="12">
+            <el-col :span="24">
                 <el-card class="feature-card verify-card" @click="showVerifyDialog">
                     <div class="card-content">
                         <div class="card-icon">
@@ -36,22 +34,7 @@
                         </div>
                         <div class="card-info">
                             <h3>水印验证</h3>
-                            <p>上传音频文件，检测是否包含AI生成水印</p>
-                        </div>
-                    </div>
-                </el-card>
-            </el-col>
-            <el-col :span="12">
-                <el-card class="feature-card embed-card" @click="showEmbedDialog">
-                    <div class="card-content">
-                        <div class="card-icon">
-                            <el-icon>
-                                <Lock />
-                            </el-icon>
-                        </div>
-                        <div class="card-info">
-                            <h3>水印嵌入</h3>
-                            <p>为您的音频添加数字水印，保护版权</p>
+                            <p>上传音频文件，检测是否包含AI生成水印，获取生成信息</p>
                         </div>
                     </div>
                 </el-card>
@@ -108,6 +91,18 @@
             <el-empty v-if="!logsLoading && verificationLogs.length === 0" description="暂无验证记录" />
         </el-card>
 
+        <!-- 未登录提示 -->
+        <el-card v-else class="login-prompt-card">
+            <div class="login-prompt">
+                <el-icon class="prompt-icon">
+                    <User />
+                </el-icon>
+                <h3>登录后查看验证记录</h3>
+                <p>登录后可以查看您的水印验证历史记录</p>
+                <el-button type="primary" @click="goToLogin">立即登录</el-button>
+            </div>
+        </el-card>
+
         <!-- 验证水印弹窗 -->
         <el-dialog v-model="verifyDialogVisible" title="验证音频水印" width="600px">
             <div class="verify-section">
@@ -159,55 +154,6 @@
             </template>
         </el-dialog>
 
-        <!-- 嵌入水印弹窗 -->
-        <el-dialog v-model="embedDialogVisible" title="嵌入音频水印" width="700px">
-            <div v-if="!isLoggedIn" class="login-prompt">
-                <el-alert title="需要登录" description="水印嵌入功能需要登录后使用" type="warning" show-icon :closable="false" />
-                <div style="text-align: center; margin-top: 20px;">
-                    <el-button type="primary" @click="goToLogin">立即登录</el-button>
-                </div>
-            </div>
-
-            <el-form v-else :model="embedForm" :rules="embedRules" ref="embedFormRef" label-width="100px">
-                <el-form-item label="选择模型" prop="model_id">
-                    <el-select v-model="embedForm.model_id" placeholder="请选择模型" style="width: 100%"
-                        :loading="modelsLoading">
-                        <el-option v-for="model in availableModels" :key="model.id" :label="model.name"
-                            :value="model.id" />
-                    </el-select>
-                </el-form-item>
-
-                <el-form-item label="音频文件" prop="audio_file">
-                    <el-upload ref="embedUploadRef" class="upload-demo" drag :auto-upload="false"
-                        :on-change="handleEmbedFileChange" :limit="1" accept="audio/*" :before-upload="beforeUpload">
-                        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                        <div class="el-upload__text">拖拽音频文件到此处，或<em>点击上传</em></div>
-                        <div class="el-upload__tip">支持 WAV、MP3 等格式</div>
-                    </el-upload>
-                </el-form-item>
-
-                <el-form-item label="码长度" prop="code_length">
-                    <el-slider v-model="embedForm.code_length" :min="32" :max="256" :step="32" show-input
-                        style="width: 100%" />
-                    <div class="code-length-tip">较短的码长度处理更快，较长的码长度更安全</div>
-                </el-form-item>
-
-                <el-form-item label="描述" prop="description">
-                    <el-input v-model="embedForm.description" type="textarea" :rows="3" placeholder="请描述此水印的用途..."
-                        maxlength="200" show-word-limit />
-                </el-form-item>
-            </el-form>
-
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="embedDialogVisible = false">取消</el-button>
-                    <el-button v-if="isLoggedIn" type="primary" @click="submitEmbedWatermark" :loading="embedLoading">
-                        嵌入水印
-                    </el-button>
-                </span>
-            </template>
-        </el-dialog>
-
         <!-- 验证日志详情弹窗 -->
         <el-dialog v-model="logDetailDialogVisible" title="验证详情" width="600px">
             <div v-if="currentLog">
@@ -243,32 +189,25 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-    Plus,
     Search,
-    Lock,
     Refresh,
-    UploadFilled
+    UploadFilled,
+    User
 } from '@element-plus/icons-vue'
-import { watermarkAPI, ttsAPI } from '@/api'
+import { watermarkAPI } from '@/api'
 import { userStore } from '@/stores/user'
 
 const router = useRouter()
 
 // 响应式数据
 const verifyDialogVisible = ref(false)
-const embedDialogVisible = ref(false)
 const logDetailDialogVisible = ref(false)
 const verifyLoading = ref(false)
-const embedLoading = ref(false)
 const logsLoading = ref(false)
-const modelsLoading = ref(false)
 
 const verifyUploadRef = ref()
-const embedUploadRef = ref()
-const embedFormRef = ref()
 
 const verificationLogs = ref([])
-const availableModels = ref([])
 const verifyResult = ref(null)
 const currentLog = ref(null)
 
@@ -280,41 +219,10 @@ const verifyForm = reactive({
     audio_file: null
 })
 
-const embedForm = reactive({
-    model_id: '',
-    audio_file: null,
-    code_length: 64,
-    description: ''
-})
-
-// 表单验证规则
-const embedRules = {
-    model_id: [
-        { required: true, message: '请选择模型', trigger: 'change' }
-    ],
-    audio_file: [
-        { required: true, message: '请上传音频文件', trigger: 'change' }
-    ],
-    description: [
-        { required: true, message: '请输入描述', trigger: 'blur' }
-    ]
-}
-
 // 方法
 function showVerifyDialog() {
     verifyDialogVisible.value = true
     resetVerifyForm()
-}
-
-function showEmbedDialog() {
-    if (!isLoggedIn.value) {
-        embedDialogVisible.value = true
-        return
-    }
-
-    embedDialogVisible.value = true
-    resetEmbedForm()
-    fetchAvailableModels()
 }
 
 function closeVerifyDialog() {
@@ -323,7 +231,6 @@ function closeVerifyDialog() {
 }
 
 function goToLogin() {
-    embedDialogVisible.value = false
     router.push({ name: 'Login' })
 }
 
@@ -336,30 +243,15 @@ async function fetchVerificationLogs() {
         verificationLogs.value = res.data?.logs || []
     } catch (error) {
         console.error('获取验证日志失败:', error)
+        ElMessage.error('获取验证日志失败')
     } finally {
         logsLoading.value = false
-    }
-}
-
-async function fetchAvailableModels() {
-    modelsLoading.value = true
-    try {
-        const res = await ttsAPI.getAvailableModels({ per_page: 100 })
-        availableModels.value = res.data?.models || []
-    } catch (error) {
-        console.error('获取模型列表失败:', error)
-    } finally {
-        modelsLoading.value = false
     }
 }
 
 function handleVerifyFileChange(file) {
     verifyForm.audio_file = file.raw
     verifyResult.value = null
-}
-
-function handleEmbedFileChange(file) {
-    embedForm.audio_file = file.raw
 }
 
 function beforeUpload(file) {
@@ -397,6 +289,7 @@ async function submitVerifyWatermark() {
         }
 
     } catch (error) {
+        console.error('水印验证失败:', error)
         ElMessage.error(error?.response?.data?.message || '水印验证失败')
         verifyResult.value = {
             success: false,
@@ -405,36 +298,6 @@ async function submitVerifyWatermark() {
     } finally {
         verifyLoading.value = false
     }
-}
-
-async function submitEmbedWatermark() {
-    if (!embedFormRef.value) return
-
-    embedFormRef.value.validate(async (valid) => {
-        if (!valid) return
-
-        embedLoading.value = true
-        try {
-            const formData = new FormData()
-            formData.append('audio_file', embedForm.audio_file)
-            formData.append('model_id', embedForm.model_id)
-            formData.append('code_length', embedForm.code_length.toString())
-            formData.append('description', embedForm.description)
-
-            const res = await watermarkAPI.embedWatermark(formData)
-
-            ElMessage.success('水印嵌入成功')
-            embedDialogVisible.value = false
-
-            // 刷新验证日志
-            fetchVerificationLogs()
-
-        } catch (error) {
-            ElMessage.error(error?.response?.data?.message || '水印嵌入失败')
-        } finally {
-            embedLoading.value = false
-        }
-    })
 }
 
 function viewLogDetail(log) {
@@ -448,17 +311,6 @@ function resetVerifyForm() {
 
     if (verifyUploadRef.value) {
         verifyUploadRef.value.clearFiles()
-    }
-}
-
-function resetEmbedForm() {
-    embedForm.model_id = ''
-    embedForm.audio_file = null
-    embedForm.code_length = 64
-    embedForm.description = ''
-
-    if (embedUploadRef.value) {
-        embedUploadRef.value.clearFiles()
     }
 }
 
@@ -516,6 +368,20 @@ onMounted(() => {
     opacity: 0.9;
 }
 
+.notice {
+    margin-top: 16px;
+}
+
+.notice :deep(.el-alert) {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.notice :deep(.el-alert__title),
+.notice :deep(.el-alert__description) {
+    color: white;
+}
+
 .header-actions {
     display: flex;
     gap: 12px;
@@ -541,11 +407,6 @@ onMounted(() => {
 
 .verify-card {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: white;
-}
-
-.embed-card {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
     color: white;
 }
 
@@ -584,6 +445,35 @@ onMounted(() => {
     border: none;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.login-prompt-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.login-prompt {
+    padding: 40px 20px;
+}
+
+.prompt-icon {
+    font-size: 48px;
+    color: #409eff;
+    margin-bottom: 16px;
+}
+
+.login-prompt h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.login-prompt p {
+    margin: 0 0 20px 0;
+    color: #666;
+    font-size: 14px;
 }
 
 .card-header {
@@ -629,17 +519,6 @@ onMounted(() => {
     color: #333;
 }
 
-.login-prompt {
-    text-align: center;
-    padding: 20px;
-}
-
-.code-length-tip {
-    margin-top: 8px;
-    font-size: 12px;
-    color: #666;
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
     .watermark-management {
@@ -655,10 +534,6 @@ onMounted(() => {
     .header-actions {
         flex-direction: column;
         width: 100%;
-    }
-
-    .feature-cards .el-col {
-        margin-bottom: 16px;
     }
 
     .card-content {
@@ -697,22 +572,5 @@ onMounted(() => {
 
 :deep(.el-card__body) {
     padding: 20px;
-}
-
-:deep(.el-slider__runway) {
-    height: 6px;
-    background-color: #e4e7ed;
-    border-radius: 3px;
-}
-
-:deep(.el-slider__bar) {
-    background-color: #409eff;
-    border-radius: 3px;
-}
-
-:deep(.el-slider__button) {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #409eff;
 }
 </style>

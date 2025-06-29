@@ -1,4 +1,4 @@
-<!-- ./gpt-sovits-frontend/src/views/VoiceLibrary.vue -->
+<!-- ./gpt-sovits-frontend/src/views/VoiceLibrary.vue - 修复版 -->
 <template>
   <div class="voice-library">
     <div class="page-header">
@@ -65,8 +65,8 @@
             </el-button>
           </div>
           <div class="voice-type-badge">
-            <el-tag :type="voice.type === 'official' ? 'warning' : 'info'" size="small">
-              {{ voice.type === 'official' ? '官方' : '用户' }}
+            <el-tag :type="voice.model_type === 'official' ? 'warning' : 'info'" size="small">
+              {{ voice.model_type === 'official' ? '官方' : '用户' }}
             </el-tag>
           </div>
         </div>
@@ -88,7 +88,7 @@
             </span>
             <span class="usage">
               <el-icon>
-                <Headphone />
+                <Microphone />
               </el-icon>
               {{ voice.usage_count || 0 }}
             </span>
@@ -124,8 +124,8 @@
 
         <el-table-column label="类型" width="80">
           <template #default="{ row }">
-            <el-tag :type="row.type === 'official' ? 'warning' : 'info'" size="small">
-              {{ row.type === 'official' ? '官方' : '用户' }}
+            <el-tag :type="row.model_type === 'official' ? 'warning' : 'info'" size="small">
+              {{ row.model_type === 'official' ? '官方' : '用户' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -192,8 +192,8 @@
             {{ selectedVoice.name }}
           </el-descriptions-item>
           <el-descriptions-item label="类型">
-            <el-tag :type="selectedVoice.type === 'official' ? 'warning' : 'info'">
-              {{ selectedVoice.type === 'official' ? '官方模型' : '用户模型' }}
+            <el-tag :type="selectedVoice.model_type === 'official' ? 'warning' : 'info'">
+              {{ selectedVoice.model_type === 'official' ? '官方模型' : '用户模型' }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="创建者">
@@ -250,11 +250,11 @@ import {
   Grid,
   List,
   VideoPlay,
-  Microphone,
   Star,
-  StarFilled
+  StarFilled,
+  Microphone
 } from '@element-plus/icons-vue'
-import { modelsAPI } from '@/api'
+import { ttsAPI } from '@/api'
 import { userStore } from '@/stores/user'
 
 const router = useRouter()
@@ -303,7 +303,7 @@ const filteredVoices = computed(() => {
 
   // 类型筛选
   if (selectedType.value) {
-    result = result.filter(voice => voice.type === selectedType.value)
+    result = result.filter(voice => voice.model_type === selectedType.value)
   }
 
   return result
@@ -319,33 +319,42 @@ const paginatedVoices = computed(() => {
 async function fetchVoices() {
   loading.value = true
   try {
-    const res = await modelsAPI.getMyModels({
-      per_page: 200,
-      is_public: true
+    // 修复：使用正确的API参数，不超过后端限制
+    const res = await ttsAPI.getAvailableModels({
+      per_page: 100, // 不超过后端限制的最大值
+      // 移除可能导致错误的参数
     })
 
-    voices.value = (res.data?.models || []).map(model => ({
-      id: model.id,
-      name: model.name,
-      description: model.description || '暂无描述',
-      avatar: model.avatar_url,
-      type: model.type || 'user',
-      tags: model.voice_characteristics || [],
-      rating: model.quality_score || 5.0,
-      usage_count: model.usage_count || 0,
-      creator_name: model.creator_name,
-      created_at: model.created_at,
-      supported_languages: model.supported_languages || ['中文'],
-      supported_emotions: model.supported_emotions || ['自然'],
-      is_favorited: false // 需要从后端获取收藏状态
-    }))
+    if (res.data?.models) {
+      voices.value = res.data.models
+        .filter(model => model.is_public) // 客户端过滤公开模型
+        .map(model => ({
+          id: model.id,
+          name: model.name,
+          description: model.description || '暂无描述',
+          avatar: model.avatar_url,
+          model_type: model.model_type || 'user',
+          tags: model.voice_characteristics || (model.tags ? model.tags.map(tag => tag.name) : []),
+          rating: model.quality_score || 5.0,
+          usage_count: model.usage_count || 0,
+          creator_name: model.creator_name || model.owner_name,
+          created_at: model.created_at,
+          supported_languages: model.supported_languages || ['中文'],
+          supported_emotions: model.supported_emotions || ['自然'],
+          is_favorited: false // 需要从后端获取收藏状态
+        }))
 
-    // 获取用户收藏状态
-    if (isLoggedIn.value) {
-      await fetchFavoriteStatus()
+      // 获取用户收藏状态
+      if (isLoggedIn.value) {
+        await fetchFavoriteStatus()
+      }
+    } else {
+      voices.value = []
     }
   } catch (error) {
-    ElMessage.error('获取音色库失败')
+    console.error('获取音色库失败:', error)
+    ElMessage.error('获取音色库失败: ' + (error?.response?.data?.message || error.message))
+    voices.value = []
   } finally {
     loading.value = false
   }
@@ -444,7 +453,7 @@ async function toggleFavorite(voice) {
 }
 
 function goToMyVoices() {
-  router.push({ name: 'MyVoices' })
+  router.push({ name: 'CreatorCenter' })
 }
 
 function handleSizeChange(size) {

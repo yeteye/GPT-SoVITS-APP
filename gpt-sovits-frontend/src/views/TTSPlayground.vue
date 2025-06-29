@@ -1,4 +1,4 @@
-<!-- ./gpt-sovits-frontend/src/views/TTSPlayground.vue -->
+<!-- ./gpt-sovits-frontend/src/views/TTSPlayground.vue - 修复版 -->
 <template>
   <div class="tts-playground">
     <!-- 主体内容区域 -->
@@ -36,11 +36,11 @@
           <!-- 模型选择 -->
           <el-form-item label="选择模型">
             <el-select v-model="form.selectedModel" placeholder="选择语音模型" style="width: 100%" :loading="modelsLoading"
-              :disabled="!isLoggedIn">
+              :disabled="!isLoggedIn" @change="onModelChange">
               <el-option v-for="model in availableModels" :key="model.id" :label="model.name" :value="model.id">
                 <span style="float: left">{{ model.name }}</span>
                 <span style="float: right; color: #8492a6; font-size: 13px">
-                  {{ model.type === 'official' ? '官方' : '用户' }}
+                  {{ model.model_type === 'official' ? '官方' : '用户' }}
                 </span>
               </el-option>
             </el-select>
@@ -195,7 +195,6 @@ import {
 } from '@element-plus/icons-vue'
 import { ttsAPI, modelsAPI } from '@/api'
 import { userStore } from '@/stores/user'
-import { downloadRequest } from '@/utils/request'
 
 const router = useRouter()
 
@@ -271,9 +270,10 @@ const goToLogin = () => {
 async function fetchModels() {
   modelsLoading.value = true
   try {
-    const res = await ttsAPI.getAvailableModels({ per_page: 50 })
+    const res = await ttsAPI.getAvailableModels({ per_page: 50 }) // 不超过100
     availableModels.value = res.data?.models || []
   } catch (error) {
+    console.error('获取模型列表失败:', error)
     ElMessage.error('获取模型列表失败')
   } finally {
     modelsLoading.value = false
@@ -283,17 +283,20 @@ async function fetchModels() {
 async function fetchVoices() {
   voicesLoading.value = true
   try {
-    const res = await ttsAPI.getAvailableModels({ per_page: 100, featured: true })
-    voices.value = (res.data?.models || []).map(model => ({
-      id: model.id,
-      name: model.name,
-      description: model.description || '暂无描述',
-      avatar: model.avatar_url,
-      tags: model.voice_characteristics || [],
-      rating: model.quality_score,
-      usage_count: model.usage_count
-    }))
+    const res = await ttsAPI.getAvailableModels({ per_page: 100 }) // 不超过100
+    voices.value = (res.data?.models || [])
+      .filter(model => model.is_public) // 只显示公开模型
+      .map(model => ({
+        id: model.id,
+        name: model.name,
+        description: model.description || '暂无描述',
+        avatar: model.avatar_url,
+        tags: model.voice_characteristics || (model.tags ? model.tags.map(tag => tag.name) : []),
+        rating: model.quality_score,
+        usage_count: model.usage_count
+      }))
   } catch (error) {
+    console.error('获取音色库失败:', error)
     ElMessage.error('获取音色库失败')
   } finally {
     voicesLoading.value = false
@@ -319,6 +322,14 @@ function toggleTag(tag) {
 
 function onSearch() {
   // 搜索逻辑已在computed中处理
+}
+
+function onModelChange(modelId) {
+  // 自动同步选中的音色
+  selectedVoice.value = modelId
+
+  // 重置情感为默认值
+  form.value.selectedEmotion = 'neutral'
 }
 
 async function previewVoice(voice) {
@@ -374,7 +385,8 @@ async function onSynthesize() {
       throw new Error('生成失败')
     }
   } catch (error) {
-    ElMessage.error(error.message || '语音生成失败')
+    console.error('语音生成失败:', error)
+    ElMessage.error(error?.response?.data?.message || '语音生成失败')
   } finally {
     generating.value = false
   }

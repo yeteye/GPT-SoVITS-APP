@@ -1,3 +1,4 @@
+// ./gpt-sovits-frontend/jsconfig.json
 {
   "compilerOptions": {
     "paths": {

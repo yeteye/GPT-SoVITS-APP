@@ -1,4 +1,4 @@
-<!-- ./gpt-sovits-frontend/src/views/VoiceClone.vue -->
+<!-- ./gpt-sovits-frontend/src/views/VoiceClone.vue - 修复版 -->
 <template>
   <div class="voice-clone-container">
     <div class="page-header">
@@ -75,62 +75,88 @@
             <h3>⚙️ 训练设置</h3>
           </template>
 
-          <el-form :model="trainingForm" :rules="trainingRules" ref="trainingFormRef" label-width="120px">
-            <el-form-item label="模型名称" prop="modelName">
-              <el-input v-model="trainingForm.modelName" placeholder="为你的音色模型起个名字" clearable />
-            </el-form-item>
+          <el-form :model="trainingForm" :rules="trainingRules" ref="trainingFormRef" label-width="120px"
+            class="training-form">
+            <div class="form-section">
+              <el-form-item label="模型名称" prop="modelName">
+                <el-input v-model="trainingForm.modelName" placeholder="为你的音色模型起个名字" clearable />
+              </el-form-item>
 
-            <el-form-item label="模型描述" prop="description">
-              <el-input v-model="trainingForm.description" type="textarea" :rows="3" placeholder="简单描述一下这个音色的特点..."
-                maxlength="200" show-word-limit />
-            </el-form-item>
+              <el-form-item label="模型描述" prop="description">
+                <el-input v-model="trainingForm.description" type="textarea" :rows="3" placeholder="简单描述一下这个音色的特点..."
+                  maxlength="200" show-word-limit />
+              </el-form-item>
+            </div>
 
-            <el-form-item label="选择样本" prop="selectedSamples">
-              <div class="sample-selection">
-                <el-checkbox-group v-model="trainingForm.selectedSamples">
-                  <div v-for="sample in samples" :key="sample.upload_id" class="sample-item">
-                    <el-checkbox :label="sample.upload_id">
-                      <div class="sample-info">
-                        <div class="sample-name">{{ sample.filename }}</div>
-                        <div class="sample-meta">
-                          {{ formatDuration(sample.duration) }} | {{ formatFileSize(sample.file_size) }}
+            <div class="form-section">
+              <el-form-item label="选择样本" prop="selectedSamples">
+                <div class="sample-selection">
+                  <el-checkbox-group v-model="trainingForm.selectedSamples">
+                    <div v-for="sample in samples" :key="sample.upload_id" class="sample-item">
+                      <el-checkbox :label="sample.upload_id">
+                        <div class="sample-info">
+                          <div class="sample-name">{{ sample.filename }}</div>
+                          <div class="sample-meta">
+                            {{ formatDuration(sample.duration) }} | {{ formatFileSize(sample.file_size) }}
+                          </div>
                         </div>
+                      </el-checkbox>
+                      <div class="sample-actions">
+                        <el-button type="text" @click="previewSample(sample)">
+                          <el-icon>
+                            <VideoPlay />
+                          </el-icon>
+                        </el-button>
+                        <el-button type="text" @click="deleteSample(sample)" style="color: #f56c6c;">
+                          <el-icon>
+                            <Delete />
+                          </el-icon>
+                        </el-button>
                       </div>
-                    </el-checkbox>
-                    <div class="sample-actions">
-                      <el-button type="text" @click="previewSample(sample)">
-                        <el-icon>
-                          <VideoPlay />
-                        </el-icon>
-                      </el-button>
-                      <el-button type="text" @click="deleteSample(sample)" style="color: #f56c6c;">
-                        <el-icon>
-                          <Delete />
-                        </el-icon>
-                      </el-button>
                     </div>
-                  </div>
-                </el-checkbox-group>
-              </div>
-            </el-form-item>
+                  </el-checkbox-group>
+                </div>
+              </el-form-item>
+            </div>
 
-            <el-form-item label="公开设置">
-              <el-switch v-model="trainingForm.isPublic" active-text="公开模型" inactive-text="私有模型" />
-              <div class="setting-tip">公开后其他用户可以使用你的音色模型</div>
-            </el-form-item>
+            <div class="form-section">
+              <el-form-item label="支持语言" prop="supported_languages">
+                <el-select v-model="trainingForm.supported_languages" multiple placeholder="选择支持的语言">
+                  <el-option label="中文" value="zh-CN" />
+                  <el-option label="英文" value="en-US" />
+                  <el-option label="日语" value="ja-JP" />
+                </el-select>
+              </el-form-item>
 
-            <el-form-item>
-              <el-button type="primary" @click="startTraining" :loading="isTraining"
-                :disabled="trainingForm.selectedSamples.length === 0" size="large">
-                <el-icon>
-                  <Cpu />
-                </el-icon>
-                {{ isTraining ? '正在提交训练...' : '开始训练' }}
-              </el-button>
-              <div class="training-info">
-                <span>预计训练时间：{{ estimatedTime }}分钟</span>
-              </div>
-            </el-form-item>
+              <el-form-item label="支持情感" prop="supported_emotions">
+                <el-select v-model="trainingForm.supported_emotions" multiple placeholder="选择支持的情感">
+                  <el-option label="自然" value="neutral" />
+                  <el-option label="快乐" value="happy" />
+                  <el-option label="悲伤" value="sad" />
+                  <el-option label="愤怒" value="angry" />
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="公开设置">
+                <el-switch v-model="trainingForm.isPublic" active-text="公开模型" inactive-text="私有模型" />
+                <div class="setting-tip">公开后其他用户可以使用你的音色模型</div>
+              </el-form-item>
+            </div>
+
+            <div class="form-actions">
+              <el-form-item>
+                <el-button type="primary" @click="startTraining" :loading="isTraining"
+                  :disabled="trainingForm.selectedSamples.length === 0" size="large" class="training-button">
+                  <el-icon>
+                    <Cpu />
+                  </el-icon>
+                  {{ isTraining ? '正在提交训练...' : '开始训练' }}
+                </el-button>
+                <div class="training-info">
+                  <span>预计训练时间：{{ estimatedTime }}分钟</span>
+                </div>
+              </el-form-item>
+            </div>
           </el-form>
         </el-card>
       </el-col>
@@ -160,21 +186,25 @@
             </div>
 
             <div class="task-meta">
-              <div class="meta-item">
-                <span class="label">样本数量：</span>
-                <span class="value">{{ currentTask.sample_count }}个</span>
+              <div class="meta-row">
+                <div class="meta-item">
+                  <span class="label">样本数量：</span>
+                  <span class="value">{{ currentTask.sample_count }}个</span>
+                </div>
+                <div class="meta-item">
+                  <span class="label">总时长：</span>
+                  <span class="value">{{ formatDuration(currentTask.total_duration) }}</span>
+                </div>
               </div>
-              <div class="meta-item">
-                <span class="label">总时长：</span>
-                <span class="value">{{ formatDuration(currentTask.total_duration) }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="label">开始时间：</span>
-                <span class="value">{{ formatTime(currentTask.created_at) }}</span>
-              </div>
-              <div class="meta-item" v-if="currentTask.estimated_completion">
-                <span class="label">预计完成：</span>
-                <span class="value">{{ formatTime(currentTask.estimated_completion) }}</span>
+              <div class="meta-row">
+                <div class="meta-item">
+                  <span class="label">开始时间：</span>
+                  <span class="value">{{ formatTime(currentTask.created_at) }}</span>
+                </div>
+                <div class="meta-item" v-if="currentTask.estimated_completion">
+                  <span class="label">预计完成：</span>
+                  <span class="value">{{ formatTime(currentTask.estimated_completion) }}</span>
+                </div>
               </div>
             </div>
 
@@ -275,6 +305,8 @@ const trainingForm = reactive({
   modelName: '',
   description: '',
   selectedSamples: [],
+  supported_languages: ['zh-CN'],
+  supported_emotions: ['neutral'],
   isPublic: false
 })
 
@@ -284,8 +316,17 @@ const trainingRules = {
     { required: true, message: '请输入模型名称', trigger: 'blur' },
     { min: 2, max: 50, message: '模型名称长度在 2 到 50 个字符', trigger: 'blur' }
   ],
+  description: [
+    { required: true, message: '请输入模型描述', trigger: 'blur' }
+  ],
   selectedSamples: [
     { required: true, message: '请至少选择一个音频样本', trigger: 'change' }
+  ],
+  supported_languages: [
+    { required: true, message: '请选择支持的语言', trigger: 'change' }
+  ],
+  supported_emotions: [
+    { required: true, message: '请选择支持的情感', trigger: 'change' }
   ]
 }
 
@@ -304,9 +345,10 @@ const estimatedTime = computed(() => {
 // 方法
 async function fetchSamples() {
   try {
-    const res = await voiceCloneAPI.getUserSamples({ per_page: 50 })
+    const res = await voiceCloneAPI.getUserSamples({ per_page: 50 }) // 不超过100
     samples.value = res.data?.samples || []
   } catch (error) {
+    console.error('获取音频样本失败:', error)
     ElMessage.error('获取音频样本失败')
   }
 }
@@ -317,18 +359,24 @@ async function fetchTasks() {
     const res = await voiceCloneAPI.getUserTasks({ per_page: 20 })
     tasks.value = res.data?.tasks || []
 
-    // 查找当前进行中的任务
-    currentTask.value = tasks.value.find(task =>
+    // 查找当前进行中的任务 - 增强验证
+    const activeTask = tasks.value.find(task =>
+      task &&
+      task.task_id &&
+      typeof task.task_id === 'string' &&
+      task.task_id !== 'undefined' &&
       ['pending', 'processing', 'training'].includes(task.status)
-    ) || null
+    )
 
-    // 如果有进行中的任务，开始轮询
-    if (currentTask.value) {
+    if (activeTask && (!currentTask.value || currentTask.value.task_id !== activeTask.task_id)) {
+      currentTask.value = activeTask
       startPolling()
-    } else {
+    } else if (!activeTask && currentTask.value) {
+      currentTask.value = null
       stopPolling()
     }
   } catch (error) {
+    console.error('获取训练任务失败:', error)
     ElMessage.error('获取训练任务失败')
   } finally {
     tasksLoading.value = false
@@ -336,10 +384,26 @@ async function fetchTasks() {
 }
 
 function startPolling() {
-  if (pollingTimer.value) return
+  // 防止重复轮询
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+  }
+
+  // 确保有有效的任务ID才开始轮询
+  if (!currentTask.value || !currentTask.value.task_id) {
+    console.warn('无法开始轮询：任务ID无效')
+    return
+  }
 
   pollingTimer.value = setInterval(() => {
-    fetchTasks()
+    // 只有在有进行中的任务且任务ID有效时才轮询
+    if (currentTask.value &&
+      currentTask.value.task_id &&
+      ['pending', 'processing', 'training'].includes(currentTask.value.status)) {
+      fetchTaskDetail(currentTask.value.task_id)
+    } else {
+      stopPolling()
+    }
   }, 5000) // 每5秒轮询一次
 }
 
@@ -347,6 +411,52 @@ function stopPolling() {
   if (pollingTimer.value) {
     clearInterval(pollingTimer.value)
     pollingTimer.value = null
+  }
+}
+
+async function fetchTaskDetail(taskId) {
+  // 确保taskId有效 - 增强验证
+  if (!taskId ||
+    taskId === 'undefined' ||
+    taskId === null ||
+    taskId === 'null' ||
+    typeof taskId !== 'string' ||
+    taskId.trim() === '') {
+    console.warn('无效的任务ID:', taskId)
+    stopPolling()
+    currentTask.value = null
+    return
+  }
+
+  try {
+    const res = await voiceCloneAPI.getTaskDetail(taskId)
+    const task = res.data
+
+    // 更新当前任务状态
+    if (currentTask.value && currentTask.value.task_id === taskId) {
+      currentTask.value = task
+
+      // 如果任务完成或失败，停止轮询并刷新任务列表
+      if (!['pending', 'processing', 'training'].includes(task.status)) {
+        currentTask.value = null
+        stopPolling()
+        fetchTasks() // 刷新任务列表
+
+        if (task.status === 'completed') {
+          ElMessage.success('模型训练完成！')
+        } else if (task.status === 'failed') {
+          ElMessage.error('模型训练失败')
+        }
+      }
+    }
+  } catch (error) {
+    console.error('获取任务详情失败:', error)
+    // 如果是404错误或任务ID无效，说明任务不存在，停止轮询
+    if (error.response?.status === 404 || error.message?.includes('Invalid task ID')) {
+      console.warn('任务不存在，停止轮询')
+      currentTask.value = null
+      stopPolling()
+    }
   }
 }
 
@@ -411,6 +521,8 @@ async function startTraining() {
         model_name: trainingForm.modelName,
         sample_ids: trainingForm.selectedSamples,
         description: trainingForm.description,
+        supported_languages: trainingForm.supported_languages,
+        supported_emotions: trainingForm.supported_emotions,
         is_public: trainingForm.isPublic
       })
 
@@ -420,6 +532,8 @@ async function startTraining() {
       trainingForm.modelName = ''
       trainingForm.description = ''
       trainingForm.selectedSamples = []
+      trainingForm.supported_languages = ['zh-CN']
+      trainingForm.supported_emotions = ['neutral']
       trainingForm.isPublic = false
 
       // 刷新任务列表
@@ -441,6 +555,8 @@ async function cancelTask(taskId) {
 
     await voiceCloneAPI.cancelTask(taskId)
     ElMessage.success('训练任务已取消')
+    currentTask.value = null
+    stopPolling()
     fetchTasks()
   } catch (error) {
     if (error !== 'cancel') {
@@ -752,6 +868,34 @@ onUnmounted(() => {
   margin-bottom: 4px;
 }
 
+.training-form {
+  padding: 0;
+}
+
+.form-section {
+  background: #fafafa;
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.form-actions {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.training-button {
+  width: 200px;
+  height: 48px;
+}
+
+.training-info {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
 .sample-selection {
   border: 1px solid #e4e7ed;
   border-radius: 8px;
@@ -798,12 +942,6 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
-.training-info {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #666;
-}
-
 .task-status {
   padding: 16px 0;
 }
@@ -833,14 +971,18 @@ onUnmounted(() => {
 }
 
 .task-meta {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
   margin-bottom: 16px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .meta-item {
   font-size: 13px;
+  flex: 1;
 }
 
 .meta-item .label {
@@ -919,8 +1061,13 @@ onUnmounted(() => {
     gap: 20px;
   }
 
-  .task-meta {
-    grid-template-columns: 1fr;
+  .form-section {
+    padding: 16px;
+  }
+
+  .meta-row {
+    flex-direction: column;
+    gap: 4px;
   }
 
   .task-item {
@@ -970,5 +1117,14 @@ onUnmounted(() => {
 
 :deep(.el-card__body) {
   padding: 20px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 18px;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #606266;
 }
 </style>
