@@ -102,6 +102,7 @@ import os
 import sys
 import traceback
 from typing import Generator
+from fastapi.middleware.cors import CORSMiddleware
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -145,6 +146,14 @@ print(tts_config)
 tts_pipeline = TTS(tts_config)
 
 APP = FastAPI()
+
+APP.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # 或 ["*"] 以允许全部源
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class TTS_Request(BaseModel):

@@ -1,5 +1,6 @@
 // src/api/index.js - 统一API管理 (修复版)
 import request from "@/utils/request";
+import { ttsRequest } from "@/utils/ttsRequest";
 
 // 认证相关API
 export const authAPI = {
@@ -362,9 +363,66 @@ export const adminAPI = {
   },
 };
 
-// 健康检查API
 export const healthAPI = {
   healthCheck() {
     return request.get("/health");
   },
+};
+
+// —— TTS 相关 API，全部走 9880 端口的 ttsRequest ——
+export const tts2API = {
+  /** 获取可用模型列表 */
+  getAvailableModels(params) {
+    // per_page 最多 100
+    if (params.per_page && params.per_page > 100) {
+      params.per_page = 100;
+    }
+    return ttsRequest.get("/tts/models", { params });
+  },
+
+  /** 获取单个模型详情 */
+  getModelDetail(modelId) {
+    return ttsRequest.get(`/tts/models/${modelId}`);
+  },
+
+  /** 生成语音 */
+  generateSpeech(data) {
+    return ttsRequest.post("/tts", data);
+  },
+
+  /** 获取任务列表 */
+  getTTSTasks(params) {
+    return ttsRequest.get("/tts/tasks", { params });
+  },
+
+  /** 获取任务详情 */
+  getTTSTaskDetail(taskId) {
+    return ttsRequest.get(`/tts/tasks/${taskId}`);
+  },
+
+  /** 下载生成好的音频流（WAV） */
+  downloadAudio(taskId) {
+    return ttsRequest.get(`/tts/tasks/${taskId}/download`, {
+      responseType: "blob",
+    });
+  },
+
+  /** 切换 GPT 权重 */
+  setGPTWeights(weights_path) {
+    return ttsRequest.get("/set_gpt_weights", {
+      params: { weights_path },
+    });
+  },
+
+  /** 切换 Sovits 权重 */
+  setSovitsWeights(weights_path) {
+    return ttsRequest.get("/set_sovits_weights", {
+      params: { weights_path },
+    });
+  },
+
+  /** 控制命令（restart / exit） */
+  control(command) {
+    return ttsRequest.get("/control", { params: { command } });
+  }
 };
