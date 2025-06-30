@@ -96,7 +96,7 @@
             <div class="form-section">
               <el-form-item label="支持语言" prop="supported_languages">
                 <el-select v-model="trainingForm.supported_languages" multiple placeholder="选择支持的语言">
-                  <el-option label="中文" value="zh-CN" />
+                  <el-option label="中文" value="zh" />
                   <el-option label="英文" value="en" />
                   <el-option label="日语" value="ja" />
                 </el-select>
@@ -356,7 +356,7 @@ const trainingForm = reactive({
   modelName: '',
   description: '',
   selectedSamples: [],
-  supported_languages: ['zh-CN'],
+  supported_languages: ['zh'],
   supported_emotions: ['happy'],
   isPublic: false
 })
@@ -680,7 +680,7 @@ async function startTraining() {
       trainingForm.modelName = ''
       trainingForm.description = ''
       trainingForm.selectedSamples = []
-      trainingForm.supported_languages = ['zh-CN']
+      trainingForm.supported_languages = ['zh']
       trainingForm.supported_emotions = ['happy']
       trainingForm.isPublic = false
 

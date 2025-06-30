@@ -242,14 +242,14 @@ watch(() => form.value.selectedModel, async (newModelId) => {
       value: type,
       // 你可以根据需要把中文标签写在这里，或直接用 type 显示
       label: {
-        neutral:   '自然',
-        happy:     '快乐',
-        sad:       '悲伤',
-        angry:     '愤怒',
+        neutral: '自然',
+        happy: '快乐',
+        sad: '悲伤',
+        angry: '愤怒',
         surprised: '惊讶',
-        calm:      '平静',
-        disgust:   '厌恶',
-        fear:      '恐惧'
+        calm: '平静',
+        disgust: '厌恶',
+        fear: '恐惧'
       }[type] || type
     }))
 
@@ -345,9 +345,9 @@ async function fetchVoices() {
 function selectVoice(voice) {
   selectedVoice.value = voice.id
   // 自动选择对应的模型
-  if (!form.value.selectedModel) {
-    form.value.selectedModel = voice.id
-  }
+
+  form.value.selectedModel = voice.id
+
 }
 
 function toggleTag(tag) {
@@ -367,8 +367,6 @@ function onModelChange(modelId) {
   // 自动同步选中的音色
   selectedVoice.value = modelId
 
-  // 重置情感为默认值
-  form.value.selectedEmotion = 'neutral'
 }
 
 async function previewVoice(voice) {
@@ -397,12 +395,14 @@ async function onSynthesize() {
   }
 
   try {
-    const modelId   = form.value.selectedModel;
-    const emotion   = form.value.selectedEmotion;
+    console.log(form)
+    const modelId = form.value.selectedModel;
+    const emotion = form.value.selectedEmotion;
 
-     // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
+    // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
     const emoListRes = await emotionAPI.getEmotions(modelId);
-    const emotions   = emoListRes.data.emotions;
+    const emotions = emoListRes.data.emotions;
+
 
     if (!emotions.includes(emotion)) {
       throw new Error(`Model does not support emotion "${emotion}"`);
@@ -410,14 +410,14 @@ async function onSynthesize() {
 
     // 2. 通过 model_id + emotionType 查询参考音频参数
     const detailRes = await emotionAPI.getEmotionDetail(modelId, emotion);
-    const detail    = detailRes.data;
+    const detail = detailRes.data;
 
-      // 输入参数
-      // text: form.value.text,
-      // model_id: form.value.selectedModel,
-      // emotion: form.value.selectedEmotion,
-      // speed: form.value.speed,
-      // language: form.value.textLang
+    // 输入参数
+    // text: form.value.text,
+    // model_id: form.value.selectedModel,
+    // emotion: form.value.selectedEmotion,
+    // speed: form.value.speed,
+    // language: form.value.textLang
 
     const payload = {
       text: form.value.text,
@@ -445,6 +445,7 @@ async function onSynthesize() {
       model_id: modelId,
       emotion: emotion
     }
+    console.log(payload)
 
     // const response = await tts2API.generateSpeech(payload)
     //
