@@ -41,10 +41,9 @@
           </template>
 
           <div class="upload-section">
-            <el-upload ref="uploadRef" class="audio-upload" drag :action="uploadAction" :headers="uploadHeaders"
-              :on-success="handleUploadSuccess" :on-error="handleUploadError" :on-progress="handleUploadProgress"
-              :before-upload="beforeUpload" :file-list="fileList" accept="audio/*" multiple :limit="10"
-              :on-exceed="handleExceed">
+            <el-upload ref="uploadRef" class="audio-upload" drag :before-upload="beforeUpload"
+              :on-change="handleFileChange" :on-remove="handleFileRemove" accept="audio/*" multiple :limit="10"
+              :on-exceed="handleExceed" :auto-upload="false" :http-request="() => { }">
               <div class="upload-content">
                 <el-icon class="upload-icon">
                   <Upload />
@@ -55,7 +54,13 @@
                 </div>
               </div>
             </el-upload>
-
+            <!-- 添加上传按钮 -->
+            <div class="upload-actions" v-if="pendingFiles.length > 0">
+              <el-button type="primary" @click="uploadAllFiles" :loading="isUploading">
+                上传 {{ pendingFiles.length }} 个文件
+              </el-button>
+              <el-button @click="clearAllFiles">清空</el-button>
+            </div>
             <div class="upload-tips">
               <h4>💡 上传建议</h4>
               <ul>
@@ -91,7 +96,7 @@
             <div class="form-section">
               <el-form-item label="支持语言" prop="supported_languages">
                 <el-select v-model="trainingForm.supported_languages" multiple placeholder="选择支持的语言">
-                  <el-option label="中文" value="zh" />
+                  <el-option label="中文" value="zh-CN" />
                   <el-option label="英文" value="en" />
                   <el-option label="日语" value="ja" />
                 </el-select>
@@ -145,9 +150,10 @@
               <div class="selected-list">
                 <div v-for="sampleId in trainingForm.selectedSamples" :key="sampleId" class="selected-item">
                   <div class="sample-info">
-                    <div class="sample-name">{{ getSampleById(sampleId)?.filename }}</div>
+                    <div class="sample-name">{{ getSampleById(sampleId)?.original_filename ||
+                      getSampleById(sampleId)?.filename }}</div>
                     <div class="sample-meta">
-                      {{ formatDuration(getSampleById(sampleId)?.duration) }} |
+                      {{ formatDuration(getSampleById(sampleId)?.file_metadata?.duration) }} |
                       {{ formatFileSize(getSampleById(sampleId)?.file_size) }}
                     </div>
                   </div>
@@ -172,12 +178,12 @@
             <div class="available-samples">
               <h4>可选择样本</h4>
               <div class="available-list">
-                <div v-for="sample in availableSamples" :key="sample.upload_id" class="available-item"
-                  @click="addSample(sample.upload_id)">
+                <div v-for="sample in availableSamples" :key="sample.id" class="available-item"
+                  @click="addSample(sample.id)">
                   <div class="sample-info">
-                    <div class="sample-name">{{ sample.filename }}</div>
+                    <div class="sample-name">{{ sample.original_filename || sample.filename }}</div>
                     <div class="sample-meta">
-                      {{ formatDuration(sample.duration) }} | {{ formatFileSize(sample.file_size) }}
+                      {{ formatDuration(sample.file_metadata?.duration) }} | {{ formatFileSize(sample.file_size) }}
                     </div>
                   </div>
                   <div class="sample-actions" @click.stop>
@@ -331,6 +337,9 @@ const isTraining = ref(false)
 const tasksLoading = ref(false)
 const currentPlayingSample = ref(null)
 const pollingTimer = ref(null)
+const pendingFiles = ref([]) // 待上传的文件列表
+const isUploading = ref(false) // 上传状态
+
 
 // 统计数据
 const totalSamples = computed(() => samples.value.length)
@@ -339,7 +348,7 @@ const completedModels = computed(() => tasks.value.filter(t => t.status === 'com
 
 // 可选择的样本（未被选中的样本）
 const availableSamples = computed(() => {
-  return samples.value.filter(sample => !trainingForm.selectedSamples.includes(sample.upload_id))
+  return samples.value.filter(sample => !trainingForm.selectedSamples.includes(sample.id))
 })
 
 // 训练表单
@@ -347,8 +356,8 @@ const trainingForm = reactive({
   modelName: '',
   description: '',
   selectedSamples: [],
-  supported_languages: ['zh'],
-  supported_emotions: ['neutral'],
+  supported_languages: ['zh-CN'],
+  supported_emotions: ['happy'],
   isPublic: false
 })
 
@@ -370,10 +379,117 @@ const trainingRules = {
 }
 
 // 上传配置
-const uploadAction = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000/api'}/voice-clone/upload-sample`)
-const uploadHeaders = computed(() => ({
-  'Authorization': `Bearer ${localStorage.getItem('token')}`
-}))
+function handleFileChange(file, fileList) {
+  console.log('文件选择:', file, fileList)
+  // 检查文件是否已存在
+  const exists = pendingFiles.value.some(f => f.uid === file.uid)
+  if (!exists) {
+    pendingFiles.value.push({
+      uid: file.uid,
+      name: file.name,
+      raw: file.raw,
+      size: file.size,
+      type: file.type
+    })
+  }
+}
+
+// 文件移除处理
+function handleFileRemove(file, fileList) {
+  console.log('文件移除:', file, fileList)
+  const index = pendingFiles.value.findIndex(f => f.uid === file.uid)
+  if (index > -1) {
+    pendingFiles.value.splice(index, 1)
+  }
+}
+
+// 上传所有文件
+async function uploadAllFiles() {
+  if (pendingFiles.value.length === 0) {
+    ElMessage.warning('请先选择文件')
+    return
+  }
+
+  isUploading.value = true
+  const uploadPromises = []
+
+  try {
+    for (const file of pendingFiles.value) {
+      uploadPromises.push(uploadSingleFile(file))
+    }
+
+    // 并发上传所有文件
+    const results = await Promise.allSettled(uploadPromises)
+
+    let successCount = 0
+    let failCount = 0
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        successCount++
+        // 添加到选中样本 - 使用正确的 id 字段
+        if (result.value?.id) {
+          trainingForm.selectedSamples.push(result.value.id)
+        }
+      } else {
+        failCount++
+        console.error(`文件 ${pendingFiles.value[index].name} 上传失败:`, result.reason)
+      }
+    })
+
+    if (successCount > 0) {
+      ElMessage.success(`成功上传 ${successCount} 个文件`)
+      // 刷新样本列表
+      fetchSamples()
+    }
+
+    if (failCount > 0) {
+      ElMessage.warning(`${failCount} 个文件上传失败`)
+    }
+
+    // 清空待上传文件列表
+    clearAllFiles()
+
+  } catch (error) {
+    console.error('批量上传失败:', error)
+    ElMessage.error('上传失败')
+  } finally {
+    isUploading.value = false
+  }
+}
+
+// 上传单个文件
+async function uploadSingleFile(file) {
+  const formData = new FormData()
+  formData.append('audio_file', file.raw, file.name)
+
+  try {
+    const response = await voiceCloneAPI.uploadSample(formData, {
+      onUploadProgress: (progressEvent) => {
+        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        console.log(`${file.name} 上传进度: ${progress}%`)
+      }
+    })
+
+    if (response.success) {
+      console.log(`${file.name} 上传成功:`, response.data)
+      return response.data
+    } else {
+      throw new Error(response.message || '上传失败')
+    }
+  } catch (error) {
+    console.error(`${file.name} 上传失败:`, error)
+    throw error
+  }
+}
+
+// 清空所有文件
+function clearAllFiles() {
+  pendingFiles.value = []
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
+}
 
 // 预计训练时间
 const estimatedTime = computed(() => {
@@ -383,7 +499,7 @@ const estimatedTime = computed(() => {
 
 // 方法
 function getSampleById(id) {
-  return samples.value.find(sample => sample.upload_id === id)
+  return samples.value.find(sample => sample.id === id)
 }
 
 function addSample(sampleId) {
@@ -523,28 +639,6 @@ function beforeUpload(file) {
   return true
 }
 
-function handleUploadSuccess(response, file) {
-  if (response.success) {
-    ElMessage.success(`${file.name} 上传成功`)
-    fetchSamples()
-
-    if (response.data?.upload_id) {
-      trainingForm.selectedSamples.push(response.data.upload_id)
-    }
-  } else {
-    ElMessage.error(`${file.name} 上传失败: ${response.message}`)
-  }
-}
-
-function handleUploadError(error, file) {
-  console.error('Upload error:', error)
-  ElMessage.error(`${file.name} 上传失败`)
-}
-
-function handleUploadProgress(event, file) {
-  // 可以在这里显示上传进度
-}
-
 function handleExceed(files, fileList) {
   ElMessage.warning(`最多只能上传 10 个文件，当前选择了 ${files.length} 个文件，已上传 ${fileList.length} 个文件`)
 }
@@ -570,6 +664,7 @@ async function startTraining() {
 
       isTraining.value = true
 
+      // 使用正确的请求格式
       const res = await voiceCloneAPI.startTraining({
         model_name: trainingForm.modelName,
         sample_ids: trainingForm.selectedSamples,
@@ -585,8 +680,8 @@ async function startTraining() {
       trainingForm.modelName = ''
       trainingForm.description = ''
       trainingForm.selectedSamples = []
-      trainingForm.supported_languages = ['zh']
-      trainingForm.supported_emotions = ['neutral']
+      trainingForm.supported_languages = ['zh-CN']
+      trainingForm.supported_emotions = ['happy']
       trainingForm.isPublic = false
 
       fetchTasks()
@@ -629,12 +724,13 @@ async function retryTask(taskId) {
 
 async function deleteSample(sample) {
   try {
-    await ElMessageBox.confirm(`确定要删除 "${sample.filename}" 吗？`, '确认删除', { type: 'warning' })
+    await ElMessageBox.confirm(`确定要删除 "${sample.original_filename || sample.filename}" 吗？`, '确认删除', { type: 'warning' })
 
-    await voiceCloneAPI.deleteSample(sample.upload_id)
+    await voiceCloneAPI.deleteSample(sample.id)
     ElMessage.success('样本已删除')
 
-    const index = trainingForm.selectedSamples.indexOf(sample.upload_id)
+    // 从选中样本中移除
+    const index = trainingForm.selectedSamples.indexOf(sample.id)
     if (index > -1) {
       trainingForm.selectedSamples.splice(index, 1)
     }
@@ -648,14 +744,23 @@ async function deleteSample(sample) {
 }
 
 function previewSample(sample) {
-  if (currentPlayingSample.value === sample.upload_id) {
+  if (currentPlayingSample.value === sample.id) {
     audioPlayer.value.pause()
     currentPlayingSample.value = null
   } else {
-    if (sample.file_url) {
-      audioPlayer.value.src = sample.file_url
-      audioPlayer.value.play()
-      currentPlayingSample.value = sample.upload_id
+    // 构建音频文件的预览URL，如果没有file_url则尝试构建
+    let audioUrl = sample.file_url
+    if (!audioUrl) {
+      // 根据文件名构建预览URL，这里需要根据你的后端API调整
+    }
+
+    if (audioUrl) {
+      audioPlayer.value.src = audioUrl
+      audioPlayer.value.play().catch(error => {
+        console.error('音频播放失败:', error)
+        ElMessage.warning('音频播放失败，可能文件不存在或格式不支持')
+      })
+      currentPlayingSample.value = sample.id
     } else {
       ElMessage.warning('音频文件不可用')
     }
@@ -745,14 +850,14 @@ function canCancelTask(task) {
 }
 
 function formatDuration(seconds) {
-  if (!seconds) return '0s'
+  if (!seconds || isNaN(seconds)) return '0s'
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return mins > 0 ? `${mins}m${secs}s` : `${secs}s`
 }
 
 function formatFileSize(bytes) {
-  if (!bytes) return '0B'
+  if (!bytes || isNaN(bytes)) return '0B'
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -873,6 +978,21 @@ onUnmounted(() => {
 
 .upload-section {
   margin-bottom: 16px;
+}
+
+.upload-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8f9fb 0%, #e8f4f8 100%);
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.upload-actions .el-button {
+  min-width: 120px;
 }
 
 .audio-upload {
