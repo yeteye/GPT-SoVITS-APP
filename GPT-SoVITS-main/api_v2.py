@@ -56,16 +56,16 @@ command:
 "restart": 重新运行
 "exit": 结束运行
 
-GET:
-```
-http://127.0.0.1:9880/control?command=restart
-```
-POST:
-```json
-{
-    "command": "restart"
-}
-```
+    GET:
+    ```
+    http://127.0.0.1:9880/control?command=restart
+    ```
+    POST:
+    ```json
+    {
+        "command": "restart"
+    }
+    ```
 
 RESP: 无
 

@@ -371,41 +371,12 @@ export const healthAPI = {
 
 // —— TTS 相关 API，全部走 9880 端口的 ttsRequest ——
 export const tts2API = {
-  /** 获取可用模型列表 */
-  getAvailableModels(params) {
-    // per_page 最多 100
-    if (params.per_page && params.per_page > 100) {
-      params.per_page = 100;
-    }
-    return ttsRequest.get("/tts/models", { params });
-  },
-
-  /** 获取单个模型详情 */
-  getModelDetail(modelId) {
-    return ttsRequest.get(`/tts/models/${modelId}`);
-  },
 
   /** 生成语音 */
   generateSpeech(data) {
     return ttsRequest.post("/tts", data);
   },
 
-  /** 获取任务列表 */
-  getTTSTasks(params) {
-    return ttsRequest.get("/tts/tasks", { params });
-  },
-
-  /** 获取任务详情 */
-  getTTSTaskDetail(taskId) {
-    return ttsRequest.get(`/tts/tasks/${taskId}`);
-  },
-
-  /** 下载生成好的音频流（WAV） */
-  downloadAudio(taskId) {
-    return ttsRequest.get(`/tts/tasks/${taskId}/download`, {
-      responseType: "blob",
-    });
-  },
 
   /** 切换 GPT 权重 */
   setGPTWeights(weights_path) {
@@ -424,5 +395,40 @@ export const tts2API = {
   /** 控制命令（restart / exit） */
   control(command) {
     return ttsRequest.get("/control", { params: { command } });
+  }
+  // endpoint: `/control`
+  //
+  // command:
+  // "restart": 重新运行
+  // "exit": 结束运行
+  //   GET:
+  // ```
+  // http://127.0.0.1:9880/control?command=restart
+  // ```
+  // POST:
+  // ```json
+  // {
+  //     "command": "restart"
+  // }
+  // ```
+};
+export const emotionAPI = {
+  /**
+   * 获取某模型支持的所有情感类型
+   * @param {string} modelId 模型 UUID
+   * @returns {Promise} 返回 { success, message, data: { emotions: [...] } }
+   */
+  getEmotions(modelId) {
+    return request.get(`/models/${modelId}/emotions`);
+  },
+
+  /**
+   * 获取指定模型某种情感的参考音频参数
+   * @param {string} modelId 模型 UUID
+   * @param {string} emotionType 情感类型，如 'neutral', 'happy' 等
+   * @returns {Promise} 返回 { success, message, data: { model_id, type, ref_path, ref_lang, ref_text, description } }
+   */
+  getEmotionDetail(modelId, emotionType) {
+    return request.get(`/models/${modelId}/emotions/${emotionType}`);
   }
 };

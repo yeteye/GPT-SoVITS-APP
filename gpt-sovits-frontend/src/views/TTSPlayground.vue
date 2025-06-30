@@ -215,7 +215,7 @@ import {
   VideoPlay,
   Star
 } from '@element-plus/icons-vue'
-import { ttsAPI, tts2API, modelsAPI } from '@/api'
+import { ttsAPI, tts2API, modelsAPI, emotionAPI } from '@/api'
 import { userStore } from '@/stores/user'
 
 const router = useRouter()
@@ -228,6 +228,9 @@ const form = ref({
   selectedEmotion: 'neutral',
   speed: 1.0
 })
+const availableEmotions = ref([
+  /* 初始可以留空或默认一项 */
+])
 
 // 状态变量
 const generating = ref(false)
@@ -243,13 +246,49 @@ const pollingTimer = ref(null)
 
 // 数据
 const availableModels = ref([])
-const availableEmotions = ref([
-  { label: '自然', value: 'neutral' },
-  { label: '快乐', value: 'happy' },
-  { label: '悲伤', value: 'sad' },
-  { label: '愤怒', value: 'angry' },
-  { label: '惊讶', value: 'surprised' }
-])
+
+watch(() => form.value.selectedModel, async (newModelId) => {
+  if (!newModelId) {
+    availableEmotions.value = []
+    form.value.selectedEmotion = null
+    return
+  }
+
+  try {
+    // 调用后端接口获取该模型支持的 emotion 列表
+    const res = await emotionAPI.getEmotions(newModelId)
+    const types = res.data.emotions  // e.g. ['neutral','happy',...]
+
+    // 把每个字符串转成 { label, value } 供 <el-option> 使用
+    availableEmotions.value = types.map(type => ({
+      value: type,
+      // 你可以根据需要把中文标签写在这里，或直接用 type 显示
+      label: {
+        neutral: '自然',
+        happy: '快乐',
+        sad: '悲伤',
+        angry: '愤怒',
+        surprised: '惊讶',
+        calm: '平静',
+        disgust: '厌恶',
+        fear: '恐惧'
+      }[type] || type
+    }))
+
+    // 将选中的 emotion 重置为第一项
+    if (availableEmotions.value.length > 0) {
+      form.value.selectedEmotion = availableEmotions.value[0].value
+    } else {
+      form.value.selectedEmotion = null
+    }
+  } catch (err) {
+    console.error('加载情感列表失败', err)
+    ElMessage.error('加载情感列表失败')
+    availableEmotions.value = []
+    form.value.selectedEmotion = null
+  }
+})
+
 const voices = ref([])
 const filterTags = ref(['男声', '女声', '温柔', '磁性', '播音', '童声'])
 
@@ -397,34 +436,51 @@ async function onSynthesize() {
   }
 
   try {
+    const modelId = form.value.selectedModel;
+    const emotion = form.value.selectedEmotion;
+
+    // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
+    const emoListRes = await emotionAPI.getEmotions(modelId);
+    const emotions = emoListRes.data.emotions;
+
+    if (!emotions.includes(emotion)) {
+      throw new Error(`Model does not support emotion "${emotion}"`);
+    }
+
+    // 2. 通过 model_id + emotionType 查询参考音频参数
+    const detailRes = await emotionAPI.getEmotionDetail(modelId, emotion);
+    const detail = detailRes.data;
+
+    // 输入参数
+    // text: form.value.text,
+    // model_id: form.value.selectedModel,
+    // emotion: form.value.selectedEmotion,
+    // speed: form.value.speed,
+    // language: form.value.textLang
+
     const payload = {
       text: form.value.text,
-      model_id: form.value.selectedModel,
-      emotion: form.value.selectedEmotion,
-      speed: form.value.speed,
-      language: form.value.textLang
-    }
-    const realpayload = {
-      text: "",
-      text_lang: "",
-      ref_audio_path: "",
+      text_lang: form.value.textLang.toLowerCase(),
+      ref_audio_path: detail.ref_path,   // 你的 D: 路径也要改成后端能读到的相对路径或文件名
       aux_ref_audio_paths: [],
-      prompt_text: "",
-      prompt_lang: "",
+      prompt_text: detail.ref_text,
+      prompt_lang: detail.ref_lang.toLowerCase(),
+      media_type: 'wav',                 // ← 一定要加上
       top_k: 5,
       top_p: 1,
       temperature: 1,
-      text_split_method: "cut0",
+      text_split_method: 'cut0',
       batch_size: 1,
       batch_threshold: 0.75,
-      split_bucket: True,
-      speed_factor: 1.0,
-      streaming_mode: False,
+      split_bucket: true,
+      speed_factor: form.value.speed,
+      fragment_interval: 0.3,            // ← 一定要加上
+      streaming_mode: false,
       seed: -1,
-      parallel_infer: True,
+      parallel_infer: true,
       repetition_penalty: 1.35,
       sample_steps: 32,
-      super_sampling: False
+      super_sampling: false
     }
 
     const response = await tts2API.generateSpeech(payload)
@@ -460,7 +516,7 @@ function startPolling(taskId) {
 
   pollingTimer.value = setInterval(async () => {
     try {
-      const res = await tts2API.getTTSTaskDetail(taskId)
+      const res = await ttsAPI.getTTSTaskDetail(taskId)
       const task = res.data
 
       currentTask.value = task

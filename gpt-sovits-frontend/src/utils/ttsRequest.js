@@ -5,6 +5,7 @@ import { handleTokenExpired } from './request'  // 如果需要和主 request �
 export const ttsRequest = axios.create({
   baseURL: 'http://127.0.0.1:9880',
   timeout: 60000,
+  responseType: 'blob',   // ← 全局 blob
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
