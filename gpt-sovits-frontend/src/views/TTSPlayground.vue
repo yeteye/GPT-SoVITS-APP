@@ -358,16 +358,16 @@ async function onSynthesize() {
   }
 
   try {
+
+      // text: form.value.text,
+      // model_id: form.value.selectedModel,
+      // emotion: form.value.selectedEmotion,
+      // speed: form.value.speed,
+      // language: form.value.textLang
+
     const payload = {
       text: form.value.text,
-      model_id: form.value.selectedModel,
-      emotion: form.value.selectedEmotion,
-      speed: form.value.speed,
-      language: form.value.textLang
-    }
-    const realpayload = {
-      text: "",
-      text_lang: "",
+      text_lang: form.value.textLang,
       ref_audio_path: "",
       aux_ref_audio_paths: [],
       prompt_text: "",
@@ -379,7 +379,7 @@ async function onSynthesize() {
       batch_size: 1,
       batch_threshold: 0.75,
       split_bucket: True,
-      speed_factor:1.0,
+      speed_factor:form.value.speed,
       streaming_mode: False,
       seed: -1,
       parallel_infer: True,
@@ -419,7 +419,7 @@ function startPolling(taskId) {
 
   pollingTimer.value = setInterval(async () => {
     try {
-      const res = await tts2API.getTTSTaskDetail(taskId)
+      const res = await ttsAPI.getTTSTaskDetail(taskId)
       const task = res.data
 
       currentTask.value = task
