@@ -223,7 +223,7 @@ const router = useRouter()
 // 表单数据
 const form = ref({
   text: '你好，欢迎使用 GPT-SoVITS 在线语音合成系统。',
-  textLang: 'zh',
+  textLang: '中文',
   selectedModel: null,
   selectedEmotion: 'neutral',
   speed: 1.0

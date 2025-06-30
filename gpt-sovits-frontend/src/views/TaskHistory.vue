@@ -138,14 +138,13 @@
         </div>
       </template>
 
-      <el-table :data="filteredTasks" v-loading="loading" row-key="id" @row-click="viewTaskDetail"
-        style="cursor: pointer">
+      <el-table :data="tasks" v-loading="loading" row-key="id" @row-click="viewTaskDetail" style="cursor: pointer">
         <el-table-column prop="id" label="任务ID" width="120" />
 
         <el-table-column label="类型" width="100">
           <template #default="{ row }">
             <el-tag :type="getTaskTypeTagType(row.type)" size="small">
-              {{ getTaskTypeText(row.type) }}
+              {{ getTaskTypeText(row.task_type) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -153,10 +152,10 @@
         <el-table-column prop="title" label="任务描述" min-width="200">
           <template #default="{ row }">
             <div class="task-title">
-              {{ row.title || getDefaultTitle(row) }}
+              {{ getTaskTitle(row) }}
             </div>
-            <div class="task-subtitle" v-if="row.subtitle || row.text">
-              {{ row.subtitle || (row.text && row.text.length > 50 ? row.text.substring(0, 50) + '...' : row.text) }}
+            <div class="task-subtitle" v-if="getTaskSubtitle(row)">
+              {{ getTaskSubtitle(row) }}
             </div>
           </template>
         </el-table-column>
@@ -195,8 +194,8 @@
                 详情
               </el-button>
 
-              <el-button v-if="row.status === 'completed' && (row.result_url || row.audio_url)" size="small"
-                type="success" @click.stop="downloadResult(row)">
+              <el-button v-if="row.status === 'completed' && hasResult(row)" size="small" type="success"
+                @click.stop="downloadResult(row)">
                 下载
               </el-button>
 
@@ -218,7 +217,7 @@
       </el-table>
 
       <!-- 空状态 -->
-      <el-empty v-if="!loading && filteredTasks.length === 0" description="暂无任务记录" />
+      <el-empty v-if="!loading && tasks.length === 0" description="暂无任务记录" />
 
       <!-- 分页 -->
       <div class="pagination-wrapper" v-if="pagination.total > 0">
@@ -234,7 +233,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -277,24 +276,6 @@ const stats = reactive({
   failed: 0
 })
 
-// 计算属性
-const filteredTasks = computed(() => {
-  let result = tasks.value
-
-  // 按任务名称筛选
-  if (filters.taskName) {
-    const keyword = filters.taskName.toLowerCase()
-    result = result.filter(task => {
-      const title = task.title || getDefaultTitle(task) || ''
-      const subtitle = task.subtitle || task.text || ''
-      return title.toLowerCase().includes(keyword) ||
-        subtitle.toLowerCase().includes(keyword)
-    })
-  }
-
-  return result
-})
-
 // 方法
 async function fetchTasks() {
   loading.value = true
@@ -314,13 +295,19 @@ async function fetchTasks() {
 
     const res = await userAPI.getTaskHistory(params)
 
+    // 根据API文档，任务数据在 res.data.tasks 中
     tasks.value = res.data?.tasks || []
-    pagination.total = res.data?.total || 0
+
+    // 更新分页信息
+    if (res.data?.pagination) {
+      pagination.total = res.data.pagination.total
+    }
 
     // 更新统计信息
     updateStats()
 
   } catch (error) {
+    console.error('获取任务列表失败:', error)
     ElMessage.error('获取任务列表失败')
   } finally {
     loading.value = false
@@ -328,7 +315,6 @@ async function fetchTasks() {
 }
 
 function updateStats() {
-  console.log(tasks.value)
   const allTasks = tasks.value
   stats.total = allTasks.length
   stats.completed = allTasks.filter(t => t.status === 'completed').length
@@ -367,24 +353,21 @@ function viewTaskDetail(row) {
 async function downloadResult(row) {
   try {
     if (row.type === 'tts') {
-      if (row.audio_url) {
-        // 直接下载音频URL
-        window.open(row.audio_url, '_blank')
-      } else {
-        // 通过API下载
-        const res = await ttsAPI.downloadAudio(row.id)
-        downloadBlob(res.data, `tts_${row.id}.wav`)
-      }
+      // TTS任务下载音频
+      const res = await ttsAPI.downloadAudio(row.id)
+      downloadBlob(res.data, `tts_${row.id}.wav`)
     } else if (row.type === 'voice_clone') {
+      // 音色克隆任务获取下载链接
       const res = await voiceCloneAPI.getTaskResult(row.id)
       if (res.data?.model_download_url) {
         window.open(res.data.model_download_url, '_blank')
-      } else if (res.data?.result_url) {
-        window.open(res.data.result_url, '_blank')
+      } else if (res.data?.download_url) {
+        window.open(res.data.download_url, '_blank')
       }
     }
     ElMessage.success('下载开始')
   } catch (error) {
+    console.error('下载失败:', error)
     ElMessage.error('下载失败')
   }
 }
@@ -434,6 +417,7 @@ async function retryTask(row) {
       router.push({ name: 'TTSPlayground' })
     }
   } catch (error) {
+    console.error('重试失败:', error)
     ElMessage.error('重试失败')
   }
 }
@@ -455,6 +439,7 @@ async function cancelTask(row) {
     }
   } catch (error) {
     if (error !== 'cancel') {
+      console.error('取消失败:', error)
       ElMessage.error('取消失败')
     }
   }
@@ -484,7 +469,7 @@ function getTaskTypeText(type) {
     'tts': '语音合成',
     'voice_clone': '音色克隆'
   }
-  return typeMap[type] || type
+  return typeMap[type] || type || '未知类型'
 }
 
 function getTaskTypeTagType(type) {
@@ -493,6 +478,29 @@ function getTaskTypeTagType(type) {
     'voice_clone': 'success'
   }
   return typeMap[type] || ''
+}
+
+function getTaskTitle(row) {
+  // 根据任务类型生成标题
+  if (row.type === 'tts') {
+    return row.title || `语音合成任务`
+  } else if (row.type === 'voice_clone') {
+    return row.title || `音色克隆任务 - ${row.model_name || '未命名'}`
+  }
+  return row.title || `任务 - ${row.id}`
+}
+
+function getTaskSubtitle(row) {
+  // 根据任务类型生成副标题
+  if (row.type === 'tts' && row.text) {
+    return row.text.length > 50 ? row.text.substring(0, 50) + '...' : row.text
+  } else if (row.type === 'voice_clone') {
+    const parts = []
+    if (row.sample_count) parts.push(`${row.sample_count}个样本`)
+    if (row.total_duration) parts.push(`${Math.round(row.total_duration)}秒`)
+    return parts.join(' | ')
+  }
+  return row.subtitle || ''
 }
 
 function getStatusText(status) {
@@ -520,7 +528,7 @@ function getStatusTagType(status) {
 }
 
 function getProgress(status, progress) {
-  if (progress) return progress
+  if (progress && typeof progress === 'number') return progress
 
   const progressMap = {
     'pending': 10,
@@ -539,13 +547,8 @@ function getProgressStatus(status) {
   return null
 }
 
-function getDefaultTitle(row) {
-  if (row.type === 'tts') {
-    return `语音合成任务`
-  } else if (row.type === 'voice_clone') {
-    return `音色克隆任务 - ${row.model_name || '未命名'}`
-  }
-  return `任务 - ${row.id}`
+function hasResult(row) {
+  return row.result_url || row.audio_url || row.model_download_url
 }
 
 function getDuration(row) {
@@ -570,6 +573,7 @@ function getDuration(row) {
 }
 
 function formatTime(timeStr) {
+  if (!timeStr) return '-'
   return new Date(timeStr).toLocaleString()
 }
 

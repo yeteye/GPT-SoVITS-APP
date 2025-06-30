@@ -443,7 +443,7 @@ defineExpose({
 }
 
 .title {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   color: #4b3f88;
   margin: 0;

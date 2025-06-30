@@ -13,7 +13,7 @@
           <template #header>
             <div class="card-header">
               <h3>个人资料</h3>
-              <el-button type="text" @click="editMode = !editMode">
+              <el-button link @click="editMode = !editMode">
                 <el-icon>
                   <Edit />
                 </el-icon>
@@ -63,7 +63,7 @@
                 <el-form-item label="用户ID">
                   <el-input v-model="profileForm.id" disabled placeholder="用户唯一标识">
                     <template #suffix>
-                      <el-button type="text" @click="copyUserId">
+                      <el-button link @click="copyUserId">
                         <el-icon>
                           <CopyDocument />
                         </el-icon>
@@ -102,7 +102,15 @@
         <!-- 账户统计 -->
         <el-card class="stats-card" shadow="hover">
           <template #header>
-            <h3>账户统计</h3>
+            <div class="card-header">
+              <h3>账户统计</h3>
+              <el-button link @click="fetchUserStats" :loading="statsLoading">
+                <el-icon>
+                  <Refresh />
+                </el-icon>
+                刷新
+              </el-button>
+            </div>
           </template>
 
           <div class="stats-grid" v-loading="statsLoading">
@@ -234,9 +242,9 @@
 
             <el-form-item label="主题设置">
               <el-radio-group v-model="preferencesForm.theme" @change="updatePreferences">
-                <el-radio label="light">浅色主题</el-radio>
-                <el-radio label="dark">深色主题</el-radio>
-                <el-radio label="auto">跟随系统</el-radio>
+                <el-radio value="light">浅色主题</el-radio>
+                <el-radio value="dark">深色主题</el-radio>
+                <el-radio value="auto">跟随系统</el-radio>
               </el-radio-group>
             </el-form-item>
 
@@ -259,7 +267,7 @@
           <template #header>
             <div class="card-header">
               <h3>最近活动</h3>
-              <el-button type="text" @click="fetchRecentActivities">
+              <el-button link @click="fetchRecentActivities">
                 <el-icon>
                   <Refresh />
                 </el-icon>
@@ -433,7 +441,7 @@ import {
   Close
 } from '@element-plus/icons-vue'
 import { userStore } from '@/stores/user'
-import { userAPI, authAPI } from '@/api'
+import { userAPI, authAPI, ttsAPI, voiceCloneAPI, modelsAPI } from '@/api'
 
 const router = useRouter()
 
@@ -545,6 +553,7 @@ async function fetchUserProfile() {
     Object.assign(profileForm, profile)
     Object.assign(originalProfile, profile)
   } catch (error) {
+    console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败')
   }
 }
@@ -552,10 +561,88 @@ async function fetchUserProfile() {
 async function fetchUserStats() {
   statsLoading.value = true
   try {
+    // 首先尝试官方统计API
+    console.log('尝试获取用户统计信息...')
     const res = await userAPI.getStatistics()
-    userStats.value = res.data || {}
+    console.log('统计API响应:', res)
+
+    if (res.data) {
+      userStats.value = res.data
+      console.log('成功获取统计数据:', res.data)
+    } else {
+      throw new Error('统计API返回空数据')
+    }
   } catch (error) {
-    console.error('获取用户统计失败:', error)
+    console.warn('统计API失败，使用备用方案:', error)
+
+    // 备用方案：分别获取各项数据
+    try {
+      console.log('开始获取各项统计数据...')
+
+      // 并发获取各项数据
+      const results = await Promise.allSettled([
+        ttsAPI.getTTSTasks({ per_page: 1 }).then(res => {
+          console.log('TTS任务响应:', res)
+          return res
+        }),
+        voiceCloneAPI.getUserTasks({ per_page: 1 }).then(res => {
+          console.log('音色克隆任务响应:', res)
+          return res
+        }),
+        modelsAPI.getMyModels({ per_page: 1 }).then(res => {
+          console.log('我的模型响应:', res)
+          return res
+        }),
+        userAPI.getUserUploads({ per_page: 100 }).then(res => {
+          console.log('用户上传响应:', res)
+          return res
+        })
+      ])
+
+      // 处理TTS任务数量
+      let ttsCount = 0
+      if (results[0].status === 'fulfilled' && results[0].value?.data) {
+        ttsCount = results[0].value.data.pagination?.total || 0
+      }
+
+      // 处理音色克隆任务数量
+      let voiceCloneCount = 0
+      if (results[1].status === 'fulfilled' && results[1].value?.data) {
+        voiceCloneCount = results[1].value.data.pagination?.total || 0
+      }
+
+      // 处理模型数量
+      let modelsCount = 0
+      if (results[2].status === 'fulfilled' && results[2].value?.data) {
+        modelsCount = results[2].value.data.pagination?.total || 0
+      }
+
+      // 计算存储使用量
+      let storageUsed = 0
+      if (results[3].status === 'fulfilled' && results[3].value?.data?.uploads) {
+        storageUsed = results[3].value.data.uploads.reduce((total, upload) => {
+          return total + (upload.file_size || 0)
+        }, 0)
+      }
+
+      userStats.value = {
+        tts_tasks: ttsCount,
+        voice_clone_tasks: voiceCloneCount,
+        models_created: modelsCount,
+        storage_used: storageUsed
+      }
+
+      console.log('备用方案获取的统计数据:', userStats.value)
+    } catch (fallbackError) {
+      console.error('备用方案也失败了:', fallbackError)
+      // 使用默认值
+      userStats.value = {
+        tts_tasks: 0,
+        voice_clone_tasks: 0,
+        models_created: 0,
+        storage_used: 0
+      }
+    }
   } finally {
     statsLoading.value = false
   }
@@ -564,35 +651,97 @@ async function fetchUserStats() {
 async function fetchRecentActivities() {
   activityLoading.value = true
   try {
+    console.log('尝试获取任务历史...')
     const res = await userAPI.getTaskHistory({ per_page: 10 })
-    recentActivities.value = (res.data?.tasks || []).map(task => ({
-      id: task.id,
-      type: task.type,
-      title: getTaskTitle(task),
-      description: getTaskDescription(task),
-      status: task.status,
-      created_at: task.created_at
-    }))
+    console.log('任务历史API响应:', res)
+
+    if (res.data?.tasks && Array.isArray(res.data.tasks)) {
+      recentActivities.value = res.data.tasks.map(task => ({
+        id: task.id,
+        type: task.type || task.task_type || 'unknown',
+        title: getTaskTitle(task),
+        description: getTaskDescription(task),
+        status: task.status,
+        created_at: task.created_at
+      }))
+      console.log('成功获取任务历史:', recentActivities.value)
+    } else {
+      throw new Error('任务历史API返回空数据')
+    }
   } catch (error) {
-    // 使用模拟数据
-    recentActivities.value = [
-      {
-        id: 1,
-        type: 'tts',
-        title: '语音合成任务',
-        description: '生成了一段中文语音',
-        status: 'completed',
-        created_at: new Date().toISOString()
-      },
-      {
-        id: 2,
-        type: 'voice_clone',
-        title: '音色克隆任务',
-        description: '训练了新的音色模型',
-        status: 'processing',
-        created_at: new Date(Date.now() - 300000).toISOString()
+    console.warn('任务历史API失败，使用备用方案:', error)
+
+    // 备用方案：从其他API获取活动数据
+    try {
+      console.log('开始获取各类任务数据...')
+      const [ttsTasksRes, voiceCloneTasksRes] = await Promise.allSettled([
+        ttsAPI.getTTSTasks({ per_page: 5 }).then(res => {
+          console.log('TTS任务列表响应:', res)
+          return res
+        }),
+        voiceCloneAPI.getUserTasks({ per_page: 5 }).then(res => {
+          console.log('音色克隆任务列表响应:', res)
+          return res
+        })
+      ])
+
+      const activities = []
+
+      // 处理TTS任务
+      if (ttsTasksRes.status === 'fulfilled' && ttsTasksRes.value?.data?.tasks) {
+        ttsTasksRes.value.data.tasks.forEach(task => {
+          activities.push({
+            id: `tts_${task.id}`,
+            type: 'tts',
+            title: '语音合成任务',
+            description: `生成了 "${(task.text || '').substring(0, 20)}..." 的语音`,
+            status: task.status,
+            created_at: task.created_at
+          })
+        })
       }
-    ]
+
+      // 处理音色克隆任务
+      if (voiceCloneTasksRes.status === 'fulfilled' && voiceCloneTasksRes.value?.data?.tasks) {
+        voiceCloneTasksRes.value.data.tasks.forEach(task => {
+          activities.push({
+            id: `voice_clone_${task.id}`,
+            type: 'voice_clone',
+            title: '音色克隆任务',
+            description: `训练了音色模型 "${task.model_name || '未命名'}"`,
+            status: task.status,
+            created_at: task.created_at
+          })
+        })
+      }
+
+      // 按时间排序
+      activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      recentActivities.value = activities.slice(0, 10)
+
+      console.log('备用方案获取的活动数据:', recentActivities.value)
+    } catch (fallbackError) {
+      console.error('备用方案也失败了:', fallbackError)
+      // 使用模拟数据
+      recentActivities.value = [
+        {
+          id: 1,
+          type: 'tts',
+          title: '语音合成任务',
+          description: '生成了一段中文语音',
+          status: 'completed',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 2,
+          type: 'voice_clone',
+          title: '音色克隆任务',
+          description: '训练了新的音色模型',
+          status: 'processing',
+          created_at: new Date(Date.now() - 300000).toISOString()
+        }
+      ]
+    }
   } finally {
     activityLoading.value = false
   }
@@ -615,6 +764,7 @@ async function updateProfile() {
       editMode.value = false
       ElMessage.success('个人信息更新成功')
     } catch (error) {
+      console.error('更新失败:', error)
       ElMessage.error('更新失败')
     } finally {
       updateLoading.value = false
@@ -803,11 +953,11 @@ function getRoleText(role) {
 
 function getRoleTagType(role) {
   const typeMap = {
-    0: '',
+    0: 'info',     // 普通用户改为info类型
     1: 'warning',
     2: 'danger'
   }
-  return typeMap[role] || ''
+  return typeMap[role] || 'info'  // 默认值改为info
 }
 
 function formatTime(timeStr) {
@@ -826,15 +976,16 @@ function formatStorage(bytes) {
 function getTaskTitle(task) {
   const titleMap = {
     'tts': '语音合成任务',
-    'voice_clone': '音色克隆任务'
+    'voice_clone': '音色克隆任务',
+    'unknown': '任务'
   }
-  return titleMap[task.task_type] || '未知任务'
+  return titleMap[task.task_type || task.type] || '未知任务'
 }
 
 function getTaskDescription(task) {
-  if (task.task_type === 'tts') {
-    return `生成了 "${task.text?.substring(0, 20) || ''}..." 的语音`
-  } else if (task.task_type === 'voice_clone') {
+  if (task.task_type === 'tts' || task.type === 'tts') {
+    return `生成了 "${(task.text || '').substring(0, 20) || ''}..." 的语音`
+  } else if (task.task_type === 'voice_clone' || task.type === 'voice_clone') {
     return `训练了音色模型 "${task.model_name || '未命名'}"`
   }
   return '任务详情'
@@ -845,7 +996,8 @@ function getActivityIcon(type) {
     'tts': Microphone,
     'voice_clone': MagicStick,
     'login': User,
-    'setting': Setting
+    'setting': Setting,
+    'unknown': Clock
   }
   return iconMap[type] || Clock
 }
