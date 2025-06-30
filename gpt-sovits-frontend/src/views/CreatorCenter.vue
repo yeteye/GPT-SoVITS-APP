@@ -1,4 +1,4 @@
-<!-- ./gpt-sovits-frontend/src/views/CreatorCenter.vue - 增强版 -->
+<!-- ./gpt-sovits-frontend/src/views/CreatorCenter.vue - 修复版 -->
 <template>
   <div class="creator-center">
     <div class="creator-header">
@@ -210,9 +210,9 @@
 
     <!-- 上传音频弹窗 -->
     <el-dialog v-model="uploadAudioVisible" title="上传音频" width="600px">
-      <el-upload ref="audioUploadRef" class="upload-demo" drag :action="uploadAudioAction" :headers="uploadHeaders"
-        :on-success="handleAudioUploadSuccess" :on-error="handleUploadError" :before-upload="beforeAudioUpload"
-        accept="audio/*" :limit="1" :file-list="audioFileList" :auto-upload="false">
+      <el-upload ref="audioUploadRef" class="upload-demo" drag :before-upload="beforeAudioUpload"
+        :on-change="handleAudioFileChange" :on-remove="handleAudioFileRemove" accept="audio/*" :limit="1"
+        :auto-upload="false" :http-request="() => { }">
         <el-icon class="el-icon--upload"><upload-filled /></el-icon>
         <div class="el-upload__text">拖拽音频文件到此处，或<em>点击上传</em></div>
         <div class="el-upload__tip">支持 WAV、MP3、M4A 等格式，文件大小不超过50MB</div>
@@ -240,14 +240,14 @@
 
         <el-form-item label="GPT模型文件" prop="gpt_model_file">
           <el-upload ref="gptUploadRef" :auto-upload="false" :limit="1" accept=".pth" :on-change="handleGptFileChange"
-            :file-list="gptFileList">
+            :on-remove="handleGptFileRemove">
             <el-button>选择GPT模型文件(.pth)</el-button>
           </el-upload>
         </el-form-item>
 
         <el-form-item label="SoVITS模型文件" prop="sovits_model_file">
           <el-upload ref="sovitsUploadRef" :auto-upload="false" :limit="1" accept=".ckpt"
-            :on-change="handleSovitsFileChange" :file-list="sovitsFileList">
+            :on-change="handleSovitsFileChange" :on-remove="handleSovitsFileRemove">
             <el-button>选择SoVITS模型文件(.ckpt)</el-button>
           </el-upload>
         </el-form-item>
@@ -452,9 +452,9 @@ const editModelVisible = ref(false)
 const uploadingAudio = ref(false)
 const uploadingModel = ref(false)
 const editingModel = ref(false)
-const audioFileList = ref([])
-const gptFileList = ref([])
-const sovitsFileList = ref([])
+
+// 修复文件跟踪 - 使用独立的变量而不是file-list
+const selectedAudioFile = ref(null)
 const currentPlayingAudio = ref(null)
 const selectedModel = ref(null)
 const editingModelData = ref(null)
@@ -528,11 +528,11 @@ const editRules = {
   ]
 }
 
-// 上传配置
-const uploadAudioAction = import.meta.env.VITE_API_BASE_URL + '/voice-clone/upload-sample'
-const uploadHeaders = {
-  'Authorization': `Bearer ${localStorage.getItem('token')}`
-}
+// 上传配置 - 不再需要这些配置
+// const uploadAudioAction = import.meta.env.VITE_API_BASE_URL + '/voice-clone/upload-sample'
+// const uploadHeaders = {
+//   'Authorization': `Bearer ${localStorage.getItem('token')}`
+// }
 
 const defaultModelAvatar = new URL('@/assets/model.png', import.meta.url).href
 
@@ -603,7 +603,11 @@ async function fetchMyModels() {
 // 显示上传音频弹窗
 function showUploadAudioDialog() {
   uploadAudioVisible.value = true
-  audioFileList.value = []
+  selectedAudioFile.value = null
+  // 清空上传组件的文件列表
+  if (audioUploadRef.value) {
+    audioUploadRef.value.clearFiles()
+  }
 }
 
 // 显示上传模型弹窗
@@ -623,8 +627,13 @@ function resetModelForm() {
     supported_emotions: [],
     is_public: false
   })
-  gptFileList.value = []
-  sovitsFileList.value = []
+  // 清空文件上传组件
+  if (gptUploadRef.value) {
+    gptUploadRef.value.clearFiles()
+  }
+  if (sovitsUploadRef.value) {
+    sovitsUploadRef.value.clearFiles()
+  }
 }
 
 // 音频上传前验证
@@ -643,54 +652,140 @@ function beforeAudioUpload(file) {
   return true
 }
 
-// 音频上传成功
-function handleAudioUploadSuccess(response, file) {
-  if (response.success) {
-    ElMessage.success('音频上传成功')
-    uploadAudioVisible.value = false
-    fetchAudioSamples()
-  } else {
-    ElMessage.error('音频上传失败: ' + response.message)
-  }
-  uploadingAudio.value = false
+// 修复：处理音频文件选择
+function handleAudioFileChange(file, fileList) {
+  console.log('音频文件改变:', file, fileList)
+  selectedAudioFile.value = file.raw
 }
 
-// 上传错误处理
-function handleUploadError(error, file) {
-  console.error('Upload error:', error)
-  ElMessage.error('上传失败: ' + error.message)
-  uploadingAudio.value = false
+// 修复：处理音频文件移除
+function handleAudioFileRemove(file, fileList) {
+  console.log('音频文件移除:', file, fileList)
+  selectedAudioFile.value = null
 }
 
-// 提交音频上传
-function submitAudioUpload() {
-  if (audioFileList.value.length === 0) {
+// 移除不再需要的回调函数
+// function handleAudioUploadSuccess(response, file) {
+//   if (response.success) {
+//     ElMessage.success('音频上传成功')
+//     uploadAudioVisible.value = false
+//     fetchAudioSamples()
+//   } else {
+//     ElMessage.error('音频上传失败: ' + response.message)
+//   }
+//   uploadingAudio.value = false
+// }
+
+// function handleUploadError(error, file) {
+//   console.error('Upload error:', error)
+//   ElMessage.error('上传失败: ' + error.message)
+//   uploadingAudio.value = false
+// }
+
+// 修复：提交音频上传 - 修正响应数据结构处理
+async function submitAudioUpload() {
+  if (!selectedAudioFile.value) {
     ElMessage.warning('请先选择音频文件')
     return
   }
 
   uploadingAudio.value = true
-  audioUploadRef.value.submit()
+  try {
+    // 创建FormData - 使用正确的字段名
+    const formData = new FormData()
+    // 使用 audio_file 字段名
+    formData.append('audio_file', selectedAudioFile.value, selectedAudioFile.value.name)
+
+    console.log('准备上传文件:', {
+      name: selectedAudioFile.value.name,
+      size: selectedAudioFile.value.size,
+      type: selectedAudioFile.value.type
+    })
+
+    // 使用API方法上传
+    const response = await voiceCloneAPI.uploadSample(formData, {
+      onUploadProgress: (progressEvent) => {
+        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        console.log(`上传进度: ${progress}%`)
+      }
+    })
+
+    console.log('上传响应:', response)
+
+    // 修正：直接检查 response.success，因为 API 返回的数据结构是 { success: true, message: "", data: {} }
+    if (response.success) {
+      ElMessage.success('音频上传成功')
+      uploadAudioVisible.value = false
+      selectedAudioFile.value = null
+      // 清空上传组件的文件列表
+      if (audioUploadRef.value) {
+        audioUploadRef.value.clearFiles()
+      }
+      fetchAudioSamples()
+    } else {
+      ElMessage.error('音频上传失败: ' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('音频上传错误:', error)
+    console.error('错误详情:', error.response?.data)
+
+    // 检查是否实际上传成功了但被误判为失败
+    if (error.response?.data?.success) {
+      ElMessage.success('音频上传成功')
+      uploadAudioVisible.value = false
+      selectedAudioFile.value = null
+      if (audioUploadRef.value) {
+        audioUploadRef.value.clearFiles()
+      }
+      fetchAudioSamples()
+    } else {
+      ElMessage.error('音频上传失败: ' + (error?.response?.data?.message || error.message || '未知错误'))
+    }
+  } finally {
+    uploadingAudio.value = false
+  }
 }
 
 // 处理GPT文件选择
-function handleGptFileChange(file) {
+function handleGptFileChange(file, fileList) {
+  console.log('GPT文件改变:', file, fileList)
   modelForm.gpt_model_file = file.raw
-  gptFileList.value = [file]
+}
+
+// 处理GPT文件移除
+function handleGptFileRemove(file, fileList) {
+  console.log('GPT文件移除:', file, fileList)
+  modelForm.gpt_model_file = null
 }
 
 // 处理SoVITS文件选择
-function handleSovitsFileChange(file) {
+function handleSovitsFileChange(file, fileList) {
+  console.log('SoVITS文件改变:', file, fileList)
   modelForm.sovits_model_file = file.raw
-  sovitsFileList.value = [file]
 }
 
-// 提交模型上传
+// 处理SoVITS文件移除
+function handleSovitsFileRemove(file, fileList) {
+  console.log('SoVITS文件移除:', file, fileList)
+  modelForm.sovits_model_file = null
+}
+
+// 修复：提交模型上传
 async function submitModelUpload() {
   if (!modelFormRef.value) return
 
   modelFormRef.value.validate(async (valid) => {
     if (!valid) return
+
+    // 检查文件是否已选择
+    if (!modelForm.gpt_model_file) {
+      ElMessage.warning('请选择GPT模型文件')
+      return
+    }
+    if (!modelForm.sovits_model_file) {
+      ElMessage.warning('请选择SoVITS模型文件')
+      return
+    }
 
     uploadingModel.value = true
     try {
@@ -724,7 +819,6 @@ async function submitModelUpload() {
     }
   })
 }
-
 
 // 播放音频
 function playAudio(audio) {

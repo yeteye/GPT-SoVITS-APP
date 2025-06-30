@@ -208,8 +208,6 @@ def validate_audio_file(file):
     if not file or not file.filename:
         raise ValidationError("No audio file provided", "audio_file")
 
-    print(f"Received file: {file.filename}, size: {file.content_length} bytes")
-
     # 检查文件名安全性
     filename = secure_filename(file.filename)
 
@@ -234,7 +232,7 @@ def validate_audio_file(file):
     file_size = file.tell()
     file.seek(0)
 
-    max_size = current_app.config.get("MAX_CONTENT_LENGTH", 100 * 1024 * 1024)
+    max_size = current_app.config.get("MAX_CONTENT_LENGTH", 100 * 1024 * 1024)  # 100MB
     if file_size > max_size:
         max_size_mb = max_size / (1024 * 1024)
         raise ValidationError(
