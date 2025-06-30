@@ -367,9 +367,9 @@ const paginatedVoices = computed(() => {
 // 语言和情感显示转换
 function getLanguageDisplay(lang) {
   const langMap = {
-    'zh-CN': '中文',
-    'en-US': '英文',
-    'ja-JP': '日语'
+    'zh': '中文',
+    'en': '英文',
+    'ja': '日语'
   }
   return langMap[lang] || lang
 }
@@ -407,7 +407,7 @@ async function fetchVoices() {
           usage_count: model.usage_count || 0,
           creator_name: model.creator_name || model.owner_name,
           created_at: model.created_at,
-          supported_languages: model.supported_languages || ['zh-CN'],
+          supported_languages: model.supported_languages || ['zh'],
           supported_emotions: model.supported_emotions || ['neutral'],
           is_favorited: false
         }))
