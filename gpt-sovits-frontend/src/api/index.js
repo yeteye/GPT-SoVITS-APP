@@ -412,3 +412,23 @@ export const tts2API = {
   // }
   // ```
 };
+export const emotionAPI = {
+  /**
+   * 获取某模型支持的所有情感类型
+   * @param {string} modelId 模型 UUID
+   * @returns {Promise} 返回 { success, message, data: { emotions: [...] } }
+   */
+  getEmotions(modelId) {
+    return request.get(`/models/${modelId}/emotions`);
+  },
+
+  /**
+   * 获取指定模型某种情感的参考音频参数
+   * @param {string} modelId 模型 UUID
+   * @param {string} emotionType 情感类型，如 'neutral', 'happy' 等
+   * @returns {Promise} 返回 { success, message, data: { model_id, type, ref_path, ref_lang, ref_text, description } }
+   */
+  getEmotionDetail(modelId, emotionType) {
+    return request.get(`/models/${modelId}/emotions/${emotionType}`);
+  }
+};
