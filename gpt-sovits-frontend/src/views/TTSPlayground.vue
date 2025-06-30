@@ -11,7 +11,8 @@
         </div>
 
         <!-- 未登录提示 -->
-        <el-alert v-if="!isLoggedIn" title="提示" type="warning" :closable="false" style="margin-bottom: 20px">
+        <el-alert v-if="!isLoggedIn" title="提示" description="您可以浏览音色库和试听功能，但需要登录后才能生成语音" type="warning"
+          :closable="false" style="margin-bottom: 20px">
           <template #default>
             <div>
               <p>您可以浏览音色库和试听功能，但需要登录后才能生成语音</p>
@@ -62,7 +63,7 @@
 
           <!-- 文本输入 -->
           <el-form-item label="输入文本">
-            <el-input v-model="form.text" type="textarea" placeholder="请输入要合成的文本，支持多行输入..." :rows="6" :maxlength="1000"
+            <el-input v-model="form.text" type="textarea" placeholder="请输入要合成的文本，支持多行输入..." :rows="8" :maxlength="1000"
               show-word-limit resize="none" :disabled="!isLoggedIn" />
           </el-form-item>
 
@@ -157,29 +158,6 @@
             <div class="voice-info">
               <div class="voice-name">{{ voice.name }}</div>
               <div class="voice-desc">{{ voice.description }}</div>
-
-              <!-- 新增：重要信息显示 -->
-              <div class="voice-details">
-                <div class="detail-item">
-                  <span class="detail-label">支持语言：</span>
-                  <div class="detail-tags">
-                    <el-tag v-for="lang in voice.supported_languages" :key="lang" size="small" type="primary"
-                      effect="plain">
-                      {{ getLanguageDisplay(lang) }}
-                    </el-tag>
-                  </div>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">支持情感：</span>
-                  <div class="detail-tags">
-                    <el-tag v-for="emotion in voice.supported_emotions" :key="emotion" size="small" type="success"
-                      effect="plain">
-                      {{ getEmotionDisplay(emotion) }}
-                    </el-tag>
-                  </div>
-                </div>
-              </div>
-
               <div class="voice-tags">
                 <el-tag v-for="tag in voice.tags" :key="tag" size="small" effect="plain">
                   {{ tag }}
@@ -223,7 +201,7 @@ const router = useRouter()
 // 表单数据
 const form = ref({
   text: '你好，欢迎使用 GPT-SoVITS 在线语音合成系统。',
-  textLang: '中文',
+  textLang: 'zh',
   selectedModel: null,
   selectedEmotion: 'neutral',
   speed: 1.0
@@ -264,14 +242,14 @@ watch(() => form.value.selectedModel, async (newModelId) => {
       value: type,
       // 你可以根据需要把中文标签写在这里，或直接用 type 显示
       label: {
-        neutral: '自然',
-        happy: '快乐',
-        sad: '悲伤',
-        angry: '愤怒',
+        neutral:   '自然',
+        happy:     '快乐',
+        sad:       '悲伤',
+        angry:     '愤怒',
         surprised: '惊讶',
-        calm: '平静',
-        disgust: '厌恶',
-        fear: '恐惧'
+        calm:      '平静',
+        disgust:   '厌恶',
+        fear:      '恐惧'
       }[type] || type
     }))
 
@@ -328,31 +306,10 @@ const goToLogin = () => {
   router.push({ name: 'Login', query: { redirect: router.currentRoute.value.fullPath } })
 }
 
-// 新增：语言和情感显示名称转换
-function getLanguageDisplay(lang) {
-  const langMap = {
-    'zh-CN': '中文',
-    'en-US': '英文',
-    'ja-JP': '日语'
-  }
-  return langMap[lang] || lang
-}
-
-function getEmotionDisplay(emotion) {
-  const emotionMap = {
-    'neutral': '自然',
-    'happy': '快乐',
-    'sad': '悲伤',
-    'angry': '愤怒',
-    'surprised': '惊讶'
-  }
-  return emotionMap[emotion] || emotion
-}
-
 async function fetchModels() {
   modelsLoading.value = true
   try {
-    const res = await ttsAPI.getAvailableModels({ per_page: 50 })
+    const res = await ttsAPI.getAvailableModels({ per_page: 50 }) // 不超过100
     availableModels.value = res.data?.models || []
   } catch (error) {
     console.error('获取模型列表失败:', error)
@@ -365,9 +322,9 @@ async function fetchModels() {
 async function fetchVoices() {
   voicesLoading.value = true
   try {
-    const res = await ttsAPI.getAvailableModels({ per_page: 100 })
+    const res = await modelsAPI.getMyModels({ per_page: 5 }) // 不超过100
     voices.value = (res.data?.models || [])
-      .filter(model => model.is_public)
+      .filter(model => model.is_public) // 只显示公开模型
       .map(model => ({
         id: model.id,
         name: model.name,
@@ -375,9 +332,7 @@ async function fetchVoices() {
         avatar: model.avatar_url,
         tags: model.voice_characteristics || (model.tags ? model.tags.map(tag => tag.name) : []),
         rating: model.quality_score,
-        usage_count: model.usage_count,
-        supported_languages: model.supported_languages || ['zh-CN'],
-        supported_emotions: model.supported_emotions || ['neutral']
+        usage_count: model.usage_count
       }))
   } catch (error) {
     console.error('获取音色库失败:', error)
@@ -389,6 +344,7 @@ async function fetchVoices() {
 
 function selectVoice(voice) {
   selectedVoice.value = voice.id
+  // 自动选择对应的模型
   if (!form.value.selectedModel) {
     form.value.selectedModel = voice.id
   }
@@ -408,11 +364,15 @@ function onSearch() {
 }
 
 function onModelChange(modelId) {
+  // 自动同步选中的音色
   selectedVoice.value = modelId
+
+  // 重置情感为默认值
   form.value.selectedEmotion = 'neutral'
 }
 
 async function previewVoice(voice) {
+  // 播放音色预览
   ElMessage.info(`预览 ${voice.name} - 功能开发中`)
 }
 
@@ -429,6 +389,7 @@ async function onSynthesize() {
 
   generating.value = true
 
+  // 清除之前的音频
   if (audioUrl.value) {
     URL.revokeObjectURL(audioUrl.value)
     audioUrl.value = null
@@ -436,12 +397,12 @@ async function onSynthesize() {
   }
 
   try {
-    const modelId = form.value.selectedModel;
-    const emotion = form.value.selectedEmotion;
+    const modelId   = form.value.selectedModel;
+    const emotion   = form.value.selectedEmotion;
 
-    // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
+     // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
     const emoListRes = await emotionAPI.getEmotions(modelId);
-    const emotions = emoListRes.data.emotions;
+    const emotions   = emoListRes.data.emotions;
 
     if (!emotions.includes(emotion)) {
       throw new Error(`Model does not support emotion "${emotion}"`);
@@ -449,14 +410,14 @@ async function onSynthesize() {
 
     // 2. 通过 model_id + emotionType 查询参考音频参数
     const detailRes = await emotionAPI.getEmotionDetail(modelId, emotion);
-    const detail = detailRes.data;
+    const detail    = detailRes.data;
 
-    // 输入参数
-    // text: form.value.text,
-    // model_id: form.value.selectedModel,
-    // emotion: form.value.selectedEmotion,
-    // speed: form.value.speed,
-    // language: form.value.textLang
+      // 输入参数
+      // text: form.value.text,
+      // model_id: form.value.selectedModel,
+      // emotion: form.value.selectedEmotion,
+      // speed: form.value.speed,
+      // language: form.value.textLang
 
     const payload = {
       text: form.value.text,
@@ -534,12 +495,13 @@ function startPolling(taskId) {
           audioUrl.value = task.result_url
           ElMessage.success('语音生成完成')
         } else {
+          // 下载音频文件
           const audioRes = await ttsAPI.downloadAudio(taskId)
           const blob = new Blob([audioRes.data], { type: 'audio/wav' })
           audioUrl.value = URL.createObjectURL(blob)
 
           audioInfo.value = {
-            duration: (blob.size / 16000).toFixed(1),
+            duration: (blob.size / 16000).toFixed(1), // 估算时长
             size: formatFileSize(blob.size)
           }
           ElMessage.success('语音生成完成')
@@ -552,7 +514,7 @@ function startPolling(taskId) {
     } catch (error) {
       console.error('轮询任务状态失败:', error)
     }
-  }, 12000)
+  }, 2000) // 2秒轮询一次
 }
 
 function stopPolling() {
@@ -564,7 +526,12 @@ function stopPolling() {
 
 async function cancelTask(taskId) {
   try {
+    // 取消任务的API调用
     ElMessage.info('任务取消功能开发中')
+    // await ttsAPI.cancelTask(taskId)
+    // currentTask.value = null
+    // stopPolling()
+    // ElMessage.success('任务已取消')
   } catch (error) {
     ElMessage.error('取消任务失败')
   }
@@ -675,11 +642,12 @@ watch(() => form.value.selectedModel, async (newModelId) => {
       const model = res.data
       if (model.supported_emotions) {
         const emotions = model.supported_emotions.map(emotion => ({
-          label: getEmotionDisplay(emotion),
+          label: emotion,
           value: emotion
         }))
         availableEmotions.value = emotions
 
+        // 重置为第一个可用情感
         if (emotions.length > 0) {
           form.value.selectedEmotion = emotions[0].value
         }
@@ -703,12 +671,11 @@ onUnmounted(() => {
 <style scoped>
 .tts-playground {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8f9fb;
 }
 
 .main-content {
-  height: 100vh;
-  overflow: hidden;
+  height: calc(100vh - 80px);
 }
 
 .editor-panel {
@@ -717,7 +684,6 @@ onUnmounted(() => {
   padding: 24px;
   border-right: 1px solid #e4e7ed;
   overflow-y: auto;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .panel-header {
@@ -729,7 +695,6 @@ onUnmounted(() => {
   margin: 0 0 8px 0;
   font-size: 24px;
   color: #303133;
-  font-weight: 600;
 }
 
 .panel-header p {
@@ -749,9 +714,8 @@ onUnmounted(() => {
 .task-progress {
   margin-top: 24px;
   padding: 16px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 12px;
-  border: 1px solid #e4e7ed;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
 
 .task-progress h3 {
@@ -775,9 +739,8 @@ onUnmounted(() => {
 .audio-result {
   margin-top: 24px;
   padding: 16px;
-  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%);
-  border-radius: 12px;
-  border: 1px solid #b3d9b3;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
 
 .result-header {
@@ -808,8 +771,7 @@ onUnmounted(() => {
 .voice-library {
   padding: 24px;
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  background: #fff;
 }
 
 .library-header {
@@ -823,7 +785,6 @@ onUnmounted(() => {
   margin: 0;
   font-size: 20px;
   color: #303133;
-  font-weight: 600;
 }
 
 .filter-tags {
@@ -832,31 +793,29 @@ onUnmounted(() => {
 
 .voice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
 .voice-card {
   background: #fff;
   border: 2px solid #e4e7ed;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .voice-card:hover {
   border-color: #409eff;
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(64, 158, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
 }
 
 .voice-card.selected {
   border-color: #409eff;
   background: linear-gradient(135deg, #ecf5ff 0%, #fff 100%);
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.3);
 }
 
 .voice-avatar {
@@ -877,7 +836,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -890,65 +849,28 @@ onUnmounted(() => {
 }
 
 .voice-info {
-  padding: 20px;
+  padding: 16px;
 }
 
 .voice-name {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
-  margin-bottom: 8px;
-  line-height: 1.4;
+  margin-bottom: 4px;
 }
 
 .voice-desc {
   font-size: 14px;
   color: #606266;
-  margin-bottom: 12px;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* 新增：音色详细信息样式 */
-.voice-details {
-  margin-bottom: 12px;
-  padding: 12px;
-  background: #f8f9fb;
-  border-radius: 8px;
-  border: 1px solid #e4e7ed;
-}
-
-.detail-item {
   margin-bottom: 8px;
-}
-
-.detail-item:last-child {
-  margin-bottom: 0;
-}
-
-.detail-label {
-  font-size: 12px;
-  color: #666;
-  font-weight: 500;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.detail-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  line-height: 1.4;
 }
 
 .voice-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 12px;
-  min-height: 20px;
+  margin-bottom: 8px;
 }
 
 .voice-stats {
@@ -966,7 +888,7 @@ onUnmounted(() => {
 
 @media (max-width: 1200px) {
   .voice-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 }
 
@@ -983,45 +905,8 @@ onUnmounted(() => {
   }
 
   .voice-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
   }
-
-  .library-header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-}
-
-/* Element Plus 样式覆盖 */
-:deep(.el-form-item__label) {
-  color: #606266;
-  font-weight: 500;
-}
-
-:deep(.el-button--primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-}
-
-:deep(.el-button--primary:hover) {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-}
-
-:deep(.el-slider__runway) {
-  background-color: #e4e7ed;
-}
-
-:deep(.el-slider__bar) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-:deep(.el-slider__button) {
-  border-color: #667eea;
-}
-
-:deep(.el-tag) {
-  border-radius: 12px;
 }
 </style>
