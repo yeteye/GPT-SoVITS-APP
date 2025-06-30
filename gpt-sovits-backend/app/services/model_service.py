@@ -73,7 +73,7 @@ def create_official_model(model_data, file_paths, creator_id):
         model.set_supported_emotions(
             model_data.get("supported_emotions", ["neutral", "happy", "sad", "calm"])
         )
-        model.set_supported_languages(model_data.get("supported_languages", ["zh-CN"]))
+        model.set_supported_languages(model_data.get("supported_languages", ["zh"]))
 
         # 添加标签
         tag_names = model_data.get("tags", [])

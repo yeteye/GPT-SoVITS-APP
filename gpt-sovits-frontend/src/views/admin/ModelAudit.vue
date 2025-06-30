@@ -476,9 +476,9 @@ function getReviewStatusText(status) {
 
 function getLanguageText(lang) {
   const langMap = {
-    'zh-CN': '中文',
-    'en-US': '英文',
-    'ja-JP': '日语'
+    'zh': '中文',
+    'en': '英文',
+    'ja': '日语'
   }
   return langMap[lang] || lang
 }
@@ -498,7 +498,7 @@ function formatTime(timeString) {
   if (!timeString) return ''
 
   const date = new Date(timeString)
-  return date.toLocaleString('zh-CN', {
+  return date.toLocaleString('zh', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

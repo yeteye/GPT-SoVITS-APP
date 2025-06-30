@@ -192,7 +192,7 @@ def sample_model(app, admin_user, sample_tags):
         )
 
         model.set_supported_emotions(["neutral", "happy", "sad", "calm"])
-        model.set_supported_languages(["zh-CN", "en-US"])
+        model.set_supported_languages(["zh", "en"])
 
         if sample_tags:
             model.tags.extend(sample_tags[:2])
@@ -225,7 +225,7 @@ def sample_model_factory(app, admin_user, sample_tags):
             )
 
             model.set_supported_emotions(["neutral", "happy", "sad", "calm"])
-            model.set_supported_languages(["zh-CN", "en-US"])
+            model.set_supported_languages(["zh", "en"])
 
             if sample_tags:
                 model.tags.extend(sample_tags[:2])
@@ -513,7 +513,7 @@ def test_data_factory():
                 "description": "A test model",
                 "voice_characteristics": "Clear and natural voice",
                 "supported_emotions": ["neutral", "happy"],
-                "supported_languages": ["zh-CN"],
+                "supported_languages": ["zh"],
             }
 
         @staticmethod

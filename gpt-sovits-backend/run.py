@@ -246,7 +246,7 @@ def create_sample_models():
             )
 
             model.set_supported_emotions(["neutral", "happy", "sad", "calm", "excited"])
-            model.set_supported_languages(["zh-CN", "en-US"])
+            model.set_supported_languages(["zh", "en"])
 
             # 添加标签
             for tag_name in model_data["tags"]:

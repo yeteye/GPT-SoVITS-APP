@@ -48,7 +48,7 @@ def generate_speech():
         model_id = data.get("model_id", "").strip()
         emotion = data.get("emotion", "neutral").strip()
         speed = data.get("speed", 1.0)
-        language = data.get("language", "zh-CN").strip()  # 添加语言参数
+        language = data.get("language", "zh").strip()  # 添加语言参数
 
         if not text:
             raise ValidationError("Text is required", "text")

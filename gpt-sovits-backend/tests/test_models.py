@@ -109,7 +109,7 @@ class TestVoiceModel:
             model = VoiceModel(name="Test", model_path="/test")
 
             # 设置支持的语言
-            languages = ["zh-CN", "en-US"]
+            languages = ["zh", "en"]
             model.set_supported_languages(languages)
 
             # 获取支持的语言

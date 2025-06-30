@@ -254,9 +254,9 @@
 
         <el-form-item label="支持语言" prop="supported_languages">
           <el-select v-model="modelForm.supported_languages" multiple placeholder="选择支持的语言">
-            <el-option label="中文" value="zh-CN" />
-            <el-option label="英文" value="en-US" />
-            <el-option label="日语" value="ja-JP" />
+            <el-option label="中文" value="zh" />
+            <el-option label="英文" value="en" />
+            <el-option label="日语" value="ja" />
           </el-select>
         </el-form-item>
 
@@ -266,6 +266,22 @@
             <el-option label="快乐" value="happy" />
             <el-option label="悲伤" value="sad" />
             <el-option label="愤怒" value="angry" />
+            <el-option label="惊讶" value="surprised" />
+            <el-option label="厌恶" value="disgusted" />
+            <el-option label="害怕" value="fearful" />
+            <el-option label="平静" value="calm" />
+            <el-option label="兴奋" value="excited" />
+            <el-option label="自信" value="confident" />
+            <el-option label="温和" value="gentle" />
+            <el-option label="愉快" value="cheerful" />
+            <el-option label="忧郁" value="melancholy" />
+            <el-option label="精力充沛" value="energetic" />
+            <el-option label="平和" value="peaceful" />
+            <el-option label="热情" value="passionate" />
+            <el-option label="严肃" value="serious" />
+            <el-option label="顽皮" value="playful" />
+            <el-option label="浪漫" value="romantic" />
+            <el-option label="神秘" value="mysterious" />
           </el-select>
         </el-form-item>
 
@@ -354,9 +370,9 @@
 
         <el-form-item label="支持语言" prop="supported_languages">
           <el-select v-model="editForm.supported_languages" multiple placeholder="选择支持的语言">
-            <el-option label="中文" value="zh-CN" />
-            <el-option label="英文" value="en-US" />
-            <el-option label="日语" value="ja-JP" />
+            <el-option label="中文" value="zh" />
+            <el-option label="英文" value="en" />
+            <el-option label="日语" value="ja" />
           </el-select>
         </el-form-item>
 
@@ -366,6 +382,22 @@
             <el-option label="快乐" value="happy" />
             <el-option label="悲伤" value="sad" />
             <el-option label="愤怒" value="angry" />
+            <el-option label="惊讶" value="surprised" />
+            <el-option label="厌恶" value="disgusted" />
+            <el-option label="害怕" value="fearful" />
+            <el-option label="平静" value="calm" />
+            <el-option label="兴奋" value="excited" />
+            <el-option label="自信" value="confident" />
+            <el-option label="温和" value="gentle" />
+            <el-option label="愉快" value="cheerful" />
+            <el-option label="忧郁" value="melancholy" />
+            <el-option label="精力充沛" value="energetic" />
+            <el-option label="平和" value="peaceful" />
+            <el-option label="热情" value="passionate" />
+            <el-option label="严肃" value="serious" />
+            <el-option label="顽皮" value="playful" />
+            <el-option label="浪漫" value="romantic" />
+            <el-option label="神秘" value="mysterious" />
           </el-select>
         </el-form-item>
 
@@ -507,9 +539,9 @@ const defaultModelAvatar = new URL('@/assets/model.png', import.meta.url).href
 // 语言和情感显示转换
 function getLanguageDisplay(lang) {
   const langMap = {
-    'zh-CN': '中文',
-    'en-US': '英文',
-    'ja-JP': '日语'
+    'zh': '中文',
+    'en': '英文',
+    'ja': '日语'
   }
   return langMap[lang] || lang
 }
@@ -520,7 +552,22 @@ function getEmotionDisplay(emotion) {
     'happy': '快乐',
     'sad': '悲伤',
     'angry': '愤怒',
-    'surprised': '惊讶'
+    'surprised': '惊讶',
+    'disgusted': '厌恶',
+    'fearful': '害怕',
+    'calm': '平静',
+    'excited': '兴奋',
+    'confident': '自信',
+    'gentle': '温和',
+    'cheerful': '愉快',
+    'melancholy': '忧郁',
+    'energetic': '精力充沛',
+    'peaceful': '平和',
+    'passionate': '热情',
+    'serious': '严肃',
+    'playful': '顽皮',
+    'romantic': '浪漫',
+    'mysterious': '神秘'
   }
   return emotionMap[emotion] || emotion
 }
@@ -652,8 +699,16 @@ async function submitModelUpload() {
       formData.append('description', modelForm.description)
       formData.append('gpt_model_file', modelForm.gpt_model_file)
       formData.append('sovits_model_file', modelForm.sovits_model_file)
-      formData.append('supported_languages', JSON.stringify(modelForm.supported_languages))
-      formData.append('supported_emotions', JSON.stringify(modelForm.supported_emotions))
+
+      // 逐个添加数组元素
+      modelForm.supported_languages.forEach(lang => {
+        formData.append('supported_languages', lang)
+      })
+
+      modelForm.supported_emotions.forEach(emotion => {
+        formData.append('supported_emotions', emotion)
+      })
+
       formData.append('is_public', modelForm.is_public)
 
       const res = await voiceCloneAPI.uploadModel(formData)
@@ -669,6 +724,7 @@ async function submitModelUpload() {
     }
   })
 }
+
 
 // 播放音频
 function playAudio(audio) {

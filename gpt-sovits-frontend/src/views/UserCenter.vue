@@ -234,9 +234,9 @@
           <el-form :model="preferencesForm" label-width="120px">
             <el-form-item label="语言偏好">
               <el-select v-model="preferencesForm.language" @change="updatePreferences">
-                <el-option label="简体中文" value="zh-CN" />
-                <el-option label="English" value="en-US" />
-                <el-option label="日本語" value="ja-JP" />
+                <el-option label="简体中文" value="zh" />
+                <el-option label="English" value="en" />
+                <el-option label="日本語" value="ja" />
               </el-select>
             </el-form-item>
 
@@ -482,7 +482,7 @@ const profileForm = reactive({
 const originalProfile = reactive({})
 
 const preferencesForm = reactive({
-  language: 'zh-CN',
+  language: 'zh',
   theme: 'light',
   email_notifications: true,
   auto_save: true

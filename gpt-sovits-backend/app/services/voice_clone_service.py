@@ -241,7 +241,7 @@ def mock_voice_clone_process(task):
             supported_emotions = config.get(
                 "supported_emotions", ["neutral", "happy", "sad"]
             )
-            supported_languages = config.get("supported_languages", ["zh-CN"])
+            supported_languages = config.get("supported_languages", ["zh"])
 
             voice_model.set_supported_emotions(supported_emotions)
             voice_model.set_supported_languages(supported_languages)
@@ -535,7 +535,7 @@ def save_trained_models(task, model_files, quality_score):
         supported_emotions = config.get(
             "supported_emotions", ["neutral", "happy", "sad"]
         )
-        supported_languages = config.get("supported_languages", ["zh-CN"])
+        supported_languages = config.get("supported_languages", ["zh"])
 
         voice_model.set_supported_emotions(supported_emotions)
         voice_model.set_supported_languages(supported_languages)

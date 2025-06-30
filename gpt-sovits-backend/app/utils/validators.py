@@ -498,6 +498,7 @@ def validate_pagination(page, per_page):
 
 def validate_model_upload_data(data, gpt_file=None, sovits_file=None):
     """验证模型上传数据 - 严格版本"""
+    print(f"Validating model upload data: {data}")
     if not isinstance(data, dict):
         raise ValidationError("Invalid data format", "data")
 
@@ -528,7 +529,7 @@ def validate_model_upload_data(data, gpt_file=None, sovits_file=None):
     validate_model_file(sovits_file, expected_type="sovits")
 
     # 验证支持的语言
-    supported_languages = data.get("supported_languages", ["zh-CN"])
+    supported_languages = data.get("supported_languages", ["zh"])
     if supported_languages:
         validate_language_support(supported_languages)
 
@@ -554,6 +555,7 @@ def validate_model_upload_data(data, gpt_file=None, sovits_file=None):
 
 def validate_language_support(languages):
     """验证支持的语言列表 - 改进版本"""
+    print(f"Validating supported languages: {languages}")
     if not languages:
         raise ValidationError(
             "At least one language must be supported", "supported_languages"
@@ -571,18 +573,19 @@ def validate_language_support(languages):
 
     # 获取支持的语言列表
     supported_languages = current_app.config.get("SUPPORTED_LANGUAGES", {})
+    print(f"Supported languages from config: {supported_languages}")
     valid_language_codes = set(supported_languages.keys())
 
     # 如果配置为空，使用默认支持的语言
     if not valid_language_codes:
         valid_language_codes = {
-            "zh-CN",
-            "en-US",
-            "ja-JP",
-            "ko-KR",
-            "es-ES",
-            "fr-FR",
-            "de-DE",
+            "zh",
+            "en",
+            "ja",
+            "ko",
+            "es",
+            "fr",
+            "de",
         }
 
     invalid_languages = []
@@ -592,8 +595,9 @@ def validate_language_support(languages):
                 "Language codes must be strings", "supported_languages"
             )
 
-        # 验证语言代码格式 (如: zh-CN, en-US)
-        if not re.match(r"^[a-z]{2}-[A-Z]{2}$", lang):
+        # 验证语言代码格式 (如: zh, en)
+        if not re.match(r"^[a-z]{2}$", lang):
+            print(f"Invalid language code format: {lang}")
             raise ValidationError(
                 f"Invalid language code format: {lang}", "supported_languages"
             )

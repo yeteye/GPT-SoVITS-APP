@@ -203,9 +203,9 @@ class Config:
     # 语言支持配置 - 新增：支持的语言列表
     # ================================
     SUPPORTED_LANGUAGES = {
-        "zh-CN": {"name": "中文", "display_name": "Chinese (Simplified)"},
-        "ja-JP": {"name": "日语", "display_name": "Japanese"},
-        "en-US": {"name": "英语", "display_name": "English (US)"},
+        "zh": {"name": "中文", "display_name": "Chinese (Simplified)"},
+        "ja": {"name": "日语", "display_name": "Japanese"},
+        "en": {"name": "英语", "display_name": "English (US)"},
     }
 
     # ================================

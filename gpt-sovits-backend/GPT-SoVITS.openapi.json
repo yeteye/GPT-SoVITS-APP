@@ -38,9 +38,7 @@
         "deprecated": false,
         "description": "获取审计日志",
         "operationId": "get_admin_get_audit_logs",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [
           {
             "name": "page",
@@ -139,10 +137,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "logs",
-                        "pagination"
-                      ]
+                      "required": ["logs", "pagination"]
                     },
                     "message": {
                       "type": "string"
@@ -151,11 +146,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -197,9 +188,7 @@
         "deprecated": false,
         "description": "系统清理",
         "operationId": "post_admin_system_cleanup",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [],
         "responses": {
           "200": {
@@ -242,9 +231,7 @@
         "deprecated": false,
         "description": "获取所有模型列表（管理员视图）",
         "operationId": "get_admin_get_all_models",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [
           {
             "name": "page",
@@ -335,9 +322,7 @@
         "deprecated": false,
         "description": "审核模型",
         "operationId": "post_admin_review_model",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [
           {
             "name": "model_id",
@@ -366,9 +351,7 @@
                     "default": ""
                   }
                 },
-                "required": [
-                  "status"
-                ]
+                "required": ["status"]
               }
             }
           }
@@ -504,9 +487,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "model"
-                      ]
+                      "required": ["model"]
                     },
                     "message": {
                       "type": "string"
@@ -515,11 +496,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -561,9 +538,7 @@
         "deprecated": false,
         "description": "获取系统统计信息",
         "operationId": "get_admin_get_system_statistics",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [],
         "responses": {
           "200": {
@@ -654,19 +629,10 @@
                               "type": "integer"
                             }
                           },
-                          "required": [
-                            "active",
-                            "new_today",
-                            "total"
-                          ]
+                          "required": ["active", "new_today", "total"]
                         }
                       },
-                      "required": [
-                        "models",
-                        "storage",
-                        "tasks",
-                        "users"
-                      ]
+                      "required": ["models", "storage", "tasks", "users"]
                     },
                     "message": {
                       "type": "string"
@@ -675,11 +641,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -721,9 +683,7 @@
         "deprecated": false,
         "description": "创建新标签",
         "operationId": "post_admin_create_tag",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -798,9 +758,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "tag"
-                      ]
+                      "required": ["tag"]
                     },
                     "message": {
                       "type": "string"
@@ -809,11 +767,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -855,9 +809,7 @@
         "deprecated": false,
         "description": "删除标签",
         "operationId": "delete_admin_delete_tag",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [
           {
             "name": "tag_id",
@@ -885,10 +837,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "message",
-                    "success"
-                  ]
+                  "required": ["message", "success"]
                 }
               }
             },
@@ -930,9 +879,7 @@
         "deprecated": false,
         "description": "上传官方预训练模型",
         "operationId": "post_admin_upload_official_model",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -967,21 +914,15 @@
                       "type": "string"
                     },
                     "description": "支持的情感标签 可选：[\"neutral\", \"happy\", \"sad\"]",
-                    "example": [
-                      "neutral",
-                      "happy",
-                      "sad"
-                    ]
+                    "example": ["neutral", "happy", "sad"]
                   },
                   "supported_languages": {
                     "type": "array",
                     "items": {
                       "type": "string"
                     },
-                    "description": "支持语言 可选：[\"zh-CN\"]",
-                    "example": [
-                      "[\"zh-CN\"]"
-                    ]
+                    "description": "支持语言 可选：[\"zh\"]",
+                    "example": ["[\"zh\"]"]
                   },
                   "tags": {
                     "type": "array",
@@ -989,9 +930,7 @@
                       "type": "string"
                     },
                     "description": "模型标签 可选：[\"官方\", \"测试\"]",
-                    "example": [
-                      "[]"
-                    ]
+                    "example": ["[]"]
                   }
                 },
                 "required": [
@@ -1139,9 +1078,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "model"
-                      ]
+                      "required": ["model"]
                     },
                     "message": {
                       "type": "string"
@@ -1150,11 +1087,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -1196,9 +1129,7 @@
         "deprecated": false,
         "description": "获取所有用户列表",
         "operationId": "get_admin_get_all_users",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [
           {
             "name": "page",
@@ -1317,10 +1248,7 @@
                           }
                         }
                       },
-                      "required": [
-                        "pagination",
-                        "users"
-                      ]
+                      "required": ["pagination", "users"]
                     },
                     "message": {
                       "type": "string"
@@ -1329,11 +1257,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -1375,9 +1299,7 @@
         "deprecated": false,
         "description": "更新用户角色",
         "operationId": "put_admin_update_user_role",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [
           {
             "name": "user_id",
@@ -1401,9 +1323,7 @@
                     "description": "JSON 字段: role"
                   }
                 },
-                "required": [
-                  "role"
-                ]
+                "required": ["role"]
               }
             }
           }
@@ -1449,9 +1369,7 @@
         "deprecated": false,
         "description": "更新用户状态（激活/禁用）",
         "operationId": "put_admin_update_user_status",
-        "tags": [
-          "admin"
-        ],
+        "tags": ["admin"],
         "parameters": [
           {
             "name": "user_id",
@@ -1475,9 +1393,7 @@
                     "description": "JSON 字段: is_active"
                   }
                 },
-                "required": [
-                  "is_active"
-                ]
+                "required": ["is_active"]
               }
             }
           }
@@ -1537,9 +1453,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "user"
-                      ]
+                      "required": ["user"]
                     },
                     "message": {
                       "type": "string"
@@ -1548,11 +1462,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -1632,9 +1542,7 @@
         "deprecated": false,
         "description": "修改密码",
         "operationId": "post_auth_change_password",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1698,9 +1606,7 @@
         "deprecated": false,
         "description": "忘记密码",
         "operationId": "post_auth_forgot_password",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1759,19 +1665,14 @@
         "deprecated": false,
         "description": "用户身份验证",
         "operationId": "post_auth_login",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "identifier",
-                  "password"
-                ],
+                "required": ["identifier", "password"],
                 "properties": {
                   "identifier": {
                     "type": "string",
@@ -1847,11 +1748,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "access_token",
-                        "refresh_token",
-                        "user"
-                      ]
+                      "required": ["access_token", "refresh_token", "user"]
                     },
                     "message": {
                       "type": "string"
@@ -1860,11 +1757,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -1906,9 +1799,7 @@
         "deprecated": false,
         "description": "用户登出",
         "operationId": "post_auth_logout",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [],
         "responses": {
           "200": {
@@ -1925,10 +1816,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "message",
-                    "success"
-                  ]
+                  "required": ["message", "success"]
                 }
               }
             },
@@ -1970,9 +1858,7 @@
         "deprecated": false,
         "description": "刷新访问令牌",
         "operationId": "post_auth_refresh",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2015,9 +1901,7 @@
         "deprecated": false,
         "description": "创建新的用户账户",
         "operationId": "post_auth_register",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2038,11 +1922,7 @@
                     "description": "密码"
                   }
                 },
-                "required": [
-                  "username",
-                  "email",
-                  "password"
-                ]
+                "required": ["username", "email", "password"]
               }
             }
           }
@@ -2107,9 +1987,7 @@
         "deprecated": false,
         "description": "重置密码",
         "operationId": "post_auth_reset_password",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [
           {
             "name": "token",
@@ -2179,9 +2057,7 @@
         "deprecated": false,
         "description": "验证邮箱",
         "operationId": "get_auth_verify_email",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "parameters": [
           {
             "name": "token",
@@ -2209,10 +2085,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "message",
-                    "success"
-                  ]
+                  "required": ["message", "success"]
                 }
               }
             },
@@ -2254,9 +2127,7 @@
         "deprecated": false,
         "description": "系统健康检查 - 修复版本",
         "operationId": "get_health_health_check",
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2285,11 +2156,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "celery",
-                        "database",
-                        "redis"
-                      ]
+                      "required": ["celery", "database", "redis"]
                     },
                     "status": {
                       "type": "string"
@@ -2342,9 +2209,7 @@
         "deprecated": false,
         "description": "获取模型详情",
         "operationId": "get_models_get_model_detail",
-        "tags": [
-          "models"
-        ],
+        "tags": ["models"],
         "parameters": [
           {
             "name": "model_id",
@@ -2396,9 +2261,7 @@
         "deprecated": false,
         "description": "更新模型信息",
         "operationId": "put_models_update_model",
-        "tags": [
-          "models"
-        ],
+        "tags": ["models"],
         "parameters": [
           {
             "name": "model_id",
@@ -2450,9 +2313,7 @@
         "deprecated": false,
         "description": "删除模型",
         "operationId": "delete_models_delete_model",
-        "tags": [
-          "models"
-        ],
+        "tags": ["models"],
         "parameters": [
           {
             "name": "model_id",
@@ -2506,9 +2367,7 @@
         "deprecated": false,
         "description": "切换模型公开状态",
         "operationId": "post_models_toggle_model_public",
-        "tags": [
-          "models"
-        ],
+        "tags": ["models"],
         "parameters": [
           {
             "name": "model_id",
@@ -2562,9 +2421,7 @@
         "deprecated": false,
         "description": "获取用户的模型列表",
         "operationId": "get_models_get_my_models",
-        "tags": [
-          "models"
-        ],
+        "tags": ["models"],
         "parameters": [
           {
             "name": "page",
@@ -2637,9 +2494,7 @@
         "deprecated": false,
         "description": "获取用户模型统计信息",
         "operationId": "get_models_get_model_stats",
-        "tags": [
-          "models"
-        ],
+        "tags": ["models"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2682,9 +2537,7 @@
         "deprecated": false,
         "description": "获取可用标签列表",
         "operationId": "get_models_get_tags",
-        "tags": [
-          "models"
-        ],
+        "tags": ["models"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2727,9 +2580,7 @@
         "deprecated": false,
         "description": "获取支持的情感列表",
         "operationId": "get_tts_get_supported_emotions",
-        "tags": [
-          "tts"
-        ],
+        "tags": ["tts"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2772,9 +2623,7 @@
         "deprecated": false,
         "description": "生成语音",
         "operationId": "post_tts_generate_speech",
-        "tags": [
-          "tts"
-        ],
+        "tags": ["tts"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2799,10 +2648,7 @@
                     "description": "JSON 字段: speed"
                   }
                 },
-                "required": [
-                  "text",
-                  "model_id"
-                ]
+                "required": ["text", "model_id"]
               },
               "examples": {}
             }
@@ -2849,9 +2695,7 @@
         "deprecated": false,
         "description": "获取可用的语音模型列表",
         "operationId": "get_tts_get_available_models",
-        "tags": [
-          "tts"
-        ],
+        "tags": ["tts"],
         "parameters": [
           {
             "name": "page",
@@ -3029,10 +2873,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "models",
-                        "pagination"
-                      ]
+                      "required": ["models", "pagination"]
                     },
                     "message": {
                       "type": "string"
@@ -3041,11 +2882,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -3087,9 +2924,7 @@
         "deprecated": false,
         "description": "获取模型详情",
         "operationId": "get_tts_get_model_detail",
-        "tags": [
-          "tts"
-        ],
+        "tags": ["tts"],
         "parameters": [
           {
             "name": "model_id",
@@ -3143,9 +2978,7 @@
         "deprecated": false,
         "description": "获取用户的TTS任务列表",
         "operationId": "get_tts_get_tts_tasks",
-        "tags": [
-          "tts"
-        ],
+        "tags": ["tts"],
         "parameters": [
           {
             "name": "page",
@@ -3218,9 +3051,7 @@
         "deprecated": false,
         "description": "获取TTS任务详情",
         "operationId": "get_tts_get_tts_task_detail",
-        "tags": [
-          "tts"
-        ],
+        "tags": ["tts"],
         "parameters": [
           {
             "name": "task_id",
@@ -3274,9 +3105,7 @@
         "deprecated": false,
         "description": "下载生成的音频",
         "operationId": "get_tts_download_audio",
-        "tags": [
-          "tts"
-        ],
+        "tags": ["tts"],
         "parameters": [
           {
             "name": "task_id",
@@ -3330,9 +3159,7 @@
         "deprecated": false,
         "description": "删除用户账户",
         "operationId": "delete_user_delete_account",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -3344,9 +3171,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "password"
-                ]
+                "required": ["password"]
               }
             }
           }
@@ -3366,10 +3191,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "message",
-                    "success"
-                  ]
+                  "required": ["message", "success"]
                 }
               }
             },
@@ -3411,9 +3233,7 @@
         "deprecated": false,
         "description": "获取用户个人资料",
         "operationId": "get_user_get_profile",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "parameters": [],
         "responses": {
           "200": {
@@ -3454,9 +3274,7 @@
         "deprecated": false,
         "description": "更新用户个人资料",
         "operationId": "put_user_update_profile",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -3471,10 +3289,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "username",
-                  "avatar_url"
-                ]
+                "required": ["username", "avatar_url"]
               }
             }
           }
@@ -3534,9 +3349,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "profile"
-                      ]
+                      "required": ["profile"]
                     },
                     "message": {
                       "type": "string"
@@ -3545,11 +3358,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -3591,9 +3400,7 @@
         "deprecated": false,
         "description": "获取用户统计信息",
         "operationId": "get_user_get_user_statistics",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "parameters": [],
         "responses": {
           "200": {
@@ -3636,9 +3443,7 @@
         "deprecated": false,
         "description": "获取用户任务历史",
         "operationId": "get_user_get_task_history",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "parameters": [
           {
             "name": "page",
@@ -3728,10 +3533,7 @@
                           }
                         }
                       },
-                      "required": [
-                        "pagination",
-                        "tasks"
-                      ]
+                      "required": ["pagination", "tasks"]
                     },
                     "message": {
                       "type": "string"
@@ -3740,11 +3542,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -3786,9 +3584,7 @@
         "deprecated": false,
         "description": "获取用户上传文件列表",
         "operationId": "get_user_get_user_uploads",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "parameters": [
           {
             "name": "page",
@@ -3931,10 +3727,7 @@
                           }
                         }
                       },
-                      "required": [
-                        "pagination",
-                        "uploads"
-                      ]
+                      "required": ["pagination", "uploads"]
                     },
                     "message": {
                       "type": "string"
@@ -3943,11 +3736,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -3989,9 +3778,7 @@
         "deprecated": false,
         "description": "删除上传文件",
         "operationId": "delete_user_delete_upload",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "parameters": [
           {
             "name": "upload_id",
@@ -4019,10 +3806,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "message",
-                    "success"
-                  ]
+                  "required": ["message", "success"]
                 }
               }
             },
@@ -4064,9 +3848,7 @@
         "deprecated": false,
         "description": "获取用户的音频样本列表",
         "operationId": "get_voice_clone_get_user_samples",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [
           {
             "name": "page",
@@ -4130,9 +3912,7 @@
         "deprecated": false,
         "description": "删除音频样本",
         "operationId": "delete_voice_clone_delete_sample",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [
           {
             "name": "sample_id",
@@ -4186,9 +3966,7 @@
         "deprecated": false,
         "description": "使用上传的音频样本开始语音克隆训练",
         "operationId": "post_voice_clone_start_training",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -4273,11 +4051,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -4319,9 +4093,7 @@
         "deprecated": false,
         "description": "获取用户的音色克隆任务列表",
         "operationId": "get_voice_clone_get_user_tasks",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [
           {
             "name": "page",
@@ -4394,9 +4166,7 @@
         "deprecated": false,
         "description": "获取任务详情",
         "operationId": "get_voice_clone_get_task_detail",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [
           {
             "name": "task_id",
@@ -4450,9 +4220,7 @@
         "deprecated": false,
         "description": "取消训练任务",
         "operationId": "post_voice_clone_cancel_task",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [
           {
             "name": "task_id",
@@ -4506,9 +4274,7 @@
         "deprecated": false,
         "description": "获取训练结果",
         "operationId": "get_voice_clone_get_task_result",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [
           {
             "name": "task_id",
@@ -4536,10 +4302,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "message",
-                    "success"
-                  ]
+                  "required": ["message", "success"]
                 }
               }
             },
@@ -4581,9 +4344,7 @@
         "deprecated": false,
         "description": "重试失败的任务",
         "operationId": "post_voice_clone_retry_task",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [
           {
             "name": "task_id",
@@ -4637,9 +4398,7 @@
         "deprecated": false,
         "description": "上传音频样本",
         "operationId": "post_voice_clone_upload_audio_sample",
-        "tags": [
-          "voice_clone"
-        ],
+        "tags": ["voice_clone"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -4654,9 +4413,7 @@
                     "format": "binary"
                   }
                 },
-                "required": [
-                  "audio_file"
-                ]
+                "required": ["audio_file"]
               }
             }
           }
@@ -4703,11 +4460,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -4936,9 +4689,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "model"
-                      ]
+                      "required": ["model"]
                     },
                     "message": {
                       "type": "string"
@@ -4947,11 +4698,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "data",
-                    "message",
-                    "success"
-                  ]
+                  "required": ["data", "message", "success"]
                 }
               }
             },
@@ -4971,9 +4718,7 @@
         "deprecated": false,
         "description": "管理员获取所有水印",
         "operationId": "get_watermark_admin_get_all_watermarks",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "page",
@@ -5055,9 +4800,7 @@
         "deprecated": false,
         "description": "管理员获取系统水印统计",
         "operationId": "get_watermark_admin_get_statistics",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [],
         "responses": {
           "200": {
@@ -5100,9 +4843,7 @@
         "deprecated": false,
         "description": "管理员获取所有验证日志",
         "operationId": "get_watermark_admin_get_verification_logs",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "page",
@@ -5184,9 +4925,7 @@
         "deprecated": false,
         "description": "手动嵌入水印API - 修复：添加参数验证",
         "operationId": "post_watermark_embed_watermark",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -5263,9 +5002,7 @@
         "deprecated": false,
         "description": "根据水印码获取公开信息（无需认证）",
         "operationId": "get_watermark_get_watermark_info",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "watermark_code",
@@ -5319,9 +5056,7 @@
         "deprecated": false,
         "description": "获取我的水印列表",
         "operationId": "get_watermark_get_my_watermarks",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "page",
@@ -5394,9 +5129,7 @@
         "deprecated": false,
         "description": "获取水印详情",
         "operationId": "get_watermark_get_watermark_detail",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "watermark_id",
@@ -5448,9 +5181,7 @@
         "deprecated": false,
         "description": "更新水印信息 - 修复：改进请求体验证",
         "operationId": "put_watermark_update_watermark",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "watermark_id",
@@ -5502,9 +5233,7 @@
         "deprecated": false,
         "description": "停用水印（软删除）",
         "operationId": "delete_watermark_deactivate_watermark",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "watermark_id",
@@ -5558,9 +5287,7 @@
         "deprecated": false,
         "description": "获取用户水印统计",
         "operationId": "get_watermark_get_watermark_statistics",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [],
         "responses": {
           "200": {
@@ -5603,9 +5330,7 @@
         "deprecated": false,
         "description": "获取用户的水印验证日志",
         "operationId": "get_watermark_get_verification_logs",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [
           {
             "name": "page",
@@ -5669,9 +5394,7 @@
         "deprecated": false,
         "description": "验证水印API",
         "operationId": "post_watermark_verify_watermark",
-        "tags": [
-          "watermark"
-        ],
+        "tags": ["watermark"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -5685,9 +5408,7 @@
                     "format": "binary"
                   }
                 },
-                "required": [
-                  "audio_file"
-                ]
+                "required": ["audio_file"]
               }
             }
           }
@@ -5781,9 +5502,7 @@
         "properties": {
           "success": {
             "type": "boolean",
-            "examples": [
-              false
-            ]
+            "examples": [false]
           },
           "message": {
             "type": "string"

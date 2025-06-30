@@ -188,7 +188,7 @@ def upload_official_model():
         if supported_languages:
             voice_model.set_supported_languages(supported_languages)
         else:
-            voice_model.set_supported_languages(["zh-CN"])
+            voice_model.set_supported_languages(["zh"])
 
         # 添加标签
         for tag_name in tags:

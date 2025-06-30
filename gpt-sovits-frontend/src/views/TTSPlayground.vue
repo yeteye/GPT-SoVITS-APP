@@ -27,9 +27,9 @@
           <!-- 文本语言选择 -->
           <el-form-item label="文本语言">
             <el-select v-model="form.textLang" placeholder="选择文本语言" style="width: 100%">
-              <el-option label="中文" value="zh-CN" />
-              <el-option label="英文" value="en-US" />
-              <el-option label="日语" value="ja-JP" />
+              <el-option label="中文" value="zh" />
+              <el-option label="英文" value="en" />
+              <el-option label="日语" value="ja" />
             </el-select>
           </el-form-item>
 
@@ -242,14 +242,14 @@ watch(() => form.value.selectedModel, async (newModelId) => {
       value: type,
       // 你可以根据需要把中文标签写在这里，或直接用 type 显示
       label: {
-        neutral:   '自然',
-        happy:     '快乐',
-        sad:       '悲伤',
-        angry:     '愤怒',
+        neutral: '自然',
+        happy: '快乐',
+        sad: '悲伤',
+        angry: '愤怒',
         surprised: '惊讶',
-        calm:      '平静',
-        disgust:   '厌恶',
-        fear:      '恐惧'
+        calm: '平静',
+        disgust: '厌恶',
+        fear: '恐惧'
       }[type] || type
     }))
 
@@ -397,12 +397,12 @@ async function onSynthesize() {
   }
 
   try {
-    const modelId   = form.value.selectedModel;
-    const emotion   = form.value.selectedEmotion;
+    const modelId = form.value.selectedModel;
+    const emotion = form.value.selectedEmotion;
 
-     // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
+    // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
     const emoListRes = await emotionAPI.getEmotions(modelId);
-    const emotions   = emoListRes.data.emotions;
+    const emotions = emoListRes.data.emotions;
 
     if (!emotions.includes(emotion)) {
       throw new Error(`Model does not support emotion "${emotion}"`);
@@ -410,14 +410,14 @@ async function onSynthesize() {
 
     // 2. 通过 model_id + emotionType 查询参考音频参数
     const detailRes = await emotionAPI.getEmotionDetail(modelId, emotion);
-    const detail    = detailRes.data;
+    const detail = detailRes.data;
 
-      // 输入参数
-      // text: form.value.text,
-      // model_id: form.value.selectedModel,
-      // emotion: form.value.selectedEmotion,
-      // speed: form.value.speed,
-      // language: form.value.textLang
+    // 输入参数
+    // text: form.value.text,
+    // model_id: form.value.selectedModel,
+    // emotion: form.value.selectedEmotion,
+    // speed: form.value.speed,
+    // language: form.value.textLang
 
     const payload = {
       text: form.value.text,
@@ -617,7 +617,7 @@ async function downloadResult(task) {
 function resetForm() {
   form.value = {
     text: '你好，欢迎使用 GPT-SoVITS 在线语音合成系统。',
-    textLang: 'zh-CN',
+    textLang: 'zh',
     selectedModel: null,
     selectedEmotion: 'neutral',
     speed: 1.0

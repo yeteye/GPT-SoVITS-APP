@@ -132,9 +132,8 @@ class VoiceModel(db.Model):
         """设置支持的语言列表"""
         if not isinstance(languages, (list, tuple)):
             raise ValueError("Languages must be a list or tuple")
-
         # 验证语言代码格式
-        valid_language_pattern = r"^[a-z]{2}-[A-Z]{2}$"
+        valid_language_pattern = r"^[a-z]{2}$"
         import re
 
         for lang in languages:
@@ -149,8 +148,8 @@ class VoiceModel(db.Model):
             try:
                 return json.loads(self.supported_languages)
             except json.JSONDecodeError:
-                return ["zh-CN"]
-        return ["zh-CN"]
+                return ["zh"]
+        return ["zh"]
 
     def increment_usage(self):
         """增加使用次数 - 线程安全版本"""

@@ -634,7 +634,7 @@ function getAudioFileName(task) {
 
 function formatTime(timeStr) {
     if (!timeStr) return '-'
-    return new Date(timeStr).toLocaleString('zh-CN')
+    return new Date(timeStr).toLocaleString('zh')
 }
 
 function formatDuration(seconds) {

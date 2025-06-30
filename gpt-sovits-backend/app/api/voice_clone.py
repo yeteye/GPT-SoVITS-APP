@@ -191,7 +191,7 @@ def upload_user_model():
         if supported_languages:
             voice_model.set_supported_languages(supported_languages)
         else:
-            voice_model.set_supported_languages(["zh-CN"])
+            voice_model.set_supported_languages(["zh"])
 
         # 添加标签
         from app.models.model import Tag
@@ -316,7 +316,7 @@ def start_training():
                 "model_name": model_name,
                 "training_params": data.get("training_params", {}),
                 "sample_ids": sample_ids,
-                "supported_languages": data.get("supported_languages", ["zh-CN"]),
+                "supported_languages": data.get("supported_languages", ["zh"]),
                 "supported_emotions": data.get(
                     "supported_emotions", ["neutral", "happy", "sad"]
                 ),
