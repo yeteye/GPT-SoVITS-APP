@@ -43,7 +43,7 @@ class VoiceCloneTask(db.Model):
     error_message = db.Column(db.Text)
 
     # 时间信息
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
     started_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
     estimated_completion = db.Column(db.DateTime)
@@ -85,9 +85,9 @@ class VoiceCloneTask(db.Model):
             self.error_message = error_message
 
         if status == "processing" and not self.started_at:
-            self.started_at = datetime.utcnow()
+            self.started_at = datetime.now()
         elif status in ["completed", "failed", "cancelled"]:
-            self.completed_at = datetime.utcnow()
+            self.completed_at = datetime.now()
 
         db.session.commit()
 
@@ -96,7 +96,7 @@ class VoiceCloneTask(db.Model):
         if self.started_at and self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()
         elif self.started_at:
-            return (datetime.utcnow() - self.started_at).total_seconds()
+            return (datetime.now() - self.started_at).total_seconds()
         return 0
 
     def is_active(self):
@@ -191,7 +191,7 @@ class TTSTask(db.Model):
     error_message = db.Column(db.Text)
 
     # 时间信息
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(), nullable=False)
     started_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
 
@@ -211,9 +211,9 @@ class TTSTask(db.Model):
             self.error_message = error_message
 
         if status == "processing" and not self.started_at:
-            self.started_at = datetime.utcnow()
+            self.started_at = datetime.now()
         elif status in ["completed", "failed", "cancelled"]:
-            self.completed_at = datetime.utcnow()
+            self.completed_at = datetime.now()
 
         db.session.commit()
 
@@ -240,7 +240,7 @@ class TTSTask(db.Model):
         if self.started_at and self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()
         elif self.started_at:
-            return (datetime.utcnow() - self.started_at).total_seconds()
+            return (datetime.now() - self.started_at).total_seconds()
         return 0
 
     def is_active(self):
@@ -346,7 +346,7 @@ class TaskQueue(db.Model):
     resource_requirements = db.Column(db.Text)  # JSON格式存储资源需求
 
     # 时间信息
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
     scheduled_at = db.Column(db.DateTime)  # 调度时间
     started_at = db.Column(db.DateTime)  # 开始执行时间
     completed_at = db.Column(db.DateTime)  # 完成时间
@@ -422,13 +422,13 @@ class TaskDependency(db.Model):
 
     # 状态
     is_satisfied = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
     satisfied_at = db.Column(db.DateTime)
 
     def mark_satisfied(self):
         """标记依赖已满足"""
         self.is_satisfied = True
-        self.satisfied_at = datetime.utcnow()
+        self.satisfied_at = datetime.now()
         db.session.commit()
 
     def to_dict(self):

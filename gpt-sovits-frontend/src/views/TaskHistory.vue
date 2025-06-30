@@ -328,6 +328,7 @@ async function fetchTasks() {
 }
 
 function updateStats() {
+  console.log(tasks.value)
   const allTasks = tasks.value
   stats.total = allTasks.length
   stats.completed = allTasks.filter(t => t.status === 'completed').length

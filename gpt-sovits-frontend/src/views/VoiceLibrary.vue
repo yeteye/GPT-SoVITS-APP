@@ -74,6 +74,29 @@
         <div class="voice-info">
           <div class="voice-name">{{ voice.name }}</div>
           <div class="voice-desc">{{ voice.description }}</div>
+
+          <!-- 重要信息显示 -->
+          <div class="voice-details">
+            <div class="detail-section">
+              <div class="detail-label">支持语言</div>
+              <div class="detail-content">
+                <el-tag v-for="lang in voice.supported_languages" :key="lang" size="small" type="primary"
+                  effect="plain">
+                  {{ getLanguageDisplay(lang) }}
+                </el-tag>
+              </div>
+            </div>
+            <div class="detail-section">
+              <div class="detail-label">支持情感</div>
+              <div class="detail-content">
+                <el-tag v-for="emotion in voice.supported_emotions" :key="emotion" size="small" type="success"
+                  effect="plain">
+                  {{ getEmotionDisplay(emotion) }}
+                </el-tag>
+              </div>
+            </div>
+          </div>
+
           <div class="voice-tags">
             <el-tag v-for="tag in voice.tags" :key="tag" size="small" type="info" effect="plain">
               {{ tag }}
@@ -127,6 +150,32 @@
             <el-tag :type="row.model_type === 'official' ? 'warning' : 'info'" size="small">
               {{ row.model_type === 'official' ? '官方' : '用户' }}
             </el-tag>
+          </template>
+        </el-table-column>
+
+        <!-- 新增：支持语言列 -->
+        <el-table-column label="支持语言" min-width="120">
+          <template #default="{ row }">
+            <el-tag v-for="lang in row.supported_languages?.slice(0, 2)" :key="lang" size="small" type="primary"
+              style="margin-right: 4px">
+              {{ getLanguageDisplay(lang) }}
+            </el-tag>
+            <span v-if="row.supported_languages?.length > 2" class="more-tags">
+              +{{ row.supported_languages.length - 2 }}
+            </span>
+          </template>
+        </el-table-column>
+
+        <!-- 新增：支持情感列 -->
+        <el-table-column label="支持情感" min-width="120">
+          <template #default="{ row }">
+            <el-tag v-for="emotion in row.supported_emotions?.slice(0, 2)" :key="emotion" size="small" type="success"
+              style="margin-right: 4px">
+              {{ getEmotionDisplay(emotion) }}
+            </el-tag>
+            <span v-if="row.supported_emotions?.length > 2" class="more-tags">
+              +{{ row.supported_emotions.length - 2 }}
+            </span>
           </template>
         </el-table-column>
 
@@ -212,15 +261,15 @@
             {{ selectedVoice.description || '暂无描述' }}
           </el-descriptions-item>
           <el-descriptions-item label="支持语言" :span="2">
-            <el-tag v-for="lang in selectedVoice.supported_languages" :key="lang" size="small"
+            <el-tag v-for="lang in selectedVoice.supported_languages" :key="lang" size="small" type="primary"
               style="margin-right: 4px">
-              {{ lang }}
+              {{ getLanguageDisplay(lang) }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="支持情感" :span="2">
-            <el-tag v-for="emotion in selectedVoice.supported_emotions" :key="emotion" size="small"
+            <el-tag v-for="emotion in selectedVoice.supported_emotions" :key="emotion" size="small" type="success"
               style="margin-right: 4px">
-              {{ emotion }}
+              {{ getEmotionDisplay(emotion) }}
             </el-tag>
           </el-descriptions-item>
         </el-descriptions>
@@ -315,19 +364,38 @@ const paginatedVoices = computed(() => {
   return filteredVoices.value.slice(start, end)
 })
 
+// 语言和情感显示转换
+function getLanguageDisplay(lang) {
+  const langMap = {
+    'zh-CN': '中文',
+    'en-US': '英文',
+    'ja-JP': '日语'
+  }
+  return langMap[lang] || lang
+}
+
+function getEmotionDisplay(emotion) {
+  const emotionMap = {
+    'neutral': '自然',
+    'happy': '快乐',
+    'sad': '悲伤',
+    'angry': '愤怒',
+    'surprised': '惊讶'
+  }
+  return emotionMap[emotion] || emotion
+}
+
 // 方法
 async function fetchVoices() {
   loading.value = true
   try {
-    // 修复：使用正确的API参数，不超过后端限制
     const res = await ttsAPI.getAvailableModels({
-      per_page: 100, // 不超过后端限制的最大值
-      // 移除可能导致错误的参数
+      per_page: 100,
     })
 
     if (res.data?.models) {
       voices.value = res.data.models
-        .filter(model => model.is_public) // 客户端过滤公开模型
+        .filter(model => model.is_public)
         .map(model => ({
           id: model.id,
           name: model.name,
@@ -339,12 +407,11 @@ async function fetchVoices() {
           usage_count: model.usage_count || 0,
           creator_name: model.creator_name || model.owner_name,
           created_at: model.created_at,
-          supported_languages: model.supported_languages || ['中文'],
-          supported_emotions: model.supported_emotions || ['自然'],
-          is_favorited: false // 需要从后端获取收藏状态
+          supported_languages: model.supported_languages || ['zh-CN'],
+          supported_emotions: model.supported_emotions || ['neutral'],
+          is_favorited: false
         }))
 
-      // 获取用户收藏状态
       if (isLoggedIn.value) {
         await fetchFavoriteStatus()
       }
@@ -361,8 +428,8 @@ async function fetchVoices() {
 }
 
 async function fetchFavoriteStatus() {
-  // 获取用户收藏的音色列表
   try {
+    // 获取用户收藏的音色列表
     // const res = await userAPI.getFavoriteVoices()
     // const favoriteIds = res.data?.favorite_ids || []
     // voices.value.forEach(voice => {
@@ -392,14 +459,12 @@ function selectVoice(voice) {
 
 async function previewVoice(voice) {
   if (currentPlayingVoice.value === voice.id) {
-    // 停止播放
     audioPlayer.value.pause()
     currentPlayingVoice.value = null
     return
   }
 
   try {
-    // 这里应该调用API获取预览音频
     ElMessage.info(`预览 ${voice.name} - 功能开发中`)
 
     // 模拟播放
@@ -482,20 +547,27 @@ onMounted(() => {
 <style scoped>
 .voice-library {
   padding: 24px;
-  background: #f8f9fb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
 }
 
 .page-header {
   text-align: center;
   margin-bottom: 24px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .title {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
   margin: 0 0 8px 0;
-  color: #303133;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
@@ -510,6 +582,11 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 16px;
   gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .search-section {
@@ -536,36 +613,44 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
   font-size: 14px;
   color: #666;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .voice-card-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
 
 .voice-card {
-  background: #fff;
-  border: 2px solid #e4e7ed;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(228, 231, 237, 0.6);
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .voice-card:hover {
-  border-color: #409eff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+  border-color: rgba(102, 126, 234, 0.8);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
 }
 
 .voice-card.selected {
-  border-color: #409eff;
-  background: linear-gradient(135deg, #ecf5ff 0%, #fff 100%);
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(236, 245, 255, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
 }
 
 .voice-avatar {
@@ -586,7 +671,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -605,14 +690,14 @@ onMounted(() => {
 }
 
 .voice-info {
-  padding: 16px;
+  padding: 20px;
 }
 
 .voice-name {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -621,7 +706,7 @@ onMounted(() => {
 .voice-desc {
   font-size: 14px;
   color: #606266;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -629,11 +714,40 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.voice-details {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fb 0%, #e8f4f8 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(228, 231, 237, 0.6);
+}
+
+.detail-section {
+  margin-bottom: 8px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.detail-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .voice-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   min-height: 24px;
 }
 
@@ -661,10 +775,12 @@ onMounted(() => {
 }
 
 .voice-table-container {
-  background: #fff;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
   overflow: hidden;
   margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .more-tags {
@@ -683,12 +799,17 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .voice-card-list {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
 
@@ -715,7 +836,7 @@ onMounted(() => {
   }
 
   .voice-card-list {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 16px;
   }
 
@@ -729,9 +850,29 @@ onMounted(() => {
 :deep(.el-table) {
   border-radius: 8px;
   overflow: hidden;
+  background: transparent;
 }
 
 :deep(.el-dialog) {
   border-radius: 16px;
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+}
+
+:deep(.el-tag) {
+  border-radius: 12px;
+}
+
+:deep(.el-pagination) {
+  --el-pagination-button-bg-color: rgba(255, 255, 255, 0.8);
+  --el-pagination-hover-color: #667eea;
 }
 </style>

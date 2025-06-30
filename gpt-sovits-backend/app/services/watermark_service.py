@@ -369,7 +369,7 @@ class WatermarkService:
                         if freq_indices
                         else ""
                     ),
-                    "embedding_time": datetime.utcnow().isoformat(),
+                    "embedding_time": datetime.now().isoformat(),
                 }
                 watermark.set_file_info(file_info)
                 db.session.commit()

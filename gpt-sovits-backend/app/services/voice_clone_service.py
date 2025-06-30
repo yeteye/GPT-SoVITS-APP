@@ -328,7 +328,7 @@ def prepare_training_environment(task):
         work_dir = os.path.join(
             current_app.config["UPLOAD_FOLDER"],
             "temp",
-            f"voice_clone_{task.id}_{int(datetime.utcnow().timestamp())}",
+            f"voice_clone_{task.id}_{int( datetime.now().timestamp())}",
         )
 
         # 创建工作目录结构
@@ -343,7 +343,7 @@ def prepare_training_environment(task):
 
         config = {
             "task_id": task.id,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now().isoformat(),
             "model_name": task.model_name,
             "sample_count": task.sample_count,
             "total_duration": task.total_duration,
@@ -430,7 +430,7 @@ def extract_audio_features(audio_files, work_dir):
         features_info = {
             "audio_files": audio_files,
             "feature_extraction_method": "mock",
-            "extracted_at": datetime.utcnow().isoformat(),
+            "extracted_at": datetime.now().isoformat(),
             "total_files": len(audio_files),
         }
 
@@ -462,7 +462,7 @@ def train_gpt_model(features_file, work_dir, task):
             f.write(f"# GPT Model for {model_name}\n")
             f.write(f"# Task ID: {task.id}\n")
             f.write(f"# Features: {features_file}\n")
-            f.write(f"# Training completed: {datetime.utcnow().isoformat()}\n")
+            f.write(f"# Training completed: {datetime.now().isoformat()}\n")
 
         logger.info(f"GPT model training completed: {gpt_model_path}")
         return gpt_model_path
@@ -486,7 +486,7 @@ def train_sovits_model(features_file, work_dir, task):
             f.write(f"# SoVITS Model for {model_name}\n")
             f.write(f"# Task ID: {task.id}\n")
             f.write(f"# Features: {features_file}\n")
-            f.write(f"# Training completed: {datetime.utcnow().isoformat()}\n")
+            f.write(f"# Training completed: {datetime.now().isoformat()}\n")
 
         logger.info(f"SoVITS model training completed: {sovits_model_path}")
         return sovits_model_path
@@ -668,7 +668,7 @@ def get_task_status(task_id):
             duration = (task.completed_at - task.started_at).total_seconds()
             status_data["processing_duration_seconds"] = duration
         elif task.started_at:
-            duration = (datetime.utcnow() - task.started_at).total_seconds()
+            duration = (datetime.now() - task.started_at).total_seconds()
             status_data["current_duration_seconds"] = duration
 
         # 如果任务完成且有结果模型，添加模型信息
@@ -850,7 +850,7 @@ def cleanup_old_training_files(days_threshold=7):
     try:
         from datetime import timedelta
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+        cutoff_date = datetime.now() - timedelta(days=days_threshold)
         temp_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "temp")
 
         if not os.path.exists(temp_dir):

@@ -180,7 +180,7 @@ def get_model_usage_statistics(model_id):
         total_downloads = model.download_count
 
         # 最近30天使用次数
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
         recent_usage = TTSTask.query.filter(
             TTSTask.model_id == model.id, TTSTask.created_at >= thirty_days_ago
         ).count()
@@ -215,7 +215,7 @@ def cleanup_inactive_models(days_threshold=90):
     try:
         from datetime import datetime, timedelta
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+        cutoff_date = datetime.now() - timedelta(days=days_threshold)
 
         # 查找需要清理的模型
         inactive_models = VoiceModel.query.filter(

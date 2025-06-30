@@ -70,7 +70,7 @@ def generate_file_hash(file_path, algorithm="sha256"):
         chunk_size = current_app.config.get("FILE_HASH_CHUNK_SIZE", 4096)
 
         with open(file_path, "rb") as f:
-            for chunk in iter(lambda: f.read(chunk_size), b""):
+            for chunk in iter(f.read(chunk_size), b""):
                 hash_obj.update(chunk)
         return hash_obj.hexdigest()
     except Exception:
@@ -211,7 +211,7 @@ def create_response(success=True, message="", data=None, **kwargs):
 
     # 添加时间戳（如果配置启用）
     if current_app.config.get("RESPONSE_INCLUDE_TIMESTAMP", False):
-        response["timestamp"] = datetime.utcnow().isoformat()
+        response["timestamp"] = datetime.now().isoformat()
 
     # 添加版本信息（如果配置启用）
     if current_app.config.get("RESPONSE_INCLUDE_VERSION", False):
@@ -269,7 +269,7 @@ def calculate_estimated_time(task_type, **kwargs):
 
         base_time = max(min_time, text_length * length_factor)
 
-    return datetime.utcnow() + timedelta(seconds=base_time)
+    return datetime.now() + timedelta(seconds=base_time)
 
 
 def clean_temp_files(max_age_hours=None):
@@ -281,7 +281,7 @@ def clean_temp_files(max_age_hours=None):
     if not os.path.exists(temp_dir):
         return 0
 
-    cutoff_time = datetime.utcnow() - timedelta(hours=max_age_hours)
+    cutoff_time = datetime.now() - timedelta(hours=max_age_hours)
     cleaned_count = 0
 
     # 使用配置的清理模式

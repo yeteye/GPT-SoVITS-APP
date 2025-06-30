@@ -32,7 +32,7 @@ class AuditLog(db.Model):
     error_message = db.Column(db.Text)
 
     # 时间戳
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
 
     # 关联关系
     user = db.relationship("User", backref="audit_logs")
@@ -195,9 +195,9 @@ class UserUpload(db.Model):
     file_metadata = db.Column(db.Text)  # JSON格式存储文件元数据
 
     # 时间戳
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(), nullable=False)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now()
     )
 
     def set_metadata(self, metadata):
@@ -216,7 +216,7 @@ class UserUpload(db.Model):
     def mark_deleted(self):
         """标记为已删除"""
         self.is_deleted = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now()
         db.session.commit()
 
     def to_dict(self):

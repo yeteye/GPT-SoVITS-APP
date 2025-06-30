@@ -71,10 +71,10 @@ class VoiceModel(db.Model):
 
     # 时间戳
     created_at = db.Column(
-        db.DateTime, default=datetime.utcnow, nullable=False, index=True
+        db.DateTime, default=lambda: datetime.now(), nullable=False, index=True
     )
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now()
     )
 
     # 关联关系
@@ -196,7 +196,7 @@ class VoiceModel(db.Model):
         self.review_status = status
         self.review_message = message
         self.reviewed_by = reviewer_id
-        self.reviewed_at = datetime.utcnow()
+        self.reviewed_at = datetime.now()
 
         if status == "approved":
             self.status = "active"
@@ -394,10 +394,8 @@ class Tag(db.Model):
     usage_count = db.Column(db.Integer, default=0, index=True)  # 使用次数
     is_active = db.Column(db.Boolean, default=True, nullable=False)  # 是否活跃
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
 
     def __init__(self, **kwargs):
         """初始化时验证标签名称"""

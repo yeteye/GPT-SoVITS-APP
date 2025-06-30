@@ -608,7 +608,7 @@ def admin_get_statistics():
             from datetime import datetime, timedelta
 
             # 最近30天的活动
-            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            thirty_days_ago = datetime.now() - timedelta(days=30)
             recent_watermarks = Watermark.query.filter(
                 Watermark.created_at >= thirty_days_ago
             ).count()

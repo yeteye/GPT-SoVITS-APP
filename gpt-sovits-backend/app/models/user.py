@@ -26,9 +26,9 @@ class User(db.Model):
     role = db.Column(db.Integer, default=0, nullable=False)
 
     # 时间戳
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(), nullable=False)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now()
     )
     last_login_at = db.Column(db.DateTime)
 
@@ -62,7 +62,7 @@ class User(db.Model):
 
     def update_last_login(self):
         """更新最后登录时间"""
-        self.last_login_at = datetime.utcnow()
+        self.last_login_at = datetime.now()
         db.session.commit()
 
     def to_dict(self, include_sensitive=False):
@@ -99,7 +99,7 @@ class AuthToken(db.Model):
     )  # access, refresh, reset_password
     expires_at = db.Column(db.DateTime, nullable=False)
     is_revoked = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
 
     # 建立与用户的关系
     user = db.relationship("User", backref="auth_tokens")
@@ -108,7 +108,7 @@ class AuthToken(db.Model):
     def create_reset_token(cls, user_id, expires_in_hours=24):
         """创建密码重置令牌"""
         token = secrets.token_urlsafe(32)
-        expires_at = datetime.utcnow() + timedelta(hours=expires_in_hours)
+        expires_at = datetime.now() + timedelta(hours=expires_in_hours)
 
         auth_token = cls(
             user_id=user_id,
@@ -127,7 +127,7 @@ class AuthToken(db.Model):
             token=token, token_type="reset_password", is_revoked=False
         ).first()
 
-        if auth_token and auth_token.expires_at > datetime.utcnow():
+        if auth_token and auth_token.expires_at > datetime.now():
             return auth_token.user
         return None
 

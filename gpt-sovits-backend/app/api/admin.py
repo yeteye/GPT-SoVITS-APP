@@ -577,7 +577,7 @@ def get_system_statistics():
         total_users = User.query.count()
         active_users = User.query.filter_by(is_active=True).count()
         new_users_today = User.query.filter(
-            User.created_at >= datetime.utcnow().date()
+            User.created_at >= datetime.now().date()
         ).count()
 
         # 模型统计 - 修改：区分GPT和SoVITS模型完整性
@@ -609,10 +609,10 @@ def get_system_statistics():
 
         # 今日任务
         today_voice_clone = VoiceCloneTask.query.filter(
-            VoiceCloneTask.created_at >= datetime.utcnow().date()
+            VoiceCloneTask.created_at >= datetime.now().date()
         ).count()
         today_tts = TTSTask.query.filter(
-            TTSTask.created_at >= datetime.utcnow().date()
+            TTSTask.created_at >= datetime.now().date()
         ).count()
 
         # 存储统计
@@ -692,10 +692,10 @@ def system_cleanup():
 
         if "inactive_models" in cleanup_types:
             # 🔧 修复：清理长期未使用的非活跃模型，使用正确字段名
-            cutoff_date = datetime.utcnow() - timedelta(days=90)
+            cutoff_date = datetime.now() - timedelta(days=90)
             inactive_models = VoiceModel.query.filter(
                 VoiceModel.status == "inactive",
-                VoiceModel.updated_at < cutoff_date,
+                VoiceModel.updated_at < cutoff_date(),
                 VoiceModel.model_type
                 == "user_trained",  # 只清理用户训练的模型，保护官方模型
             ).all()
@@ -783,7 +783,7 @@ def system_cleanup():
                 data={
                     "results": results,
                     "cleanup_types": cleanup_types,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now().isoformat(),
                 },
             )
         )

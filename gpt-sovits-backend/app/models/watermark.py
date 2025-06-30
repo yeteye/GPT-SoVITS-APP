@@ -28,7 +28,7 @@ class Watermark(db.Model):
 
     # 使用统计
     usage_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(), nullable=False)
     last_used = db.Column(db.DateTime)
 
     # 状态
@@ -84,7 +84,7 @@ class Watermark(db.Model):
     def increment_usage(self):
         """增加使用次数"""
         self.usage_count += 1
-        self.last_used = datetime.utcnow()
+        self.last_used = datetime.now()
         db.session.commit()
 
     def set_file_info(self, file_info: dict):
@@ -144,7 +144,7 @@ class WatermarkVerificationLog(db.Model):
     user_agent = db.Column(db.String(500))
 
     # 时间戳
-    verified_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    verified_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
 
     # 附加信息
     verification_details = db.Column(db.Text)  # JSON格式存储详细信息

@@ -323,7 +323,7 @@ def create_error_response(error, request_id=None):
     # 添加时间戳
     from datetime import datetime
 
-    response_data["timestamp"] = datetime.utcnow().isoformat()
+    response_data["timestamp"] = datetime.now().isoformat()
 
     return response_data
 
@@ -355,7 +355,7 @@ def register_error_handlers(app):
             "code": "BAD_REQUEST",
             "status_code": 400,
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
         return jsonify(response_data), 400
 
@@ -370,7 +370,7 @@ def register_error_handlers(app):
             "code": "NOT_FOUND",
             "status_code": 404,
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
         return jsonify(response_data), 404
 
@@ -385,7 +385,7 @@ def register_error_handlers(app):
             "code": "METHOD_NOT_ALLOWED",
             "status_code": 405,
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
         return jsonify(response_data), 405
 
@@ -408,7 +408,7 @@ def register_error_handlers(app):
             "status_code": 413,
             "details": {"max_size_mb": max_size_mb} if max_size_mb else {},
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
         return jsonify(response_data), 413
 
@@ -435,7 +435,7 @@ def register_error_handlers(app):
             "code": "INTERNAL_ERROR",
             "status_code": 500,
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
 
         # 在开发环境中包含更多错误信息
@@ -473,7 +473,7 @@ def register_error_handlers(app):
             "code": "UNEXPECTED_ERROR",
             "status_code": 500,
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
         }
 
         # 在开发环境中包含错误详情

@@ -135,8 +135,8 @@ class TestVoiceModel:
                 name="Test Model",
                 model_path="/test/path",
                 config_path="/test/config",
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
             )
             model.set_supported_emotions(["happy", "sad"])
 

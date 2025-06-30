@@ -16,8 +16,8 @@ def generate_verification_token(
     payload = {
         "user_id": user_id,
         "token_type": token_type,
-        "exp": datetime.utcnow() + timedelta(hours=expires_in_hours),
-        "iat": datetime.utcnow(),
+        "exp": datetime.now() + timedelta(hours=expires_in_hours),
+        "iat": datetime.now(),
     }
 
     token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
@@ -273,7 +273,7 @@ def clean_expired_tokens():
     try:
         # 删除过期的认证令牌
         expired_tokens = AuthToken.query.filter(
-            AuthToken.expires_at < datetime.utcnow(), AuthToken.is_revoked == False
+            AuthToken.expires_at < datetime.now(), AuthToken.is_revoked == False
         ).all()
 
         for token in expired_tokens:

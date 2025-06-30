@@ -376,7 +376,7 @@ def get_user_statistics():
         )
 
         # 本月活动
-        month_start = datetime.utcnow().replace(
+        month_start = datetime.now().replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
 

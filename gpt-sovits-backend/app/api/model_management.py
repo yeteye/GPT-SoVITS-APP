@@ -247,7 +247,7 @@ def delete_model(model_id):
 
         # 软删除：设置状态为inactive
         model.status = "inactive"
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now()
 
         # 🔧 修复：删除正确的物理文件
         deleted_files = []

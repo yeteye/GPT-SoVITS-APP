@@ -26,7 +26,7 @@
 
     <el-row :gutter="24">
       <!-- 左侧：上传和训练区域 -->
-      <el-col :lg="12" :md="24" :sm="24">
+      <el-col :lg="14" :md="24" :sm="24">
         <!-- 音频样本上传 -->
         <el-card class="upload-card" shadow="hover">
           <template #header>
@@ -89,37 +89,6 @@
             </div>
 
             <div class="form-section">
-              <el-form-item label="选择样本" prop="selectedSamples">
-                <div class="sample-selection">
-                  <el-checkbox-group v-model="trainingForm.selectedSamples">
-                    <div v-for="sample in samples" :key="sample.upload_id" class="sample-item">
-                      <el-checkbox :label="sample.upload_id">
-                        <div class="sample-info">
-                          <div class="sample-name">{{ sample.filename }}</div>
-                          <div class="sample-meta">
-                            {{ formatDuration(sample.duration) }} | {{ formatFileSize(sample.file_size) }}
-                          </div>
-                        </div>
-                      </el-checkbox>
-                      <div class="sample-actions">
-                        <el-button type="text" @click="previewSample(sample)">
-                          <el-icon>
-                            <VideoPlay />
-                          </el-icon>
-                        </el-button>
-                        <el-button type="text" @click="deleteSample(sample)" style="color: #f56c6c;">
-                          <el-icon>
-                            <Delete />
-                          </el-icon>
-                        </el-button>
-                      </div>
-                    </div>
-                  </el-checkbox-group>
-                </div>
-              </el-form-item>
-            </div>
-
-            <div class="form-section">
               <el-form-item label="支持语言" prop="supported_languages">
                 <el-select v-model="trainingForm.supported_languages" multiple placeholder="选择支持的语言">
                   <el-option label="中文" value="zh-CN" />
@@ -137,7 +106,7 @@
                 </el-select>
               </el-form-item>
 
-              <el-form-item label="公开设置">
+              <el-form-item label="是否公开">
                 <el-switch v-model="trainingForm.isPublic" active-text="公开模型" inactive-text="私有模型" />
                 <div class="setting-tip">公开后其他用户可以使用你的音色模型</div>
               </el-form-item>
@@ -161,8 +130,75 @@
         </el-card>
       </el-col>
 
-      <!-- 右侧：任务状态和历史 -->
-      <el-col :lg="12" :md="24" :sm="24">
+      <!-- 右侧：样本选择和任务状态 -->
+      <el-col :lg="10" :md="24" :sm="24">
+        <!-- 样本选择区域 -->
+        <el-card class="sample-selection-card" shadow="hover" v-if="samples.length > 0">
+          <template #header>
+            <h3>🎯 样本选择</h3>
+          </template>
+
+          <div class="sample-selection-container">
+            <!-- 已选择样本 -->
+            <div class="selected-samples">
+              <h4>已选择样本 ({{ trainingForm.selectedSamples.length }})</h4>
+              <div class="selected-list">
+                <div v-for="sampleId in trainingForm.selectedSamples" :key="sampleId" class="selected-item">
+                  <div class="sample-info">
+                    <div class="sample-name">{{ getSampleById(sampleId)?.filename }}</div>
+                    <div class="sample-meta">
+                      {{ formatDuration(getSampleById(sampleId)?.duration) }} |
+                      {{ formatFileSize(getSampleById(sampleId)?.file_size) }}
+                    </div>
+                  </div>
+                  <div class="sample-actions">
+                    <el-button type="text" @click="previewSample(getSampleById(sampleId))" size="small">
+                      <el-icon>
+                        <VideoPlay />
+                      </el-icon>
+                    </el-button>
+                    <el-button type="text" @click="removeSample(sampleId)" size="small" style="color: #f56c6c;">
+                      <el-icon>
+                        <Close />
+                      </el-icon>
+                    </el-button>
+                  </div>
+                </div>
+                <el-empty v-if="trainingForm.selectedSamples.length === 0" description="暂未选择样本" />
+              </div>
+            </div>
+
+            <!-- 可选择样本 -->
+            <div class="available-samples">
+              <h4>可选择样本</h4>
+              <div class="available-list">
+                <div v-for="sample in availableSamples" :key="sample.upload_id" class="available-item"
+                  @click="addSample(sample.upload_id)">
+                  <div class="sample-info">
+                    <div class="sample-name">{{ sample.filename }}</div>
+                    <div class="sample-meta">
+                      {{ formatDuration(sample.duration) }} | {{ formatFileSize(sample.file_size) }}
+                    </div>
+                  </div>
+                  <div class="sample-actions" @click.stop>
+                    <el-button type="text" @click="previewSample(sample)" size="small">
+                      <el-icon>
+                        <VideoPlay />
+                      </el-icon>
+                    </el-button>
+                    <el-button type="text" @click="deleteSample(sample)" size="small" style="color: #f56c6c;">
+                      <el-icon>
+                        <Delete />
+                      </el-icon>
+                    </el-button>
+                  </div>
+                </div>
+                <el-empty v-if="availableSamples.length === 0" description="暂无可选择样本" />
+              </div>
+            </div>
+          </div>
+        </el-card>
+
         <!-- 当前任务状态 -->
         <el-card class="status-card" shadow="hover" v-if="currentTask">
           <template #header>
@@ -231,7 +267,7 @@
           </template>
 
           <div class="task-list" v-loading="tasksLoading">
-            <div v-for="task in tasks" :key="task.task_id" class="task-item" @click="viewTaskDetail(task)">
+            <div v-for="task in tasks.slice(0, 5)" :key="task.task_id" class="task-item" @click="viewTaskDetail(task)">
               <div class="task-info">
                 <div class="task-title">{{ task.model_name }}</div>
                 <div class="task-time">{{ formatTime(task.created_at) }}</div>
@@ -275,6 +311,7 @@ import {
   QuestionFilled,
   VideoPlay,
   Delete,
+  Close,
   Cpu,
   Refresh
 } from '@element-plus/icons-vue'
@@ -300,6 +337,11 @@ const totalSamples = computed(() => samples.value.length)
 const trainingTasks = computed(() => tasks.value.filter(t => ['pending', 'processing', 'training'].includes(t.status)).length)
 const completedModels = computed(() => tasks.value.filter(t => t.status === 'completed').length)
 
+// 可选择的样本（未被选中的样本）
+const availableSamples = computed(() => {
+  return samples.value.filter(sample => !trainingForm.selectedSamples.includes(sample.upload_id))
+})
+
 // 训练表单
 const trainingForm = reactive({
   modelName: '',
@@ -318,9 +360,6 @@ const trainingRules = {
   ],
   description: [
     { required: true, message: '请输入模型描述', trigger: 'blur' }
-  ],
-  selectedSamples: [
-    { required: true, message: '请至少选择一个音频样本', trigger: 'change' }
   ],
   supported_languages: [
     { required: true, message: '请选择支持的语言', trigger: 'change' }
@@ -343,9 +382,26 @@ const estimatedTime = computed(() => {
 })
 
 // 方法
+function getSampleById(id) {
+  return samples.value.find(sample => sample.upload_id === id)
+}
+
+function addSample(sampleId) {
+  if (!trainingForm.selectedSamples.includes(sampleId)) {
+    trainingForm.selectedSamples.push(sampleId)
+  }
+}
+
+function removeSample(sampleId) {
+  const index = trainingForm.selectedSamples.indexOf(sampleId)
+  if (index > -1) {
+    trainingForm.selectedSamples.splice(index, 1)
+  }
+}
+
 async function fetchSamples() {
   try {
-    const res = await voiceCloneAPI.getUserSamples({ per_page: 50 }) // 不超过100
+    const res = await voiceCloneAPI.getUserSamples({ per_page: 50 })
     samples.value = res.data?.samples || []
   } catch (error) {
     console.error('获取音频样本失败:', error)
@@ -359,7 +415,6 @@ async function fetchTasks() {
     const res = await voiceCloneAPI.getUserTasks({ per_page: 20 })
     tasks.value = res.data?.tasks || []
 
-    // 查找当前进行中的任务 - 增强验证
     const activeTask = tasks.value.find(task =>
       task &&
       task.task_id &&
@@ -384,19 +439,16 @@ async function fetchTasks() {
 }
 
 function startPolling() {
-  // 防止重复轮询
   if (pollingTimer.value) {
     clearInterval(pollingTimer.value)
   }
 
-  // 确保有有效的任务ID才开始轮询
   if (!currentTask.value || !currentTask.value.task_id) {
     console.warn('无法开始轮询：任务ID无效')
     return
   }
 
   pollingTimer.value = setInterval(() => {
-    // 只有在有进行中的任务且任务ID有效时才轮询
     if (currentTask.value &&
       currentTask.value.task_id &&
       ['pending', 'processing', 'training'].includes(currentTask.value.status)) {
@@ -404,7 +456,7 @@ function startPolling() {
     } else {
       stopPolling()
     }
-  }, 5000) // 每5秒轮询一次
+  }, 5000)
 }
 
 function stopPolling() {
@@ -415,7 +467,6 @@ function stopPolling() {
 }
 
 async function fetchTaskDetail(taskId) {
-  // 确保taskId有效 - 增强验证
   if (!taskId ||
     taskId === 'undefined' ||
     taskId === null ||
@@ -432,15 +483,13 @@ async function fetchTaskDetail(taskId) {
     const res = await voiceCloneAPI.getTaskDetail(taskId)
     const task = res.data
 
-    // 更新当前任务状态
     if (currentTask.value && currentTask.value.task_id === taskId) {
       currentTask.value = task
 
-      // 如果任务完成或失败，停止轮询并刷新任务列表
       if (!['pending', 'processing', 'training'].includes(task.status)) {
         currentTask.value = null
         stopPolling()
-        fetchTasks() // 刷新任务列表
+        fetchTasks()
 
         if (task.status === 'completed') {
           ElMessage.success('模型训练完成！')
@@ -451,7 +500,6 @@ async function fetchTaskDetail(taskId) {
     }
   } catch (error) {
     console.error('获取任务详情失败:', error)
-    // 如果是404错误或任务ID无效，说明任务不存在，停止轮询
     if (error.response?.status === 404 || error.message?.includes('Invalid task ID')) {
       console.warn('任务不存在，停止轮询')
       currentTask.value = null
@@ -478,9 +526,8 @@ function beforeUpload(file) {
 function handleUploadSuccess(response, file) {
   if (response.success) {
     ElMessage.success(`${file.name} 上传成功`)
-    fetchSamples() // 刷新样本列表
+    fetchSamples()
 
-    // 自动选中新上传的样本
     if (response.data?.upload_id) {
       trainingForm.selectedSamples.push(response.data.upload_id)
     }
@@ -504,6 +551,12 @@ function handleExceed(files, fileList) {
 
 async function startTraining() {
   if (!trainingFormRef.value) return
+
+  // 检查是否选择了样本
+  if (trainingForm.selectedSamples.length === 0) {
+    ElMessage.warning('请至少选择一个音频样本')
+    return
+  }
 
   trainingFormRef.value.validate(async (valid) => {
     if (!valid) return
@@ -536,7 +589,6 @@ async function startTraining() {
       trainingForm.supported_emotions = ['neutral']
       trainingForm.isPublic = false
 
-      // 刷新任务列表
       fetchTasks()
 
     } catch (error) {
@@ -582,7 +634,6 @@ async function deleteSample(sample) {
     await voiceCloneAPI.deleteSample(sample.upload_id)
     ElMessage.success('样本已删除')
 
-    // 从选中列表中移除
     const index = trainingForm.selectedSamples.indexOf(sample.upload_id)
     if (index > -1) {
       trainingForm.selectedSamples.splice(index, 1)
@@ -598,11 +649,9 @@ async function deleteSample(sample) {
 
 function previewSample(sample) {
   if (currentPlayingSample.value === sample.upload_id) {
-    // 停止播放
     audioPlayer.value.pause()
     currentPlayingSample.value = null
   } else {
-    // 开始播放
     if (sample.file_url) {
       audioPlayer.value.src = sample.file_url
       audioPlayer.value.play()
@@ -728,17 +777,18 @@ onUnmounted(() => {
 <style scoped>
 .voice-clone-container {
   padding: 24px;
-  background: #f8f9fb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
 }
 
 .page-header {
   margin-bottom: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
   padding: 32px;
-  color: white;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  color: #333;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .header-content {
@@ -751,12 +801,15 @@ onUnmounted(() => {
   margin: 0 0 8px 0;
   font-size: 32px;
   font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .header-text p {
   margin: 0;
   font-size: 16px;
-  opacity: 0.9;
+  color: #666;
 }
 
 .header-stats {
@@ -772,21 +825,27 @@ onUnmounted(() => {
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .stat-label {
   font-size: 14px;
-  opacity: 0.8;
+  color: #666;
 }
 
 .upload-card,
 .training-card,
+.sample-selection-card,
 .status-card,
 .history-card {
   margin-bottom: 24px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
 }
 
 .card-header {
@@ -805,10 +864,11 @@ onUnmounted(() => {
 .help-icon {
   color: #909399;
   cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 .help-icon:hover {
-  color: #409eff;
+  color: #667eea;
 }
 
 .upload-section {
@@ -845,16 +905,17 @@ onUnmounted(() => {
 }
 
 .upload-tips {
-  background: #f8f9fb;
-  padding: 16px;
-  border-radius: 8px;
-  border-left: 4px solid #409eff;
+  background: linear-gradient(135deg, #f8f9fb 0%, #e8f4f8 100%);
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
 }
 
 .upload-tips h4 {
   margin: 0 0 12px 0;
   font-size: 14px;
   color: #333;
+  font-weight: 600;
 }
 
 .upload-tips ul {
@@ -865,7 +926,8 @@ onUnmounted(() => {
 .upload-tips li {
   font-size: 13px;
   color: #666;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  line-height: 1.5;
 }
 
 .training-form {
@@ -873,21 +935,25 @@ onUnmounted(() => {
 }
 
 .form-section {
-  background: #fafafa;
-  padding: 20px;
-  margin-bottom: 16px;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+  padding: 24px;
+  margin-bottom: 20px;
+  border-radius: 12px;
   border: 1px solid #e4e7ed;
 }
 
 .form-actions {
   text-align: center;
-  padding: 20px 0;
+  padding: 24px 0;
 }
 
 .training-button {
   width: 200px;
   height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 24px;
+  font-weight: 600;
 }
 
 .training-info {
@@ -896,34 +962,81 @@ onUnmounted(() => {
   color: #666;
 }
 
-.sample-selection {
+.setting-tip {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* 样本选择区域样式 */
+.sample-selection-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 500px;
+}
+
+.selected-samples,
+.available-samples {
+  flex: 1;
+}
+
+.selected-samples h4,
+.available-samples h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e4e7ed;
+}
+
+.selected-list,
+.available-list {
+  max-height: 200px;
+  overflow-y: auto;
   border: 1px solid #e4e7ed;
   border-radius: 8px;
-  padding: 16px;
   background: #fafafa;
 }
 
-.sample-item {
+.selected-item,
+.available-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 12px 16px;
   border-bottom: 1px solid #eee;
+  transition: background-color 0.3s ease;
 }
 
-.sample-item:last-child {
+.selected-item:last-child,
+.available-item:last-child {
   border-bottom: none;
+}
+
+.available-item {
+  cursor: pointer;
+}
+
+.available-item:hover {
+  background: #f0f8ff;
+}
+
+.selected-item {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%);
+  border-left: 3px solid #67c23a;
 }
 
 .sample-info {
   flex: 1;
-  margin-left: 8px;
 }
 
 .sample-name {
   font-size: 14px;
   color: #333;
   margin-bottom: 4px;
+  font-weight: 500;
 }
 
 .sample-meta {
@@ -934,12 +1047,6 @@ onUnmounted(() => {
 .sample-actions {
   display: flex;
   gap: 8px;
-}
-
-.setting-tip {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
 }
 
 .task-status {
@@ -999,7 +1106,7 @@ onUnmounted(() => {
 }
 
 .task-list {
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -1016,8 +1123,8 @@ onUnmounted(() => {
 }
 
 .task-item:hover {
-  border-color: #409eff;
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
 }
 
 .task-info {
@@ -1079,40 +1186,38 @@ onUnmounted(() => {
   .task-actions {
     justify-content: center;
   }
+
+  .sample-selection-container {
+    gap: 16px;
+  }
 }
 
 /* Element Plus 样式覆盖 */
 :deep(.el-upload-dragger) {
   border: 2px dashed #d9d9d9;
   border-radius: 12px;
-  background: #fafafa;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
   transition: all 0.3s ease;
 }
 
 :deep(.el-upload-dragger:hover) {
-  border-color: #409eff;
-  background: #ecf5ff;
+  border-color: #667eea;
+  background: linear-gradient(135deg, #ecf5ff 0%, #e8f4f8 100%);
 }
 
 :deep(.el-progress-bar__outer) {
-  border-radius: 4px;
+  border-radius: 8px;
+  background: #e4e7ed;
 }
 
 :deep(.el-progress-bar__inner) {
-  border-radius: 4px;
-}
-
-:deep(.el-checkbox-group) {
-  width: 100%;
-}
-
-:deep(.el-checkbox) {
-  width: 100%;
-  margin-right: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 :deep(.el-card__header) {
   padding: 20px 20px 0 20px;
+  background: transparent;
 }
 
 :deep(.el-card__body) {
@@ -1126,5 +1231,23 @@ onUnmounted(() => {
 :deep(.el-form-item__label) {
   font-weight: 500;
   color: #606266;
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+}
+
+:deep(.el-tag) {
+  border-radius: 12px;
+}
+
+:deep(.el-switch.is-checked .el-switch__core) {
+  background-color: #667eea;
 }
 </style>

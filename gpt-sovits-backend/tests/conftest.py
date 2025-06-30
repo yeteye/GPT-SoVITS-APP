@@ -188,7 +188,7 @@ def sample_model(app, admin_user, sample_tags):
             quality_score=8.5,
             review_status="approved",
             reviewed_by=admin_user.id,
-            reviewed_at=datetime.utcnow(),
+            reviewed_at=datetime.now(),
         )
 
         model.set_supported_emotions(["neutral", "happy", "sad", "calm"])
@@ -221,7 +221,7 @@ def sample_model_factory(app, admin_user, sample_tags):
                 quality_score=8.5,
                 review_status="approved",
                 reviewed_by=admin_user.id,
-                reviewed_at=datetime.utcnow(),
+                reviewed_at=datetime.now(),
             )
 
             model.set_supported_emotions(["neutral", "happy", "sad", "calm"])

@@ -48,6 +48,7 @@ def generate_speech():
         model_id = data.get("model_id", "").strip()
         emotion = data.get("emotion", "neutral").strip()
         speed = data.get("speed", 1.0)
+        language = data.get("language", "zh-CN").strip()  # 添加语言参数
 
         if not text:
             raise ValidationError("Text is required", "text")
@@ -121,9 +122,11 @@ def generate_speech():
                 task.update_status("failed", error_message=str(sync_e))
                 raise ServiceUnavailableError(f"TTS service unavailable: {str(sync_e)}")
 
+        import datetime
+        from datetime import timezone, timedelta
+
         # 增加模型使用次数
         model.increment_usage()
-
         return (
             jsonify(
                 create_response(
@@ -136,6 +139,7 @@ def generate_speech():
                         "model_id": task.model_id,
                         "emotion": task.emotion,
                         "speed": task.speed,
+                        "created_at": task.created_at.isoformat(),  # 添加这行
                     },
                 )
             ),

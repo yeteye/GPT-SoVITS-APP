@@ -72,7 +72,7 @@ class TaskService:
             ).count()
 
             # 今日任务数
-            today = datetime.utcnow().date()
+            today = datetime.now().date()
             today_vc = VoiceCloneTask.query.filter(
                 VoiceCloneTask.user_id == user_id, VoiceCloneTask.created_at >= today
             ).count()
@@ -111,7 +111,7 @@ class TaskService:
             if days_threshold is None:
                 days_threshold = current_app.config.get("TASK_CLEANUP_DAYS", 30)
 
-            cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+            cutoff_date = datetime.now() - timedelta(days=days_threshold)
 
             # 清理语音克隆任务
             vc_query = VoiceCloneTask.query.filter(
@@ -207,7 +207,7 @@ class TaskService:
 
             # 设置时间范围
             if time_period_days:
-                start_date = datetime.utcnow() - timedelta(days=time_period_days)
+                start_date = datetime.now() - timedelta(days=time_period_days)
             else:
                 start_date = None
 
