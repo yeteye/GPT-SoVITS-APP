@@ -215,7 +215,7 @@ import {
   VideoPlay,
   Star
 } from '@element-plus/icons-vue'
-import { ttsAPI, modelsAPI } from '@/api'
+import { ttsAPI, tts2API, modelsAPI } from '@/api'
 import { userStore } from '@/stores/user'
 
 const router = useRouter()
@@ -223,7 +223,7 @@ const router = useRouter()
 // 表单数据
 const form = ref({
   text: '你好，欢迎使用 GPT-SoVITS 在线语音合成系统。',
-  textLang: 'zh-CN',
+  textLang: 'zh',
   selectedModel: null,
   selectedEmotion: 'neutral',
   speed: 1.0
@@ -404,8 +404,30 @@ async function onSynthesize() {
       speed: form.value.speed,
       language: form.value.textLang
     }
+    const realpayload = {
+      text: "",
+      text_lang: "",
+      ref_audio_path: "",
+      aux_ref_audio_paths: [],
+      prompt_text: "",
+      prompt_lang: "",
+      top_k: 5,
+      top_p: 1,
+      temperature: 1,
+      text_split_method: "cut0",
+      batch_size: 1,
+      batch_threshold: 0.75,
+      split_bucket: True,
+      speed_factor: 1.0,
+      streaming_mode: False,
+      seed: -1,
+      parallel_infer: True,
+      repetition_penalty: 1.35,
+      sample_steps: 32,
+      super_sampling: False
+    }
 
-    const response = await ttsAPI.generateSpeech(payload)
+    const response = await tts2API.generateSpeech(payload)
 
     if (response.data?.audio_url) {
       audioUrl.value = response.data.audio_url
@@ -438,7 +460,7 @@ function startPolling(taskId) {
 
   pollingTimer.value = setInterval(async () => {
     try {
-      const res = await ttsAPI.getTTSTaskDetail(taskId)
+      const res = await tts2API.getTTSTaskDetail(taskId)
       const task = res.data
 
       currentTask.value = task

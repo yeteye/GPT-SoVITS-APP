@@ -413,3 +413,4 @@ export const clearCache = (pattern) => {
 };
 
 export default request;
+export { handleTokenExpired }
