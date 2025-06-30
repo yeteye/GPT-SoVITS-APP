@@ -483,26 +483,33 @@ async function onSynthesize() {
       super_sampling: false
     }
 
-    const response = await tts2API.generateSpeech(payload)
+    // const response = await tts2API.generateSpeech(payload)
+    //
+    // if (response.data?.audio_url) {
+    //   // 如果后端直接返回音频URL
+    //   audioUrl.value = response.data.audio_url
+    //   ElMessage.success('语音生成成功')
+    // }
+    // else if (response.data?.task_id) {
+    //   // 如果返回任务ID，需要轮询获取结果
+    //   currentTask.value = {
+    //     id: response.data.task_id,
+    //     status: 'pending',
+    //     created_at: new Date().toISOString()
+    //   }
+    //   startPolling(response.data.task_id)
+    //   ElMessage.success('任务已提交，请等待处理')
+    // }
+    // else {
+    //   throw new Error('生成失败')
+    // }
+    const blob = await tts2API.generateSpeech(payload);
 
-    if (response.data?.audio_url) {
-      audioUrl.value = response.data.audio_url
-      ElMessage.success('语音生成成功')
-    } else if (response.data?.task_id) {
-      currentTask.value = {
-        id: response.data.task_id,
-        status: 'pending',
-        created_at: response.data.created_at,  // 使用后端返回的时间
-        text: response.data.text,
-        model_id: response.data.model_id,
-        emotion: response.data.emotion,
-        speed: response.data.speed
-      }
-      startPolling(response.data.task_id)
-      ElMessage.success('任务已提交，请等待处理')
-    } else {
-      throw new Error('生成失败')
-    }
+    // 2) 生成可播放/下载的 URL
+    audioUrl.value = URL.createObjectURL(blob);
+
+    ElMessage.success('语音合成成功，点击下方播放器试听');
+
   } catch (error) {
     console.error('语音生成失败:', error)
     ElMessage.error(error?.response?.data?.message || '语音生成失败')
