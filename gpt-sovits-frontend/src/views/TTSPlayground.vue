@@ -242,14 +242,14 @@ watch(() => form.value.selectedModel, async (newModelId) => {
       value: type,
       // 你可以根据需要把中文标签写在这里，或直接用 type 显示
       label: {
-        neutral: '自然',
-        happy: '快乐',
-        sad: '悲伤',
-        angry: '愤怒',
+        neutral:   '自然',
+        happy:     '快乐',
+        sad:       '悲伤',
+        angry:     '愤怒',
         surprised: '惊讶',
-        calm: '平静',
-        disgust: '厌恶',
-        fear: '恐惧'
+        calm:      '平静',
+        disgust:   '厌恶',
+        fear:      '恐惧'
       }[type] || type
     }))
 
@@ -397,12 +397,12 @@ async function onSynthesize() {
   }
 
   try {
-    const modelId = form.value.selectedModel;
-    const emotion = form.value.selectedEmotion;
+    const modelId   = form.value.selectedModel;
+    const emotion   = form.value.selectedEmotion;
 
-    // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
+     // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
     const emoListRes = await emotionAPI.getEmotions(modelId);
-    const emotions = emoListRes.data.emotions;
+    const emotions   = emoListRes.data.emotions;
 
     if (!emotions.includes(emotion)) {
       throw new Error(`Model does not support emotion "${emotion}"`);
@@ -410,23 +410,23 @@ async function onSynthesize() {
 
     // 2. 通过 model_id + emotionType 查询参考音频参数
     const detailRes = await emotionAPI.getEmotionDetail(modelId, emotion);
-    const detail = detailRes.data;
+    const detail    = detailRes.data;
 
-    // 输入参数
-    // text: form.value.text,
-    // model_id: form.value.selectedModel,
-    // emotion: form.value.selectedEmotion,
-    // speed: form.value.speed,
-    // language: form.value.textLang
+      // 输入参数
+      // text: form.value.text,
+      // model_id: form.value.selectedModel,
+      // emotion: form.value.selectedEmotion,
+      // speed: form.value.speed,
+      // language: form.value.textLang
 
     const payload = {
       text: form.value.text,
       text_lang: form.value.textLang.toLowerCase(),
-      ref_audio_path: detail.ref_path,   // 你的 D: 路径也要改成后端能读到的相对路径或文件名
+      ref_audio_path: detail.ref_path,
       aux_ref_audio_paths: [],
       prompt_text: detail.ref_text,
       prompt_lang: detail.ref_lang.toLowerCase(),
-      media_type: 'wav',                 // ← 一定要加上
+      media_type: 'wav',
       top_k: 5,
       top_p: 1,
       temperature: 1,
@@ -435,13 +435,15 @@ async function onSynthesize() {
       batch_threshold: 0.75,
       split_bucket: true,
       speed_factor: form.value.speed,
-      fragment_interval: 0.3,            // ← 一定要加上
+      fragment_interval: 0.3,
       streaming_mode: false,
       seed: -1,
       parallel_infer: true,
       repetition_penalty: 1.35,
       sample_steps: 32,
-      super_sampling: false
+      super_sampling: false,
+      model_id: modelId,
+      emotion: emotion
     }
 
     // const response = await tts2API.generateSpeech(payload)
@@ -617,7 +619,7 @@ async function downloadResult(task) {
 function resetForm() {
   form.value = {
     text: '你好，欢迎使用 GPT-SoVITS 在线语音合成系统。',
-    textLang: 'zh',
+    textLang: 'zh-CN',
     selectedModel: null,
     selectedEmotion: 'neutral',
     speed: 1.0

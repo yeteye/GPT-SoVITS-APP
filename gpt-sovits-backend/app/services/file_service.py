@@ -22,7 +22,7 @@ def process_file_upload(file, user_id, file_type="general", metadata=None):
         file_size = file.tell()
         file.seek(0)
 
-        max_size = current_app.config.get("MAX_CONTENT_LENGTH", 10 * 1024 * 1024)
+        max_size = current_app.config.get("MAX_CONTENT_LENGTH", 1024 * 1024 * 1024)
         if file_size > max_size:
             raise ValidationError(
                 f"File size exceeds {max_size // (1024*1024)}MB limit"

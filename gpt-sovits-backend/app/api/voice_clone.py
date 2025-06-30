@@ -114,11 +114,12 @@ def upload_user_model():
     """用户上传自己的模型文件 - 修复：要求必须上传两个文件"""
     try:
         user = request.current_user
-
+        print("User uploading model:", user.id)
         # 检查文件上传 - 修复：要求必须提供两个文件
         gpt_file = request.files.get("gpt_model_file")
+        print("Received files:", gpt_file)
         sovits_file = request.files.get("sovits_model_file")
-
+        print("Received files:", gpt_file, sovits_file)
         if not gpt_file:
             raise ValidationError("GPT模型文件(.pth)是必需的", "gpt_model_file")
 
@@ -140,6 +141,7 @@ def upload_user_model():
             "supported_emotions": supported_emotions,
             "supported_languages": supported_languages,
         }
+        print("Validating model upload data:", form_data)
         validate_model_upload_data(form_data, gpt_file, sovits_file)
 
         # 检查用户模型数量限制

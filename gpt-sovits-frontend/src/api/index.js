@@ -373,8 +373,12 @@ export const healthAPI = {
 export const tts2API = {
 
   /** 生成语音 */
-  generateSpeech(data) {
+  generateSpeech2(data) {
     return ttsRequest.post("/tts", data);
+  },
+
+  generateSpeech(data) {
+    return request.post("/tts/generate", data);
   },
 
 

@@ -165,6 +165,8 @@ class TTSTask(db.Model):
     )  # pending, processing, completed, failed, cancelled
 
     # 输入信息
+
+
     text = db.Column(db.Text, nullable=False)
     model_id = db.Column(
         db.String(36), db.ForeignKey("voice_models.id"), nullable=False
@@ -172,7 +174,36 @@ class TTSTask(db.Model):
     emotion = db.Column(
         db.String(20), default="neutral"
     )  # 情感: neutral, happy, sad, angry, etc.
-    speed = db.Column(db.Float, default=1.0)  # 语速倍率
+    # 输入语言与提示
+    text_lang = db.Column(db.String(10), default="zh")  # 文本语言
+    prompt_text = db.Column(db.Text)  # 提示文本
+    prompt_lang = db.Column(db.String(10), default="zh")  # 提示文本语言
+
+    # 参考音频路径
+    ref_audio_path = db.Column(db.String(255))  # 主参考音频
+    aux_ref_audio_paths = db.Column(db.Text)  # 辅助参考音频列表（JSON 字符串）
+
+    # 控制参数（采样与生成策略）
+    top_k = db.Column(db.Integer, default=5)
+    top_p = db.Column(db.Float, default=1.0)
+    temperature = db.Column(db.Float, default=1.0)
+    repetition_penalty = db.Column(db.Float, default=1.35)
+    sample_steps = db.Column(db.Integer, default=32)
+    seed = db.Column(db.Integer, default=-1)
+
+    # 分段与批处理策略
+    text_split_method = db.Column(db.String(20), default="cut0")
+    batch_size = db.Column(db.Integer, default=1)
+    batch_threshold = db.Column(db.Float, default=0.75)
+    split_bucket = db.Column(db.Boolean, default=True)
+    fragment_interval = db.Column(db.Float, default=0.3)
+
+    # 并行与增强配置
+    parallel_infer = db.Column(db.Boolean, default=True)
+    super_sampling = db.Column(db.Boolean, default=False)
+
+    # 语速倍率
+    speed = db.Column(db.Float, default=1.0)
 
     # 高级参数
     pitch = db.Column(db.Float, default=1.0)  # 音调倍率

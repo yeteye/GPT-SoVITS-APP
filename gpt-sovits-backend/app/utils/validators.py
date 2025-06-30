@@ -232,7 +232,7 @@ def validate_audio_file(file):
     file_size = file.tell()
     file.seek(0)
 
-    max_size = current_app.config.get("MAX_CONTENT_LENGTH", 100 * 1024 * 1024)  # 100MB
+    max_size = current_app.config.get("MAX_CONTENT_LENGTH", 1024 * 1024 * 1024)
     if file_size > max_size:
         max_size_mb = max_size / (1024 * 1024)
         raise ValidationError(

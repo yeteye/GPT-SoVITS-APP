@@ -393,6 +393,8 @@ async function fetchVoices() {
       per_page: 100,
     })
 
+    console.log(res)
+
     if (res.data?.models) {
       voices.value = res.data.models
         .filter(model => model.is_public)

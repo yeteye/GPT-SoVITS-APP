@@ -38,7 +38,7 @@ def app():
         "JWT_SECRET_KEY": "test-jwt-secret-key-for-testing",
         "SECRET_KEY": "test-secret-key-for-testing",
         "UPLOAD_FOLDER": upload_dir,
-        "MAX_CONTENT_LENGTH": 10 * 1024 * 1024,  # 10MB
+        "MAX_CONTENT_LENGTH": 1024 * 1024 * 1024,  # 1 GB
         "ALLOWED_AUDIO_EXTENSIONS": {"wav", "mp3", "flac", "m4a"},
         "ALLOWED_MODEL_EXTENSIONS": {"pth", "json", "index"},
         # 禁用外部服务以避免错误

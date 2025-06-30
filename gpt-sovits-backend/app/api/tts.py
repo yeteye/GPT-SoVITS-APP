@@ -1,4 +1,7 @@
 # ./gpt-sovits-backend/app/api/tts.py
+import os
+import json
+from app.services.tts_service import generate_speech_task
 from flask import Blueprint, request, jsonify, current_app, send_file
 from app.extensions import db
 from app.models.task import TTSTask
@@ -23,12 +26,7 @@ from app.utils.exceptions import (
     ServiceUnavailableError,
 )
 
-# 修改导入方式
-from app.services.tts_service import generate_speech_task
-import os
-
 tts_bp = Blueprint("tts", __name__)
-
 
 @tts_bp.route("/generate", methods=["POST"])
 @auth_required
@@ -43,22 +41,78 @@ def generate_speech():
         if not data:
             raise ValidationError("Request body is required")
 
+        # text: form.value.text,
+        # text_lang: form.value.textLang.toLowerCase(),
+        # ref_audio_path: detail.ref_path,
+        # aux_ref_audio_paths: [],
+        # prompt_text: detail.ref_text,
+        # prompt_lang: detail.ref_lang.toLowerCase(),
+        # media_type: 'wav',
+        # top_k: 5,
+        # top_p: 1,
+        # temperature: 1,
+        # text_split_method: 'cut0',
+        # batch_size: 1,
+        # batch_threshold: 0.75,
+        # split_bucket: true,
+        # speed_factor: form.value.speed,
+        # fragment_interval: 0.3,
+        # streaming_mode: false,
+        # seed: -1,
+        # parallel_infer: true,
+        # repetition_penalty: 1.35,
+        # sample_steps: 32,
+        # super_sampling: false
+
+        # model_id
+        # emotion
+
+
         # 验证必需字段
         text = data.get("text", "").strip()
-        model_id = data.get("model_id", "").strip()
-        emotion = data.get("emotion", "neutral").strip()
-        speed = data.get("speed", 1.0)
-        language = data.get("language", "zh").strip()  # 添加语言参数
-
+        text_lang = data.get("text_lang", "zh").strip()  # 添加语言参数
+        ref_audio_path = data.get("ref_audio_path", "").strip()
+        aux_ref_audio_paths = data.get("aux_ref_audio_paths", [])
+        model_id = data.get("model_id")
+        emotion = data.get("emotion", "neutral").strip()  # 添加情感参数
+        prompt_text = data.get("prompt_text", "").strip()
+        prompt_lang = data.get("prompt_lang", "zh").strip()  # 添加语言参数
+        speed = data.get("speed_factor", 1.0)
+        top_k = data.get("top_k", 5)
+        top_p = data.get("top_p", 1.0)
+        temperature = data.get("temperature", 1.0)
+        text_split_method = data.get("text_split_method", "cut0")
+        batch_size = data.get("batch_size", 1)
+        batch_threshold = data.get("batch_threshold", 0.75)
+        split_bucket = data.get("split_bucket", True)
+        fragment_interval = data.get("fragment_interval", 0.3)
+        streaming_mode = data.get("streaming_mode", False)
+        seed = data.get("seed", -1)
+        parallel_infer = data.get("parallel_infer", True)
+        repetition_penalty = data.get("repetition_penalty", 1.35)
+        sample_steps = data.get("sample_steps", 32)
+        super_sampling = data.get("super_sampling", False)
+        # 验证必需字段
         if not text:
             raise ValidationError("Text is required", "text")
-
         if not model_id:
             raise ValidationError("Model ID is required", "model_id")
+        if not emotion:
+            raise ValidationError("Emotion is required", "emotion")
+        if not ref_audio_path:
+            raise ValidationError("Reference audio path is required", "ref_audio_path")
+        if not text_lang:
+            raise ValidationError("Text language is required", "text_lang")
+        if not prompt_text:
+            raise ValidationError("Prompt text is required", "prompt_text")
+        if not prompt_lang:
+            raise ValidationError("Prompt language is required", "prompt_lang")
+        if not speed:
+            raise ValidationError("Speed factor is required", "speed_factor")
 
         # 验证输入
         validate_text_length(text, min_length=1, max_length=200, field_name="text")
-        validate_emotion(emotion)
+
         validate_speed(speed)
 
         # 验证模型存在且可用
@@ -92,41 +146,74 @@ def generate_speech():
                 f"Maximum concurrent tasks ({max_concurrent}) exceeded"
             )
 
+        print("checkpoint 1")
+        import json
         # 创建TTS任务
         task = TTSTask(
-            user_id=user.id, text=text, model_id=model_id, emotion=emotion, speed=speed
+            user_id=user.id,
+            text=text,
+            model_id=model_id,
+            emotion=emotion,
+            text_lang=text_lang,
+            prompt_text=prompt_text,
+            prompt_lang=prompt_lang,
+            ref_audio_path=ref_audio_path,
+            aux_ref_audio_paths=json.dumps(aux_ref_audio_paths),  # 需要转成 JSON 字符串
+            speed=speed,
+            pitch=1.0,
+            volume=1.0,
+            top_k=top_k,
+            top_p=top_p,
+            temperature=temperature,
+            repetition_penalty=repetition_penalty,
+            sample_steps=sample_steps,
+            seed=seed,
+            text_split_method=text_split_method,
+            batch_size=batch_size,
+            batch_threshold=batch_threshold,
+            split_bucket=split_bucket,
+            fragment_interval=fragment_interval,
+            parallel_infer=parallel_infer,
+            super_sampling=super_sampling,
         )
 
         db.session.add(task)
         db.session.commit()
 
+        dummy_self = object()
+        result = generate_speech_task(dummy_self, task.id)
         # 启动异步生成任务（修复：正确调用方式）
-        try:
-            if current_app.config.get("TESTING", False):
-                # 测试环境：直接调用函数
-                result = generate_speech_task(None, task.id)  # self=None, task_id
-                current_app.logger.info(f"Test mode: TTS task completed immediately")
-            else:
-                # 生产环境：使用delay方法
-                celery_task = generate_speech_task.delay(task.id)  # 只传task_id
-                task.celery_task_id = celery_task.id
-                db.session.commit()
-        except Exception as e:
-            current_app.logger.warning(
-                f"Failed to start async TTS task, falling back to sync: {e}"
-            )
-            # 如果异步任务失败，使用同步方式
-            try:
-                result = generate_speech_task(None, task.id)  # self=None, task_id
-            except Exception as sync_e:
-                task.update_status("failed", error_message=str(sync_e))
-                raise ServiceUnavailableError(f"TTS service unavailable: {str(sync_e)}")
+        # try:
+        #     if current_app.config.get("TESTING", False):
+        #         # 测试环境：直接调用函数
+        #         print("checkpoint 2")
+        #         result = generate_speech_task(None, task.id)  # self=None, task_id
+        #         current_app.logger.info(f"Test mode: TTS task completed immediately")
+        #     else:
+        #         # 生产环境：使用delay方法
+        #         print("checkpoint 3")
+        #         celery_task = generate_speech_task.delay(task.id)  # 只传task_id
+        #         task.celery_task_id = celery_task.id
+        #         db.session.commit()
+        # except Exception as e:
+        #     current_app.logger.warning(
+        #         f"Failed to start async TTS task, falling back to sync: {e}"
+        #     )
+        #     # 如果异步任务失败，使用同步方式
+        #     try:
+        #         result = generate_speech_task(None, task.id)  # self=None, task_id
+        #     except Exception as sync_e:
+        #         task.update_status("failed", error_message=str(sync_e))
+        #         raise ServiceUnavailableError(f"TTS service unavailable: {str(sync_e)}")
 
         import datetime
         from datetime import timezone, timedelta
 
         # 增加模型使用次数
+        model = db.session.get(VoiceModel, model_id)
         model.increment_usage()
+        db.session.commit()
+
         return (
             jsonify(
                 create_response(

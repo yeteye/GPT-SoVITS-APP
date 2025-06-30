@@ -1,5 +1,8 @@
 # ./gpt-sovits-backend/app/services/tts_service.py (修复后的完整版本)
 import os
+import json
+from io import BytesIO
+import requests
 import numpy as np
 from datetime import datetime
 from flask import current_app
@@ -9,6 +12,9 @@ from app.models.model import VoiceModel
 from app.utils.exceptions import TaskProcessingError
 from app.utils.helpers import log_user_action, generate_unique_filename
 
+TTS_API_URL = "http://127.0.0.1:9880/tts"
+SET_GPT_URL = "http://127.0.0.1:9880/set_gpt_weights"
+SET_SOVITS_URL = "http://127.0.0.1:9880/set_sovits_weights"
 
 class MockCeleryResult:
     """模拟Celery任务结果"""
@@ -86,6 +92,8 @@ def create_task_decorator():
 @create_task_decorator()
 def generate_speech_task(self, task_id):
     """生成语音任务 - 修复版本"""
+    print("generate_speech_task called with task_id:", task_id)
+
     try:
         # 获取任务信息
         task = db.session.get(TTSTask, task_id)
@@ -233,34 +241,80 @@ def mock_speech_generation(task, watermark_enabled=True):
     except Exception as e:
         raise TaskProcessingError(f"Mock speech generation failed: {str(e)}")
 
-
 def process_speech_generation(task, watermark_enabled=True):
+
+    print("isActive")
     """处理语音生成（生产环境）- 集成水印功能"""
     try:
         # 1. 加载语音模型
         update_tts_task_status(task, "Loading voice model...")
+
         model_info = load_voice_model(task.model_id)
+        # 1.1 切换 GPT 权重
+        resp = requests.get(
+            SET_GPT_URL,
+            params={"weights_path": model_info["gpt_model_path"]},
+            timeout=10
+        )
+        resp_json = resp.json()
+        if resp.status_code != 200 or resp_json.get("message") != "success":
+            raise TaskProcessingError(f"Failed to set GPT weights: {resp.status_code} {resp.text}")
+
+        # 1.2 切换 SoVITS 权重
+        resp = requests.get(
+            SET_SOVITS_URL,
+            params={"weights_path": model_info["sovits_model_path"]},
+            timeout=10
+        )
+        resp_json = resp.json()
+        if resp.status_code != 200 or resp_json.get("message") != "success":
+            raise TaskProcessingError(f"Failed to set SoVITS weights: {resp.status_code} {resp.text}")
+
+        #1.5 payload
+        payload = {
+            "text": task.text,
+            "text_lang": task.text_lang,
+            "ref_audio_path": task.ref_audio_path,
+            "aux_ref_audio_paths": json.loads(task.aux_ref_audio_paths or "[]"),
+            "prompt_text": task.prompt_text,
+            "prompt_lang": task.prompt_lang,
+            "top_k": task.top_k,
+            "top_p": task.top_p,
+            "temperature": task.temperature,
+            "text_split_method": task.text_split_method,
+            "batch_size": task.batch_size,
+            "batch_threshold": task.batch_threshold,
+            "split_bucket": task.split_bucket,
+            "speed_factor": task.speed,
+            "fragment_interval": task.fragment_interval,
+            "seed": task.seed,
+            "media_type": "wav",
+            "streaming_mode": False,
+            "parallel_infer": task.parallel_infer,
+            "repetition_penalty": task.repetition_penalty,
+            "sample_steps": task.sample_steps,
+            "super_sampling": task.super_sampling
+        }
 
         # 2. 预处理文本
         update_tts_task_status(task, "Processing text...")
-        processed_text = preprocess_text(task.text)
-
-        # 3. 生成语音
-        update_tts_task_status(task, "Generating speech...")
-        audio_data = generate_audio(
-            text=processed_text,
-            model_info=model_info,
-            emotion=task.emotion,
-            speed=task.speed,
+        response = requests.post(
+            TTS_API_URL,
+            json=payload,
+            stream=True,
+            timeout=120
         )
+        if response.status_code != 200:
+            raise TaskProcessingError(f"TTS service returned {response.status_code}: {response.text}")
 
-        # 4. 后处理音频
-        update_tts_task_status(task, "Post-processing audio...")
-        audio_data = post_process_audio(audio_data, task.speed)
+        # 4. 读取音频流
+        update_tts_task_status(task, "Receiving audio stream...")
+        audio_bytes = BytesIO(response.content)
 
-        # 5. 保存音频文件（暂不嵌入水印）
+        # 5. 保存音频文件
         update_tts_task_status(task, "Saving audio file...")
-        audio_info = save_generated_audio(audio_data, task, embed_watermark=False)
+        # save_generated_audio 接受 BytesIO 或 二进制流
+        audio_info = save_generated_audio(audio_bytes, task)
 
         # 6. 嵌入水印（如果启用）
         if watermark_enabled:
@@ -286,6 +340,7 @@ def process_speech_generation(task, watermark_enabled=True):
 
     except Exception as e:
         raise TaskProcessingError(f"Speech generation failed: {str(e)}")
+
 
 
 def embed_watermark_to_tts_audio(task, audio_info):
@@ -374,6 +429,8 @@ def load_voice_model(model_id):
 
     except Exception as e:
         raise TaskProcessingError(f"Failed to load voice model: {str(e)}")
+
+
 
 
 def preprocess_text(text):
