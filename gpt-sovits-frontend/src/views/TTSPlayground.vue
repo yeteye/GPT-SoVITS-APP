@@ -200,7 +200,7 @@ const router = useRouter()
 
 // 表单数据
 const form = ref({
-  text: '你好，欢迎使用 GPT-SoVITS 在线语音合成系统。',
+  text: '你好，欢迎使用在线语音合成系统。',
   textLang: 'zh',
   selectedModel: null,
   selectedEmotion: 'neutral',
@@ -242,14 +242,14 @@ watch(() => form.value.selectedModel, async (newModelId) => {
       value: type,
       // 你可以根据需要把中文标签写在这里，或直接用 type 显示
       label: {
-        neutral: '自然',
-        happy: '快乐',
-        sad: '悲伤',
-        angry: '愤怒',
+        neutral:   '自然',
+        happy:     '快乐',
+        sad:       '悲伤',
+        angry:     '愤怒',
         surprised: '惊讶',
-        calm: '平静',
-        disgust: '厌恶',
-        fear: '恐惧'
+        calm:      '平静',
+        disgust:   '厌恶',
+        fear:      '恐惧'
       }[type] || type
     }))
 
@@ -395,14 +395,13 @@ async function onSynthesize() {
   }
 
   try {
-    console.log(form)
-    const modelId = form.value.selectedModel;
-    const emotion = form.value.selectedEmotion;
+
+    const modelId   = form.value.selectedModel;
+    const emotion   = form.value.selectedEmotion;
 
     // 1. 实时获取该模型支持的情感列表（可作二次校验或渲染下拉）
     const emoListRes = await emotionAPI.getEmotions(modelId);
     const emotions = emoListRes.data.emotions;
-
 
     if (!emotions.includes(emotion)) {
       throw new Error(`Model does not support emotion "${emotion}"`);
@@ -445,7 +444,6 @@ async function onSynthesize() {
       model_id: modelId,
       emotion: emotion
     }
-    console.log(payload)
 
     // const response = await tts2API.generateSpeech(payload)
     //
@@ -471,6 +469,11 @@ async function onSynthesize() {
 
     // 2) 生成可播放/下载的 URL
     audioUrl.value = URL.createObjectURL(blob);
+    // const response = await tts2API.generateSpeech(payload, {
+    //   responseType: 'blob'
+    // });
+    // const blob = response.data;
+    // audioUrl.value = URL.createObjectURL(blob);
 
     ElMessage.success('语音合成成功，点击下方播放器试听');
 
@@ -619,7 +622,7 @@ async function downloadResult(task) {
 
 function resetForm() {
   form.value = {
-    text: '你好，欢迎使用 GPT-SoVITS 在线语音合成系统。',
+    text: '你好，欢迎使用在线语音合成系统。',
     textLang: 'zh-CN',
     selectedModel: null,
     selectedEmotion: 'neutral',

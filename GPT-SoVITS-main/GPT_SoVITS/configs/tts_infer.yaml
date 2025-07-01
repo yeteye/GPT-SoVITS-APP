@@ -5,7 +5,7 @@ custom:
   is_half: true
   t2s_weights_path: D:\Code\From_Pycharm\practice03\GPT-SoVITS-APP\GPT-SoVITS-main\GPT_weights\lan-e15.ckpt
   version: v1
-  vits_weights_path: D:\Code\From_Pycharm\practice03\GPT-SoVITS-APP\GPT-SoVITS-main\SoVITS_weights\lan_e25_s1475.pth
+  vits_weights_path: D:\Code\From_Pycharm\practice03\GPT-SoVITS-APP\GPT-SoVITS-main\SoVITS_weights\sud_e8_s160.pth
 v1:
   bert_base_path: GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large
   cnhuhbert_base_path: GPT_SoVITS/pretrained_models/chinese-hubert-base

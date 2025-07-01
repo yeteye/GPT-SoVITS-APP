@@ -73,7 +73,7 @@ def embed_watermark():
         validate_audio_file(file)
 
         # 获取可选参数并验证 - 修复：添加严格的参数验证
-        code_length_str = request.form.get("code_length", "16")
+        code_length_str = request.form.get("code_length", "32")
 
         # 修复：添加数字验证
         try:
@@ -178,6 +178,7 @@ def verify_watermark():
 
             with wave.open(temp_path, "rb") as wav:
                 pass
+
         except Exception:
             os.unlink(temp_path)
             raise ValidationError("Invalid WAV file", "audio_file")

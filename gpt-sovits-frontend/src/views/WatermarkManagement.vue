@@ -316,7 +316,7 @@ function resetVerifyForm() {
 
 function getVerifyResultDescription(result) {
     if (result.success) {
-        return '该音频文件包含AI生成水印，以下是详细信息'
+        return '该音频文件包含AI生成水印'
     } else {
         return '该音频文件未检测到AI生成水印，可能是原创音频或使用了其他生成方式'
     }

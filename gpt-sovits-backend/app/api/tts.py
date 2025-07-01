@@ -1,6 +1,7 @@
 # ./gpt-sovits-backend/app/api/tts.py
 import os
 import json
+from pathlib import Path
 from app.services.tts_service import generate_speech_task
 from flask import Blueprint, request, jsonify, current_app, send_file
 from app.extensions import db
@@ -214,24 +215,36 @@ def generate_speech():
         model.increment_usage()
         db.session.commit()
 
-        return (
-            jsonify(
-                create_response(
-                    success=True,
-                    message="Speech generation started",
-                    data={
-                        "task_id": task.id,
-                        "status": task.status,
-                        "text": task.text,
-                        "model_id": task.model_id,
-                        "emotion": task.emotion,
-                        "speed": task.speed,
-                        "created_at": task.created_at.isoformat(),  # 添加这行
-                    },
-                )
-            ),
-            201,
-        )
+        base_dir = os.getcwd()
+
+        task = db.session.get(TTSTask, task.id)
+
+        if not task or not os.path.exists(task.audio_path):
+            return jsonify({"success": False, "message": "Audio not found"}), 404
+
+        audio_path = os.path.join(base_dir, task.audio_path)
+        if not os.path.exists(audio_path):
+            return jsonify({"success": False, "message": "Audio not found"}), 404
+
+        return send_file(audio_path, as_attachment=True, download_name=f"{task.id}.wav")
+        # return (
+        #     jsonify(
+        #         create_response(
+        #             success=True,
+        #             message="Speech generation started",
+        #             data={
+        #                 "task_id": task.id,
+        #                 "status": task.status,
+        #                 "text": task.text,
+        #                 "model_id": task.model_id,
+        #                 "emotion": task.emotion,
+        #                 "speed": task.speed,
+        #                 "created_at": task.created_at.isoformat(),  # 添加这行
+        #             },
+        #         )
+        #     ),
+        #     201,
+        # )
 
     except (ValidationError, ResourceNotFoundError, ServiceUnavailableError) as e:
         return jsonify(create_response(False, str(e))), e.status_code

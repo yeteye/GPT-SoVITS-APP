@@ -16,6 +16,7 @@ const request = axios.create({
   },
 });
 
+
 // 显示全局loading
 const showLoading = () => {
   if (requestCount === 0 && !loadingInstance) {

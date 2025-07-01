@@ -378,7 +378,7 @@ export const tts2API = {
   },
 
   generateSpeech(data) {
-    return request.post("/tts/generate", data);
+    return ttsRequest.post("/tts/generate", data);
   },
 
 

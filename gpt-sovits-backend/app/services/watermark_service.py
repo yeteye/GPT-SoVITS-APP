@@ -201,20 +201,20 @@ class WatermarkService:
     ) -> str:
         """获取或创建用户水印"""
         try:
-            # 查找现有水印
-            watermark = Watermark.query.filter_by(
-                user_id=user_id, model_id=model_id, is_active=True
-            ).first()
-
-            if watermark:
-                return watermark.watermark_code
+            # # 查找现有水印
+            # watermark = Watermark.query.filter_by(
+            #     user_id=user_id, model_id=model_id, is_active=True
+            # ).first()
+            #
+            # if watermark:
+            #     return watermark.watermark_code
 
             # 创建新水印
             watermark = Watermark.create_for_user(
                 user_id=user_id,
-                username=username,
+                # username=username,
                 model_id=model_id,
-                code_length=16,
+                code_length=32,
                 description=(
                     f"Auto-generated for model {model_id}"
                     if model_id
@@ -414,7 +414,7 @@ class WatermarkService:
                     audio = audio[::2]  # 转为单声道
 
             # 尝试不同长度的水印码
-            possible_lengths = [8, 16, 32]
+            possible_lengths = [32]
             best_result = None
             best_accuracy = 0.0
 

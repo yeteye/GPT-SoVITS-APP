@@ -2,6 +2,7 @@
 import os
 import json
 from io import BytesIO
+import wave
 import requests
 import numpy as np
 from datetime import datetime
@@ -240,6 +241,50 @@ def mock_speech_generation(task, watermark_enabled=True):
 
     except Exception as e:
         raise TaskProcessingError(f"Mock speech generation failed: {str(e)}")
+def save_generated_audio(audio_bytes_io: BytesIO, task):
+    """
+    将从TTS服务返回的音频流保存成WAV文件。
+    确保音频格式正确且采样率有效。
+    """
+    # 这里假设你的音频格式是wav，如果不是需要对应改写
+
+    # 设定保存路径
+    output_dir = "./uploads\generated"  # 你的音频保存目录
+    os.makedirs(output_dir, exist_ok=True)
+
+    filename = f"{task.id}.wav"
+    filepath = os.path.join(output_dir, filename)
+
+    # 读取BytesIO中的音频数据，直接写入文件
+    with open(filepath, "wb") as f:
+        f.write(audio_bytes_io.getbuffer())
+
+    # 你也可以做进一步检测wav文件的参数，比如采样率等，示例：
+    try:
+        with wave.open(filepath, 'rb') as wav_file:
+            samp_rate = wav_file.getframerate()
+            channels = wav_file.getnchannels()
+            frames = wav_file.getnframes()
+            duration = frames / float(samp_rate)
+            # 可以将这些信息存入task或返回
+    except wave.Error:
+        # 处理wav文件损坏或格式错误
+        raise TaskProcessingError("Saved audio file is not a valid WAV file")
+
+    # 更新数据库中音频路径等信息
+    task.set_result(
+        audio_path=filepath,
+        audio_url=f"/static/audio/{filename}",  # 如果你有静态资源服务
+        duration=duration,
+        file_size=os.path.getsize(filepath)
+    )
+    return {
+        "audio_path": filepath,
+        "audio_url": f"/static/audio/{filename}",  # ← 加上这一行
+        "duration": duration,
+        "file_size": os.path.getsize(filepath)
+    }
+
 
 def process_speech_generation(task, watermark_enabled=True):
 
@@ -304,16 +349,14 @@ def process_speech_generation(task, watermark_enabled=True):
             stream=True,
             timeout=120
         )
+
         if response.status_code != 200:
             raise TaskProcessingError(f"TTS service returned {response.status_code}: {response.text}")
-
         # 4. 读取音频流
         update_tts_task_status(task, "Receiving audio stream...")
         audio_bytes = BytesIO(response.content)
-
         # 5. 保存音频文件
         update_tts_task_status(task, "Saving audio file...")
-        # save_generated_audio 接受 BytesIO 或 二进制流
         audio_info = save_generated_audio(audio_bytes, task)
 
         # 6. 嵌入水印（如果启用）
@@ -520,58 +563,58 @@ def post_process_audio(audio_info, speed=1.0):
         return audio_info
 
 
-def save_generated_audio(audio_info, task, embed_watermark=True):
-    """保存生成的音频文件"""
-    try:
-        # 生成文件名
-        filename = generate_unique_filename(f"tts_{task.id}.wav", "generated")
-
-        # 创建保存目录
-        try:
-            from flask import current_app
-
-            save_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "generated")
-        except RuntimeError:
-            save_dir = "./uploads/generated"
-
-        os.makedirs(save_dir, exist_ok=True)
-
-        # 完整文件路径
-        file_path = os.path.join(save_dir, filename)
-
-        # 模拟保存音频文件（在实际应用中应该使用真实的音频库）
-        import wave
-        import struct
-
-        # 保存为WAV文件
-        with wave.open(file_path, "wb") as wav_file:
-            wav_file.setnchannels(1)  # 单声道
-            wav_file.setsampwidth(2)  # 16位
-            wav_file.setframerate(int(audio_info["sample_rate"]))
-
-            # 将浮点音频数据转换为16位整数
-            audio_data = audio_info["audio_data"]
-            audio_int16 = (audio_data * 32767).astype(np.int16)
-
-            # 写入音频数据
-            for sample in audio_int16:
-                wav_file.writeframes(struct.pack("<h", sample))
-
-        # 生成访问URL
-        audio_url = f"/api/tts/tasks/{task.id}/download"
-
-        result = {
-            "audio_path": file_path,
-            "audio_url": audio_url,
-            "duration": audio_info["duration"],
-            "watermark_embedded": False,
-            "watermark_code": None,
-        }
-
-        return result
-
-    except Exception as e:
-        raise TaskProcessingError(f"Failed to save audio file: {str(e)}")
+# def save_generated_audio(audio_info, task, embed_watermark=True):
+#     """保存生成的音频文件"""
+#     try:
+#         # 生成文件名
+#         filename = generate_unique_filename(f"tts_{task.id}.wav", "generated")
+#
+#         # 创建保存目录
+#         try:
+#             from flask import current_app
+#
+#             save_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "generated")
+#         except RuntimeError:
+#             save_dir = "./uploads/generated"
+#
+#         os.makedirs(save_dir, exist_ok=True)
+#
+#         # 完整文件路径
+#         file_path = os.path.join(save_dir, filename)
+#
+#         # 模拟保存音频文件（在实际应用中应该使用真实的音频库）
+#         import wave
+#         import struct
+#
+#         # 保存为WAV文件
+#         with wave.open(file_path, "wb") as wav_file:
+#             wav_file.setnchannels(1)  # 单声道
+#             wav_file.setsampwidth(2)  # 16位
+#             wav_file.setframerate(int(audio_info["sample_rate"]))
+#
+#             # 将浮点音频数据转换为16位整数
+#             audio_data = audio_info["audio_data"]
+#             audio_int16 = (audio_data * 32767).astype(np.int16)
+#
+#             # 写入音频数据
+#             for sample in audio_int16:
+#                 wav_file.writeframes(struct.pack("<h", sample))
+#
+#         # 生成访问URL
+#         audio_url = f"/api/tts/tasks/{task.id}/download"
+#
+#         result = {
+#             "audio_path": file_path,
+#             "audio_url": audio_url,
+#             "duration": audio_info["duration"],
+#             "watermark_embedded": False,
+#             "watermark_code": None,
+#         }
+#
+#         return result
+#
+#     except Exception as e:
+#         raise TaskProcessingError(f"Failed to save audio file: {str(e)}")
 
 
 def update_tts_task_status(task, message):

@@ -150,10 +150,10 @@ const onSubmit = () => {
 
         if (userRole === 2) {
           // 管理员跳转到管理面板
-          router.push('/admin')
+          router.push('/')
         } else {
           // 普通用户跳转到原来要访问的页面或首页
-          router.push(redirect)
+          router.push('/')
         }
       } else {
         throw new Error('登录响应格式错误')

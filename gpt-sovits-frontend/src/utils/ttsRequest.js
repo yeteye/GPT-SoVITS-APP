@@ -3,7 +3,7 @@ import axios from 'axios'
 import { handleTokenExpired } from './request'  // 如果需要和主 request 一致的拦截逻辑
 
 export const ttsRequest = axios.create({
-  baseURL: 'http://127.0.0.1:9880',
+  baseURL: 'http://127.0.0.1:5000/api',
   timeout: 60000,
   responseType: 'blob',   // ← 全局 blob
   withCredentials: true,
