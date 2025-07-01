@@ -482,7 +482,7 @@ const profileForm = reactive({
 const originalProfile = reactive({})
 
 const preferencesForm = reactive({
-  language: 'zh',
+  language: '中文',
   theme: 'light',
   email_notifications: true,
   auto_save: true
@@ -567,8 +567,17 @@ async function fetchUserStats() {
     console.log('统计API响应:', res)
 
     if (res.data) {
-      userStats.value = res.data
-      console.log('成功获取统计数据:', res.data)
+      // 修复：正确映射后端返回的数据结构
+      const backendData = res.data
+
+      userStats.value = {
+        tts_tasks: backendData.tasks?.tts?.total || 0,
+        voice_clone_tasks: backendData.tasks?.voice_clone?.total || 0,
+        models_created: backendData.models?.total || 0,
+        storage_used: backendData.storage?.total_size_bytes || 0
+      }
+
+      console.log('成功获取统计数据:', userStats.value)
     } else {
       throw new Error('统计API返回空数据')
     }
@@ -656,6 +665,12 @@ async function fetchRecentActivities() {
     console.log('任务历史API响应:', res)
 
     if (res.data?.tasks && Array.isArray(res.data.tasks)) {
+      // 如果任务历史为空，使用备用方案
+      if (res.data.tasks.length === 0) {
+        console.log('任务历史为空，使用备用方案获取活动数据')
+        throw new Error('任务历史为空')
+      }
+
       recentActivities.value = res.data.tasks.map(task => ({
         id: task.id,
         type: task.type || task.task_type || 'unknown',
@@ -669,18 +684,22 @@ async function fetchRecentActivities() {
       throw new Error('任务历史API返回空数据')
     }
   } catch (error) {
-    console.warn('任务历史API失败，使用备用方案:', error)
+    console.warn('任务历史API失败或为空，使用备用方案:', error)
 
     // 备用方案：从其他API获取活动数据
     try {
       console.log('开始获取各类任务数据...')
-      const [ttsTasksRes, voiceCloneTasksRes] = await Promise.allSettled([
+      const [ttsTasksRes, voiceCloneTasksRes, modelsRes] = await Promise.allSettled([
         ttsAPI.getTTSTasks({ per_page: 5 }).then(res => {
           console.log('TTS任务列表响应:', res)
           return res
         }),
         voiceCloneAPI.getUserTasks({ per_page: 5 }).then(res => {
           console.log('音色克隆任务列表响应:', res)
+          return res
+        }),
+        modelsAPI.getMyModels({ per_page: 3 }).then(res => {
+          console.log('我的模型列表响应:', res)
           return res
         })
       ])
@@ -715,6 +734,35 @@ async function fetchRecentActivities() {
         })
       }
 
+      // 处理创建的模型
+      if (modelsRes.status === 'fulfilled' && modelsRes.value?.data?.models) {
+        modelsRes.value.data.models.forEach(model => {
+          activities.push({
+            id: `model_${model.id}`,
+            type: 'model',
+            title: '创建音色模型',
+            description: `创建了音色模型 "${model.name || '未命名'}"`,
+            status: 'completed',
+            created_at: model.created_at
+          })
+        })
+      }
+
+      // 如果所有备用方案都没有数据，添加一些示例数据
+      if (activities.length === 0) {
+        console.log('所有API都没有返回数据，使用示例数据')
+        activities.push(
+          {
+            id: 'welcome',
+            type: 'welcome',
+            title: '欢迎使用GPT-SoVITS',
+            description: '开始您的语音合成之旅吧！',
+            status: 'completed',
+            created_at: new Date().toISOString()
+          }
+        )
+      }
+
       // 按时间排序
       activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       recentActivities.value = activities.slice(0, 10)
@@ -722,23 +770,15 @@ async function fetchRecentActivities() {
       console.log('备用方案获取的活动数据:', recentActivities.value)
     } catch (fallbackError) {
       console.error('备用方案也失败了:', fallbackError)
-      // 使用模拟数据
+      // 使用欢迎信息
       recentActivities.value = [
         {
-          id: 1,
-          type: 'tts',
-          title: '语音合成任务',
-          description: '生成了一段中文语音',
+          id: 'welcome',
+          type: 'welcome',
+          title: '欢迎使用GPT-SoVITS',
+          description: '开始您的语音合成之旅吧！',
           status: 'completed',
           created_at: new Date().toISOString()
-        },
-        {
-          id: 2,
-          type: 'voice_clone',
-          title: '音色克隆任务',
-          description: '训练了新的音色模型',
-          status: 'processing',
-          created_at: new Date(Date.now() - 300000).toISOString()
         }
       ]
     }
@@ -977,6 +1017,7 @@ function getTaskTitle(task) {
   const titleMap = {
     'tts': '语音合成任务',
     'voice_clone': '音色克隆任务',
+    'model': '创建音色模型',
     'unknown': '任务'
   }
   return titleMap[task.task_type || task.type] || '未知任务'
@@ -987,6 +1028,8 @@ function getTaskDescription(task) {
     return `生成了 "${(task.text || '').substring(0, 20) || ''}..." 的语音`
   } else if (task.task_type === 'voice_clone' || task.type === 'voice_clone') {
     return `训练了音色模型 "${task.model_name || '未命名'}"`
+  } else if (task.task_type === 'model' || task.type === 'model') {
+    return `创建了音色模型 "${task.name || '未命名'}"`
   }
   return '任务详情'
 }
@@ -995,8 +1038,10 @@ function getActivityIcon(type) {
   const iconMap = {
     'tts': Microphone,
     'voice_clone': MagicStick,
+    'model': DataBoard,
     'login': User,
     'setting': Setting,
+    'welcome': Check,
     'unknown': Clock
   }
   return iconMap[type] || Clock
@@ -1248,12 +1293,24 @@ onMounted(() => {
   background: #f093fb;
 }
 
+.activity-model {
+  background: #4facfe;
+}
+
 .activity-login {
   background: #67c23a;
 }
 
 .activity-setting {
   background: #e6a23c;
+}
+
+.activity-welcome {
+  background: #67c23a;
+}
+
+.activity-unknown {
+  background: #909399;
 }
 
 .activity-content {
